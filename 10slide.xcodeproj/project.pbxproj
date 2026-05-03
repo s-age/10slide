@@ -31,6 +31,12 @@
 		CFA74A6CCDB04FE469505DC1 /* TransitionTypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD60F0A03CF4FE7AFC93BD38 /* TransitionTypeTests.swift */; };
 		3FD65AE12AD243F3AAAD426C /* SlideshowConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FDF72D96CFFEBE499163A25 /* SlideshowConfigTests.swift */; };
 		F5F0AF52787D5A962FE45D64 /* SlideshowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F7637CE9B8204701F952D4 /* SlideshowTests.swift */; };
+		35E04A07E852A3E03328148D /* ConfigDataSourceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 507CB24AF42E63137067949E /* ConfigDataSourceProtocol.swift */; };
+		4F572356CB84E7084F4DD59F /* SlideshowDataSourceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59B1E70DF7BCD69AB31B9EFF /* SlideshowDataSourceProtocol.swift */; };
+		119A8C09EC1DBDE811BD2813 /* ConfigDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4134A33D9ECBB17A7232E1FB /* ConfigDTO.swift */; };
+		4CAFE453FC92412937CF5D46 /* ConfigStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F23D871CA2471DDAC8EEF6 /* ConfigStore.swift */; };
+		5F1F7E954988E5A451575E29 /* SlideshowDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF8287B16F529652E5B58A22 /* SlideshowDataSource.swift */; };
+		B6441F0E38143CBF76F65A31 /* Yams in Frameworks */ = {isa = PBXBuildFile; productRef = 905AAC53EA9C23113464A0A3 /* Yams */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,16 +76,40 @@
 		CD60F0A03CF4FE7AFC93BD38 /* TransitionTypeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitionTypeTests.swift; sourceTree = "<group>"; };
 		5FDF72D96CFFEBE499163A25 /* SlideshowConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowConfigTests.swift; sourceTree = "<group>"; };
 		F2F7637CE9B8204701F952D4 /* SlideshowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowTests.swift; sourceTree = "<group>"; };
+		507CB24AF42E63137067949E /* ConfigDataSourceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigDataSourceProtocol.swift; sourceTree = "<group>"; };
+		59B1E70DF7BCD69AB31B9EFF /* SlideshowDataSourceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowDataSourceProtocol.swift; sourceTree = "<group>"; };
+		4134A33D9ECBB17A7232E1FB /* ConfigDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigDTO.swift; sourceTree = "<group>"; };
+		F5F23D871CA2471DDAC8EEF6 /* ConfigStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigStore.swift; sourceTree = "<group>"; };
+		FF8287B16F529652E5B58A22 /* SlideshowDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowDataSource.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		12E9CD81ADA2AA1631F24FC7 /* Protocols */ = {
 			isa = PBXGroup;
 			children = (
+				507CB24AF42E63137067949E /* ConfigDataSourceProtocol.swift */,
 				1ECDC3C1FBFBFC2D2B79052D /* ImageDataSourceProtocol.swift */,
 				0796277AA9BF1FB6043F6E94 /* SlideDataSourceProtocol.swift */,
+				59B1E70DF7BCD69AB31B9EFF /* SlideshowDataSourceProtocol.swift */,
 			);
 			path = Protocols;
+			sourceTree = "<group>";
+		};
+		ABE48057B14715806F4EFE9E /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				F5F23D871CA2471DDAC8EEF6 /* ConfigStore.swift */,
+				5DC1BC1616976C73B8A28037 /* DTO */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		5DC1BC1616976C73B8A28037 /* DTO */ = {
+			isa = PBXGroup;
+			children = (
+				4134A33D9ECBB17A7232E1FB /* ConfigDTO.swift */,
+			);
+			path = DTO;
 			sourceTree = "<group>";
 		};
 		1A8793CE469A3C11CBF8318B /* Products */ = {
@@ -94,6 +124,7 @@
 		1B7CE8F8D78E8FE7C5531DA8 /* Infrastructure */ = {
 			isa = PBXGroup;
 			children = (
+				ABE48057B14715806F4EFE9E /* Config */,
 				554CD5463A90AA8B681D01D3 /* Image */,
 				12E9CD81ADA2AA1631F24FC7 /* Protocols */,
 				972ACD0F492E4659B6D8C062 /* SwiftData */,
@@ -142,6 +173,7 @@
 			isa = PBXGroup;
 			children = (
 				5FDF8772B348D86AA93F4576 /* SlideDataSource.swift */,
+				FF8287B16F529652E5B58A22 /* SlideshowDataSource.swift */,
 				BB1BFFC31ED55E05C9DC556B /* DTO */,
 			);
 			path = SwiftData;
@@ -283,6 +315,7 @@
 			buildConfigurationList = A20B2D0272A5552326E3DA9A /* Build configuration list for PBXNativeTarget "10slide" */;
 			buildPhases = (
 				A1A49732CDE730AC11C4F26E /* Sources */,
+				1E84531B53FA84D37EA38A35 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -290,6 +323,7 @@
 			);
 			name = 10slide;
 			packageProductDependencies = (
+				905AAC53EA9C23113464A0A3 /* Yams */,
 			);
 			productName = 10slide;
 			productReference = 32565F1B107399525BBAC2E6 /* 10slide.app */;
@@ -319,6 +353,9 @@
 			);
 			mainGroup = F6538ABF26166E73C2051E4B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C3E20B0512F8440B801934BE /* XCRemoteSwiftPackageReference "Yams" */,
+			);
 			productRefGroup = 1A8793CE469A3C11CBF8318B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -328,6 +365,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		1E84531B53FA84D37EA38A35 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B6441F0E38143CBF76F65A31 /* Yams in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		436D17720062548D777D04D4 /* Sources */ = {
@@ -345,6 +393,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				35E04A07E852A3E03328148D /* ConfigDataSourceProtocol.swift in Sources */,
+				119A8C09EC1DBDE811BD2813 /* ConfigDTO.swift in Sources */,
+				4CAFE453FC92412937CF5D46 /* ConfigStore.swift in Sources */,
 				59C3F2EE0B577163957C1041 /* Container.swift in Sources */,
 				810D4DC4BE1531F953DF07FD /* ContentView.swift in Sources */,
 				3EFB1FECB36ABB9BF11C1F5A /* ImageDTO.swift in Sources */,
@@ -361,6 +412,8 @@
 				3262BF41F48BDE724A8E9C3A /* SlideRepositoryProtocol.swift in Sources */,
 				39197A1BEC165EF0ACFE4692 /* Slideshow.swift in Sources */,
 				4BC1902569BB4D353D423382 /* SlideshowConfig.swift in Sources */,
+				5F1F7E954988E5A451575E29 /* SlideshowDataSource.swift in Sources */,
+				4F572356CB84E7084F4DD59F /* SlideshowDataSourceProtocol.swift in Sources */,
 				1C5B06DD1302FCF11E315EA1 /* SlideshowModel.swift in Sources */,
 				9E3145BBED62F76A4BB06E23 /* TransitionType.swift in Sources */,
 				96E61C2C8D1347AE5BCC2F51 /* TenSlideApp.swift in Sources */,
@@ -377,6 +430,25 @@
 			targetProxy = 12CBE339A5B9FC8779ACC87D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		C3E20B0512F8440B801934BE /* XCRemoteSwiftPackageReference "Yams" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/jpsim/Yams";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = "5.0.0";
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		905AAC53EA9C23113464A0A3 /* Yams */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C3E20B0512F8440B801934BE /* XCRemoteSwiftPackageReference "Yams" */;
+			productName = Yams;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		361E208FA9034B38FCCF3B28 /* Release */ = {

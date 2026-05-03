@@ -3,6 +3,9 @@ packages:
   SwiftLint:
     url: https://github.com/realm/SwiftLint
     from: "0.57.1"
+  Yams:
+    url: https://github.com/jpsim/Yams
+    from: "5.0.0"
 options:
   bundleIdPrefix: com.sage0196
   createIntermediateGroups: true
@@ -19,6 +22,8 @@ targets:
     dependencies:
       - plugin: SwiftLintBuildToolPlugin
         package: SwiftLint
+      - package: Yams
+        product: Yams
     settings:
       base:
         SWIFT_VERSION: "6.0"
