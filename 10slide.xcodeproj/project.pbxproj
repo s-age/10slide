@@ -48,6 +48,18 @@
 		7009B2302DA540028016102E /* ConfigRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB03EF4E79E7420DBD08DE2D /* ConfigRepositoryTests.swift */; };
 		5EA6366002AF40CE86E9DCE3 /* SlideshowRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FAE43EB7C80411CA96B16E2 /* SlideshowRepositoryTests.swift */; };
 		6A13D1A59A474B36A147AD8A /* ImageRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED679368B46B407E8B860B8D /* ImageRepositoryTests.swift */; };
+		966B653659664440914414BF /* CreateSlideshowUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65CC9A55FD344358C0D1E6B /* CreateSlideshowUseCase.swift */; };
+		167CD98AE0784B9884C0A33B /* FetchSlideshowUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7A0676E37C471C8B86A809 /* FetchSlideshowUseCase.swift */; };
+		3ACCB4C79E1E41B1ADB40AE8 /* FetchLibraryUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5550803B071F4ED29B6BFBD5 /* FetchLibraryUseCase.swift */; };
+		30A41C6D72F4414390FFE6F8 /* LoadSlideImageUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F037A6F7BB5C4FBF972B9CA1 /* LoadSlideImageUseCase.swift */; };
+		72422109FE1E43B4A4ABA815 /* LoadConfigUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 396195C1E2DD4BA897E32E13 /* LoadConfigUseCase.swift */; };
+		D7799BFA8A294356A2DE06F2 /* SaveConfigUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29968D188BB64FB98B43225F /* SaveConfigUseCase.swift */; };
+		E857E185F64E4497B5AD85F7 /* CreateSlideshowUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B5947C087114E4CBC8A2980 /* CreateSlideshowUseCaseProtocol.swift */; };
+		3FB2C62A5FC54E8BB6FB13EC /* FetchSlideshowUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB766417BF3B475689A4014F /* FetchSlideshowUseCaseProtocol.swift */; };
+		357E375184D54128833D519B /* FetchLibraryUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C3F853940A749D7B6C2BC1F /* FetchLibraryUseCaseProtocol.swift */; };
+		7620EAAD54F6482F9DEF1BC5 /* LoadSlideImageUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 342272F7A6184D538B737404 /* LoadSlideImageUseCaseProtocol.swift */; };
+		C1B640C874DE4A90B128532D /* LoadConfigUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9956910DD2B34A7C98D16BEC /* LoadConfigUseCaseProtocol.swift */; };
+		260B8AEEE43C4E0CB1456ADC /* SaveConfigUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = C850782E5A104C83950FFD6F /* SaveConfigUseCaseProtocol.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -103,6 +115,18 @@
 		CB03EF4E79E7420DBD08DE2D /* ConfigRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigRepositoryTests.swift; sourceTree = "<group>"; };
 		1FAE43EB7C80411CA96B16E2 /* SlideshowRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowRepositoryTests.swift; sourceTree = "<group>"; };
 		ED679368B46B407E8B860B8D /* ImageRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageRepositoryTests.swift; sourceTree = "<group>"; };
+		F65CC9A55FD344358C0D1E6B /* CreateSlideshowUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateSlideshowUseCase.swift; sourceTree = "<group>"; };
+		BB7A0676E37C471C8B86A809 /* FetchSlideshowUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchSlideshowUseCase.swift; sourceTree = "<group>"; };
+		5550803B071F4ED29B6BFBD5 /* FetchLibraryUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchLibraryUseCase.swift; sourceTree = "<group>"; };
+		F037A6F7BB5C4FBF972B9CA1 /* LoadSlideImageUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadSlideImageUseCase.swift; sourceTree = "<group>"; };
+		396195C1E2DD4BA897E32E13 /* LoadConfigUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadConfigUseCase.swift; sourceTree = "<group>"; };
+		29968D188BB64FB98B43225F /* SaveConfigUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveConfigUseCase.swift; sourceTree = "<group>"; };
+		1B5947C087114E4CBC8A2980 /* CreateSlideshowUseCaseProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateSlideshowUseCaseProtocol.swift; sourceTree = "<group>"; };
+		AB766417BF3B475689A4014F /* FetchSlideshowUseCaseProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchSlideshowUseCaseProtocol.swift; sourceTree = "<group>"; };
+		1C3F853940A749D7B6C2BC1F /* FetchLibraryUseCaseProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchLibraryUseCaseProtocol.swift; sourceTree = "<group>"; };
+		342272F7A6184D538B737404 /* LoadSlideImageUseCaseProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadSlideImageUseCaseProtocol.swift; sourceTree = "<group>"; };
+		9956910DD2B34A7C98D16BEC /* LoadConfigUseCaseProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadConfigUseCaseProtocol.swift; sourceTree = "<group>"; };
+		C850782E5A104C83950FFD6F /* SaveConfigUseCaseProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveConfigUseCaseProtocol.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -267,6 +291,33 @@
 			path = DTO;
 			sourceTree = "<group>";
 		};
+		DBA266D20EDE4A60B829F73B /* Protocols */ = {
+			isa = PBXGroup;
+			children = (
+				1B5947C087114E4CBC8A2980 /* CreateSlideshowUseCaseProtocol.swift */,
+				1C3F853940A749D7B6C2BC1F /* FetchLibraryUseCaseProtocol.swift */,
+				AB766417BF3B475689A4014F /* FetchSlideshowUseCaseProtocol.swift */,
+				9956910DD2B34A7C98D16BEC /* LoadConfigUseCaseProtocol.swift */,
+				342272F7A6184D538B737404 /* LoadSlideImageUseCaseProtocol.swift */,
+				C850782E5A104C83950FFD6F /* SaveConfigUseCaseProtocol.swift */,
+			);
+			path = Protocols;
+			sourceTree = "<group>";
+		};
+		59E58971468D4224BC4D41F5 /* UseCases */ = {
+			isa = PBXGroup;
+			children = (
+				DBA266D20EDE4A60B829F73B /* Protocols */,
+				F65CC9A55FD344358C0D1E6B /* CreateSlideshowUseCase.swift */,
+				5550803B071F4ED29B6BFBD5 /* FetchLibraryUseCase.swift */,
+				BB7A0676E37C471C8B86A809 /* FetchSlideshowUseCase.swift */,
+				396195C1E2DD4BA897E32E13 /* LoadConfigUseCase.swift */,
+				F037A6F7BB5C4FBF972B9CA1 /* LoadSlideImageUseCase.swift */,
+				29968D188BB64FB98B43225F /* SaveConfigUseCase.swift */,
+			);
+			path = UseCases;
+			sourceTree = "<group>";
+		};
 		C27B756D206E3CC1C68F4759 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
@@ -276,6 +327,7 @@
 				1B7CE8F8D78E8FE7C5531DA8 /* Infrastructure */,
 				E634FBECDE25780572A07F2C /* Presentation */,
 				C7B63AE2D1506BD4636EC6FC /* Repositories */,
+				59E58971468D4224BC4D41F5 /* UseCases */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -480,6 +532,18 @@
 				96E61C2C8D1347AE5BCC2F51 /* TenSlideApp.swift in Sources */,
 				3A0E15A9D59D0EC248FB0749 /* TransitionType.swift in Sources */,
 				2A462736B505212969F5F434 /* UseCaseContainer.swift in Sources */,
+				966B653659664440914414BF /* CreateSlideshowUseCase.swift in Sources */,
+				3ACCB4C79E1E41B1ADB40AE8 /* FetchLibraryUseCase.swift in Sources */,
+				167CD98AE0784B9884C0A33B /* FetchSlideshowUseCase.swift in Sources */,
+				72422109FE1E43B4A4ABA815 /* LoadConfigUseCase.swift in Sources */,
+				30A41C6D72F4414390FFE6F8 /* LoadSlideImageUseCase.swift in Sources */,
+				D7799BFA8A294356A2DE06F2 /* SaveConfigUseCase.swift in Sources */,
+				E857E185F64E4497B5AD85F7 /* CreateSlideshowUseCaseProtocol.swift in Sources */,
+				357E375184D54128833D519B /* FetchLibraryUseCaseProtocol.swift in Sources */,
+				3FB2C62A5FC54E8BB6FB13EC /* FetchSlideshowUseCaseProtocol.swift in Sources */,
+				C1B640C874DE4A90B128532D /* LoadConfigUseCaseProtocol.swift in Sources */,
+				7620EAAD54F6482F9DEF1BC5 /* LoadSlideImageUseCaseProtocol.swift in Sources */,
+				260B8AEEE43C4E0CB1456ADC /* SaveConfigUseCaseProtocol.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
