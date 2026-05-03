@@ -3,19 +3,19 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		03F97172C7A6BC443E46C6E4 /* SlideshowDataSourceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 306A490BD685FFEE49485E2F /* SlideshowDataSourceProtocol.swift */; };
+		09CC1A3C9F93BF7A569133CE /* SlideshowRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0CBD43FDF1CD7C7494C3F9F /* SlideshowRepository.swift */; };
+		0B0ED5C1E5928821C56E123F /* ConfigStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E27B82615D8749D84E2B6F92 /* ConfigStoreTests.swift */; };
 		13A1BA304DBB2D6FFC8AC5D2 /* Slide.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CF7E20D69F66682C53D7501 /* Slide.swift */; };
 		16457E4B63758C5DA543CF4D /* RepositoryContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01BA0AC7327737BF9AFAD6A1 /* RepositoryContainer.swift */; };
 		1C5B06DD1302FCF11E315EA1 /* SlideshowModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BE2A12E6B1C9AEBAB958E79 /* SlideshowModel.swift */; };
 		206BD6AC689F1BF2158B8578 /* ConfigDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5571885CB3DA209019943179 /* ConfigDTO.swift */; };
 		2A462736B505212969F5F434 /* UseCaseContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CB57A25B5590DD6978FA8A /* UseCaseContainer.swift */; };
 		2B8699775931563AFD416A4F /* TenSlideTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0913E7732228A808F3F17C0 /* TenSlideTests.swift */; };
-		56A2A15D7086DB12EB7F9594 /* ConfigStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8479B84064842F80212C880 /* ConfigStoreTests.swift */; };
-		F966473BC1121751F46FCA76 /* SlideshowDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9004F365B43D6DABA3A541CD /* SlideshowDataSourceTests.swift */; };
 		3262BF41F48BDE724A8E9C3A /* SlideRepositoryProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6672530C98915117CC58EB36 /* SlideRepositoryProtocol.swift */; };
 		39197A1BEC165EF0ACFE4692 /* Slideshow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D92E75FE6E16E943DF0F6C38 /* Slideshow.swift */; };
 		3A0E15A9D59D0EC248FB0749 /* TransitionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67049E943242377AA5A86153 /* TransitionType.swift */; };
@@ -25,19 +25,25 @@
 		3F8455328F3FA870727A7251 /* PresentationContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8E215733E67DFAAFC15884 /* PresentationContainer.swift */; };
 		3FD65AE12AD243F3AAAD426C /* SlideshowConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FDF72D96CFFEBE499163A25 /* SlideshowConfigTests.swift */; };
 		492C0740E3AFFE097F6E6A93 /* SlideDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FDF8772B348D86AA93F4576 /* SlideDataSource.swift */; };
+		4AE759875B16206B2CC68D07 /* ConfigRepositoryProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4A92D858C119A0A9C90A4C /* ConfigRepositoryProtocol.swift */; };
 		54CB5C02AD76DA9CBDD871CD /* SlideshowConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E5EED4BC26855354CB0E9C3 /* SlideshowConfig.swift */; };
 		59C3F2EE0B577163957C1041 /* Container.swift in Sources */ = {isa = PBXBuildFile; fileRef = 838A8405251436B65A4CBFBD /* Container.swift */; };
 		603B4AA1C2096AFB66B4CD66 /* SlideshowDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F519E01D778038E3B145B1E /* SlideshowDataSource.swift */; };
 		6F4965CB7779E65A5F17E56A /* ConfigDataSourceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE9F3F9052308B1E74D0FE9 /* ConfigDataSourceProtocol.swift */; };
 		79A530AACE64667BAFD9E1FE /* ImageDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ACEA093A26B874A5604093B /* ImageDataSource.swift */; };
+		7F0F493C5A12AAE8256AF729 /* ConfigRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10D96B93D5DC5796186F0B2 /* ConfigRepository.swift */; };
 		810D4DC4BE1531F953DF07FD /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA365F04B3E788479DF5D888 /* ContentView.swift */; };
 		8212E492BDE37EC28202197C /* SlideDataSourceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0796277AA9BF1FB6043F6E94 /* SlideDataSourceProtocol.swift */; };
+		84E606541C07A61F3F6059E1 /* ImageRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67AC098F8AC2229331E8BFC /* ImageRepository.swift */; };
 		96E61C2C8D1347AE5BCC2F51 /* TenSlideApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BEE58527F43ADC4CF43653 /* TenSlideApp.swift */; };
 		9E7B8A5E8DF2C38EB8455D95 /* ImageDataSourceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ECDC3C1FBFBFC2D2B79052D /* ImageDataSourceProtocol.swift */; };
+		A7D174CC0D79301E568D5D91 /* ImageRepositoryProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7C985F90FF6F31977F1CC77 /* ImageRepositoryProtocol.swift */; };
 		AA8F68C29CC1696292E536F6 /* InfrastructureContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249694D115F7F33068AD9B07 /* InfrastructureContainer.swift */; };
+		CB1B35FD446836CD2009AE9E /* SlideshowRepositoryProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E36BA01119F923F2EC875F2 /* SlideshowRepositoryProtocol.swift */; };
 		CD1DA8DD6C5B86726F3C77D2 /* SlideRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7D18A6E875B16BF168795F3 /* SlideRepository.swift */; };
 		CFA74A6CCDB04FE469505DC1 /* TransitionTypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD60F0A03CF4FE7AFC93BD38 /* TransitionTypeTests.swift */; };
 		E2E7D46D98F207C9FB074A42 /* ConfigStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51894761C0FD2794AD78E758 /* ConfigStore.swift */; };
+		E7EFA63F394C44E8CB60D342 /* SlideshowDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B6B2155586832557D080939 /* SlideshowDataSourceTests.swift */; };
 		F5F0AF52787D5A962FE45D64 /* SlideshowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F7637CE9B8204701F952D4 /* SlideshowTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -54,6 +60,7 @@
 /* Begin PBXFileReference section */
 		01BA0AC7327737BF9AFAD6A1 /* RepositoryContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryContainer.swift; sourceTree = "<group>"; };
 		0796277AA9BF1FB6043F6E94 /* SlideDataSourceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideDataSourceProtocol.swift; sourceTree = "<group>"; };
+		0B6B2155586832557D080939 /* SlideshowDataSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowDataSourceTests.swift; sourceTree = "<group>"; };
 		0F519E01D778038E3B145B1E /* SlideshowDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowDataSource.swift; sourceTree = "<group>"; };
 		1CF7E20D69F66682C53D7501 /* Slide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Slide.swift; sourceTree = "<group>"; };
 		1ECDC3C1FBFBFC2D2B79052D /* ImageDataSourceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDataSourceProtocol.swift; sourceTree = "<group>"; };
@@ -64,6 +71,7 @@
 		4ACEA093A26B874A5604093B /* ImageDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDataSource.swift; sourceTree = "<group>"; };
 		51894761C0FD2794AD78E758 /* ConfigStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigStore.swift; sourceTree = "<group>"; };
 		5571885CB3DA209019943179 /* ConfigDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigDTO.swift; sourceTree = "<group>"; };
+		5E36BA01119F923F2EC875F2 /* SlideshowRepositoryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowRepositoryProtocol.swift; sourceTree = "<group>"; };
 		5FDF72D96CFFEBE499163A25 /* SlideshowConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowConfigTests.swift; sourceTree = "<group>"; };
 		5FDF8772B348D86AA93F4576 /* SlideDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideDataSource.swift; sourceTree = "<group>"; };
 		6672530C98915117CC58EB36 /* SlideRepositoryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideRepositoryProtocol.swift; sourceTree = "<group>"; };
@@ -73,18 +81,22 @@
 		8E5EED4BC26855354CB0E9C3 /* SlideshowConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowConfig.swift; sourceTree = "<group>"; };
 		AA365F04B3E788479DF5D888 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AAE9F3F9052308B1E74D0FE9 /* ConfigDataSourceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigDataSourceProtocol.swift; sourceTree = "<group>"; };
-		A8479B84064842F80212C880 /* ConfigStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigStoreTests.swift; sourceTree = "<group>"; };
-		9004F365B43D6DABA3A541CD /* SlideshowDataSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowDataSourceTests.swift; sourceTree = "<group>"; };
 		B0913E7732228A808F3F17C0 /* TenSlideTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TenSlideTests.swift; sourceTree = "<group>"; };
+		B10D96B93D5DC5796186F0B2 /* ConfigRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigRepository.swift; sourceTree = "<group>"; };
+		B67AC098F8AC2229331E8BFC /* ImageRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageRepository.swift; sourceTree = "<group>"; };
 		CD60F0A03CF4FE7AFC93BD38 /* TransitionTypeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitionTypeTests.swift; sourceTree = "<group>"; };
 		CD8E215733E67DFAAFC15884 /* PresentationContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationContainer.swift; sourceTree = "<group>"; };
 		D7D18A6E875B16BF168795F3 /* SlideRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideRepository.swift; sourceTree = "<group>"; };
 		D873FDE6F790630A42F70B39 /* 10slideTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = 10slideTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D92E75FE6E16E943DF0F6C38 /* Slideshow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Slideshow.swift; sourceTree = "<group>"; };
+		E27B82615D8749D84E2B6F92 /* ConfigStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigStoreTests.swift; sourceTree = "<group>"; };
+		E7C985F90FF6F31977F1CC77 /* ImageRepositoryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageRepositoryProtocol.swift; sourceTree = "<group>"; };
 		E9CB57A25B5590DD6978FA8A /* UseCaseContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UseCaseContainer.swift; sourceTree = "<group>"; };
+		F0CBD43FDF1CD7C7494C3F9F /* SlideshowRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowRepository.swift; sourceTree = "<group>"; };
 		F2F7637CE9B8204701F952D4 /* SlideshowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowTests.swift; sourceTree = "<group>"; };
 		F8BEE58527F43ADC4CF43653 /* TenSlideApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TenSlideApp.swift; sourceTree = "<group>"; };
 		FAAD7BD09DCEDB0F61EF5A3C /* ImageDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDTO.swift; sourceTree = "<group>"; };
+		FC4A92D858C119A0A9C90A4C /* ConfigRepositoryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigRepositoryProtocol.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +111,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0E2037303AB389C26E2783B0 /* InfrastructureTests */ = {
+			isa = PBXGroup;
+			children = (
+				E27B82615D8749D84E2B6F92 /* ConfigStoreTests.swift */,
+				0B6B2155586832557D080939 /* SlideshowDataSourceTests.swift */,
+			);
+			path = InfrastructureTests;
+			sourceTree = "<group>";
+		};
 		12E9CD81ADA2AA1631F24FC7 /* Protocols */ = {
 			isa = PBXGroup;
 			children = (
@@ -186,15 +207,6 @@
 			path = DomainTests;
 			sourceTree = "<group>";
 		};
-		8AEC995136B8F39728752B6B /* InfrastructureTests */ = {
-			isa = PBXGroup;
-			children = (
-				A8479B84064842F80212C880 /* ConfigStoreTests.swift */,
-				9004F365B43D6DABA3A541CD /* SlideshowDataSourceTests.swift */,
-			);
-			path = InfrastructureTests;
-			sourceTree = "<group>";
-		};
 		972ACD0F492E4659B6D8C062 /* SwiftData */ = {
 			isa = PBXGroup;
 			children = (
@@ -276,7 +288,7 @@
 			children = (
 				B0913E7732228A808F3F17C0 /* TenSlideTests.swift */,
 				7EF3A9BFEE9425429DB744DB /* DomainTests */,
-				8AEC995136B8F39728752B6B /* InfrastructureTests */,
+				0E2037303AB389C26E2783B0 /* InfrastructureTests */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -284,7 +296,10 @@
 		D302F5B7E3ECE9B8A2D331A4 /* Protocols */ = {
 			isa = PBXGroup;
 			children = (
+				FC4A92D858C119A0A9C90A4C /* ConfigRepositoryProtocol.swift */,
+				E7C985F90FF6F31977F1CC77 /* ImageRepositoryProtocol.swift */,
 				6672530C98915117CC58EB36 /* SlideRepositoryProtocol.swift */,
+				5E36BA01119F923F2EC875F2 /* SlideshowRepositoryProtocol.swift */,
 			);
 			path = Protocols;
 			sourceTree = "<group>";
@@ -309,7 +324,10 @@
 		F746DC1CBC4B6F31FAF42963 /* Implementations */ = {
 			isa = PBXGroup;
 			children = (
+				B10D96B93D5DC5796186F0B2 /* ConfigRepository.swift */,
+				B67AC098F8AC2229331E8BFC /* ImageRepository.swift */,
 				D7D18A6E875B16BF168795F3 /* SlideRepository.swift */,
+				F0CBD43FDF1CD7C7494C3F9F /* SlideshowRepository.swift */,
 			);
 			path = Implementations;
 			sourceTree = "<group>";
@@ -382,7 +400,7 @@
 				354922C3878C679388476A6F /* XCRemoteSwiftPackageReference "SwiftLint" */,
 				83254C453168BBCF2A302F45 /* XCRemoteSwiftPackageReference "Yams" */,
 			);
-			preferredProjectObjectVersion = 70;
+			preferredProjectObjectVersion = 77;
 			productRefGroup = 1A8793CE469A3C11CBF8318B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -398,9 +416,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				56A2A15D7086DB12EB7F9594 /* ConfigStoreTests.swift in Sources */,
-				F966473BC1121751F46FCA76 /* SlideshowDataSourceTests.swift in Sources */,
+				0B0ED5C1E5928821C56E123F /* ConfigStoreTests.swift in Sources */,
 				3FD65AE12AD243F3AAAD426C /* SlideshowConfigTests.swift in Sources */,
+				E7EFA63F394C44E8CB60D342 /* SlideshowDataSourceTests.swift in Sources */,
 				F5F0AF52787D5A962FE45D64 /* SlideshowTests.swift in Sources */,
 				2B8699775931563AFD416A4F /* TenSlideTests.swift in Sources */,
 				CFA74A6CCDB04FE469505DC1 /* TransitionTypeTests.swift in Sources */,
@@ -413,12 +431,16 @@
 			files = (
 				206BD6AC689F1BF2158B8578 /* ConfigDTO.swift in Sources */,
 				6F4965CB7779E65A5F17E56A /* ConfigDataSourceProtocol.swift in Sources */,
+				7F0F493C5A12AAE8256AF729 /* ConfigRepository.swift in Sources */,
+				4AE759875B16206B2CC68D07 /* ConfigRepositoryProtocol.swift in Sources */,
 				E2E7D46D98F207C9FB074A42 /* ConfigStore.swift in Sources */,
 				59C3F2EE0B577163957C1041 /* Container.swift in Sources */,
 				810D4DC4BE1531F953DF07FD /* ContentView.swift in Sources */,
 				3EFB1FECB36ABB9BF11C1F5A /* ImageDTO.swift in Sources */,
 				79A530AACE64667BAFD9E1FE /* ImageDataSource.swift in Sources */,
 				9E7B8A5E8DF2C38EB8455D95 /* ImageDataSourceProtocol.swift in Sources */,
+				84E606541C07A61F3F6059E1 /* ImageRepository.swift in Sources */,
+				A7D174CC0D79301E568D5D91 /* ImageRepositoryProtocol.swift in Sources */,
 				AA8F68C29CC1696292E536F6 /* InfrastructureContainer.swift in Sources */,
 				3F8455328F3FA870727A7251 /* PresentationContainer.swift in Sources */,
 				16457E4B63758C5DA543CF4D /* RepositoryContainer.swift in Sources */,
@@ -433,6 +455,8 @@
 				603B4AA1C2096AFB66B4CD66 /* SlideshowDataSource.swift in Sources */,
 				03F97172C7A6BC443E46C6E4 /* SlideshowDataSourceProtocol.swift in Sources */,
 				1C5B06DD1302FCF11E315EA1 /* SlideshowModel.swift in Sources */,
+				09CC1A3C9F93BF7A569133CE /* SlideshowRepository.swift in Sources */,
+				CB1B35FD446836CD2009AE9E /* SlideshowRepositoryProtocol.swift in Sources */,
 				96E61C2C8D1347AE5BCC2F51 /* TenSlideApp.swift in Sources */,
 				3A0E15A9D59D0EC248FB0749 /* TransitionType.swift in Sources */,
 				2A462736B505212969F5F434 /* UseCaseContainer.swift in Sources */,
@@ -461,8 +485,8 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7VF2T8G76X;
+				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -481,7 +505,6 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
-				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -501,8 +524,8 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7VF2T8G76X;
+				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -584,7 +607,6 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
-				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

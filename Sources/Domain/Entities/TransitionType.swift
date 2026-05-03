@@ -5,4 +5,6 @@ enum TransitionType: String, Equatable, Sendable, CaseIterable, Codable {
     case fade
     case slide
     case dissolve
+
+    static let `default` = TransitionType.fade
 }
