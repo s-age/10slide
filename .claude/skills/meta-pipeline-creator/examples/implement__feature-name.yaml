@@ -1,0 +1,48 @@
+tasks:
+  - type: script
+    command: rm -f .claude/tmp/implement-feature-name-reviewer
+
+  - type: pipeline
+    name: implement-feature-name
+    tasks:
+      - type: agent
+        name: implement-feature-name-implementer
+        task: |
+          target_file_path: Sources/Layer/FeatureName.swift
+
+          <Describe what to build — reference the plan layer spec>
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Write
+          - Edit
+          - Bash
+
+      - type: agent
+        name: implement-feature-name-reviewer
+        task: |
+          target_file_path: Sources/Layer/FeatureName.swift
+          ng_output_path: .claude/tmp/implement-feature-name-reviewer
+        skill: review-arch
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Bash
+        rejected:
+          to: implement-feature-name-implementer
+          max_retries: 3
+
+      - type: script
+        command: xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+        rejected:
+          to: implement-feature-name-implementer
+          max_retries: 3
+
+  - type: agent
+    name: implement-feature-name-implementer
+    task: |
+      Implementation complete and build passes. Commit the changes with an appropriate conventional commit message (e.g. feat(layer): ...).
+    model: haiku
+    allowed_tools:
+      - Read
+      - Bash

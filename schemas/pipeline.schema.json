@@ -1,0 +1,164 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/s-age/perclst/schemas/pipeline.schema.json",
+  "title": "Pipeline",
+  "description": "A perclst pipeline definition. Tasks run serially in the order listed.",
+  "type": "object",
+  "required": ["tasks"],
+  "additionalProperties": false,
+  "properties": {
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/PipelineTask" }
+    }
+  },
+  "$defs": {
+    "PipelineTask": {
+      "oneOf": [
+        { "$ref": "#/$defs/AgentTask" },
+        { "$ref": "#/$defs/ScriptTask" },
+        { "$ref": "#/$defs/NestedPipelineTask" },
+        { "$ref": "#/$defs/ChildPipelineTask" }
+      ]
+    },
+    "RejectedConfig": {
+      "type": "object",
+      "required": ["to"],
+      "additionalProperties": false,
+      "properties": {
+        "to": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name of the agent or pipeline task to loop back to on failure."
+        },
+        "max_retries": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum number of rejection loops before aborting (default: 1)."
+        }
+      }
+    },
+    "AgentTask": {
+      "type": "object",
+      "required": ["type", "task"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "agent" },
+        "name": {
+          "type": "string",
+          "description": "Session name. Found → resume. Not found → start with this name. Omitted → always start new."
+        },
+        "task": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Instruction passed to the agent."
+        },
+        "skill": {
+          "type": "string",
+          "description": "Skill name. Applied on session start; ignored on resume."
+        },
+        "model": {
+          "type": "string",
+          "description": "Model override for this task (e.g. haiku, sonnet, opus)."
+        },
+        "labels": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Labels attached to the session created by this task. Used for filtering with summarize --label etc."
+        },
+        "allowed_tools": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Tools to allow without prompting."
+        },
+        "disallowed_tools": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Tools to deny."
+        },
+        "max_messages": {
+          "type": "integer",
+          "description": "Message count limit before graceful termination."
+        },
+        "max_context_tokens": {
+          "type": "integer",
+          "description": "Context token limit before graceful termination."
+        },
+        "rejected": {
+          "$ref": "#/$defs/RejectedConfig",
+          "description": "Loop back to another task when the agent signals rejection via ng_output_path."
+        },
+        "done": {
+          "type": "boolean",
+          "description": "Set to true when this task has completed. Written automatically by the runner."
+        }
+      }
+    },
+    "ScriptTask": {
+      "type": "object",
+      "required": ["type", "command"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "script" },
+        "command": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Shell command to run in the current working directory."
+        },
+        "rejected": {
+          "$ref": "#/$defs/RejectedConfig",
+          "description": "Loop back to a named agent or pipeline task when the command exits non-zero."
+        },
+        "done": {
+          "type": "boolean",
+          "description": "Set to true when this task has completed. Written automatically by the runner."
+        }
+      }
+    },
+    "NestedPipelineTask": {
+      "type": "object",
+      "required": ["type", "name", "tasks"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "pipeline" },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Identifier for the pipeline group — used as the target for rejected.to."
+        },
+        "tasks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/PipelineTask" },
+          "description": "Agent and/or script tasks to run in order."
+        },
+        "done": {
+          "type": "boolean",
+          "description": "Set to true when this task has completed. Written automatically by the runner."
+        }
+      }
+    },
+    "ChildPipelineTask": {
+      "type": "object",
+      "required": ["type", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "child" },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path to the child pipeline JSON file. Resolved relative to the parent pipeline file's directory."
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name for this child pipeline step."
+        },
+        "done": {
+          "type": "boolean",
+          "description": "Set to true when this task has completed. Written automatically by the runner."
+        }
+      }
+    }
+  }
+}

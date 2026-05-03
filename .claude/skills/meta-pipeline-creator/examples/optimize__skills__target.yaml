@@ -1,0 +1,48 @@
+tasks:
+  - type: script
+    command: rm -f .claude/tmp/optimize-skills-target
+
+  - type: pipeline
+    name: optimize-skills-target
+    tasks:
+      - type: agent
+        name: optimize-skills-target-implementer
+        task: |
+          skill_path: .claude/skills/target/SKILL.md
+          ng_output_path: .claude/tmp/optimize-skills-target
+        skill: improve-skill
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Write
+          - Edit
+          - Bash
+
+      - type: agent
+        name: optimize-skills-target-reviewer
+        task: |
+          skill_path: .claude/skills/target/SKILL.md
+          ng_output_path: .claude/tmp/optimize-skills-target
+        skill: review-skill
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Bash
+        rejected:
+          to: optimize-skills-target-implementer
+          max_retries: 3
+
+      - type: script
+        command: bash .claude/skills/meta-skill-creator/scripts/validate.sh .claude/skills/target/SKILL.md
+        rejected:
+          to: optimize-skills-target-implementer
+          max_retries: 3
+
+  - type: agent
+    name: optimize-skills-target-implementer
+    task: |
+      Improvements reviewed and validated. Commit the changes with an appropriate conventional commit message (e.g. docs(skills): improve target skill).
+    model: haiku
+    allowed_tools:
+      - Read
+      - Bash

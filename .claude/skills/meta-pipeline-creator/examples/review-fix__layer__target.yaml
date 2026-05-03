@@ -1,0 +1,61 @@
+tasks:
+  - type: script
+    command: rm -f .claude/tmp/review-fix-layer-target-reviewer
+
+  - type: agent
+    name: review-fix-layer-target-reviewer
+    task: |
+      target_path: Sources/Layer/Target.swift
+      ng_output_path: .claude/tmp/review-fix-layer-target-reviewer
+    skill: review-arch
+    model: sonnet
+    allowed_tools:
+      - Read
+      - Bash
+
+  - type: pipeline
+    name: review-fix-layer-target-fix-loop
+    tasks:
+      - type: agent
+        name: review-fix-layer-target-implementer
+        task: |
+          target_path: Sources/Layer/Target.swift
+          ng_output_path: .claude/tmp/review-fix-layer-target-reviewer
+
+          If ng_output_path does not exist, there are no issues to fix — exit immediately.
+        skill: refactor-arch
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Write
+          - Edit
+          - Bash
+
+      - type: agent
+        name: review-fix-layer-target-reviewer
+        task: |
+          Re-review Sources/Layer/Target.swift for remaining violations.
+          ng_output_path: .claude/tmp/review-fix-layer-target-reviewer
+          If the code is now clean, exit without writing to ng_output_path.
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Bash
+        rejected:
+          to: review-fix-layer-target-implementer
+          max_retries: 3
+
+      - type: script
+        command: xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+        rejected:
+          to: review-fix-layer-target-implementer
+          max_retries: 3
+
+  - type: agent
+    name: review-fix-layer-target-implementer
+    task: |
+      Code is clean and build passes. Commit the changes with an appropriate conventional commit message (e.g. refactor(layer): ...).
+    model: haiku
+    allowed_tools:
+      - Read
+      - Bash

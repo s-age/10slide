@@ -13,3 +13,10 @@ DerivedData/
 
 # macOS
 .DS_Store
+
+# Node (used by meta-pipeline-creator validation scripts)
+node_modules/
+package-lock.json
+
+# Claude Code temporary files
+.claude/tmp/

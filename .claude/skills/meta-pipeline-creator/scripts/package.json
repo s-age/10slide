@@ -1,0 +1,8 @@
+{
+  "name": "meta-pipeline-creator-scripts",
+  "private": true,
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "yaml": "^2.8.3"
+  }
+}

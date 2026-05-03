@@ -1,0 +1,38 @@
+tasks:
+  - type: agent
+    name: optimize-knowledge-domain-a
+    task: |
+      report: ~/docs/knowledge-review-domain-a.md
+      knowledge_dir: knowledge/domain-a/
+
+      Read the relevant section of report. If there is nothing to do, stop.
+      Apply all suggested changes.
+    model: sonnet
+    allowed_tools:
+      - Read
+      - Write
+      - Bash
+
+  - type: agent
+    name: optimize-knowledge-domain-b
+    task: |
+      report: ~/docs/knowledge-review-domain-b.md
+      knowledge_dir: knowledge/domain-b/
+
+      Read the relevant section of report. If there is nothing to do, stop.
+      Apply all suggested changes.
+    model: sonnet
+    allowed_tools:
+      - Read
+      - Write
+      - Bash
+
+  - type: agent
+    name: optimize-knowledge-committer
+    task: |
+      Run `git status` to see what changed. Stage all knowledge/ changes and commit
+      with an appropriate conventional commit message (e.g. refactor(knowledge): ...).
+      If there is nothing to commit, stop.
+    model: haiku
+    allowed_tools:
+      - Bash
