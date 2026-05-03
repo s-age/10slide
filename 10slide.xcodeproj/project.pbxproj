@@ -45,6 +45,9 @@
 		E2E7D46D98F207C9FB074A42 /* ConfigStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51894761C0FD2794AD78E758 /* ConfigStore.swift */; };
 		E7EFA63F394C44E8CB60D342 /* SlideshowDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B6B2155586832557D080939 /* SlideshowDataSourceTests.swift */; };
 		F5F0AF52787D5A962FE45D64 /* SlideshowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F7637CE9B8204701F952D4 /* SlideshowTests.swift */; };
+		7009B2302DA540028016102E /* ConfigRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB03EF4E79E7420DBD08DE2D /* ConfigRepositoryTests.swift */; };
+		5EA6366002AF40CE86E9DCE3 /* SlideshowRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FAE43EB7C80411CA96B16E2 /* SlideshowRepositoryTests.swift */; };
+		6A13D1A59A474B36A147AD8A /* ImageRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED679368B46B407E8B860B8D /* ImageRepositoryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -97,6 +100,9 @@
 		F8BEE58527F43ADC4CF43653 /* TenSlideApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TenSlideApp.swift; sourceTree = "<group>"; };
 		FAAD7BD09DCEDB0F61EF5A3C /* ImageDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDTO.swift; sourceTree = "<group>"; };
 		FC4A92D858C119A0A9C90A4C /* ConfigRepositoryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigRepositoryProtocol.swift; sourceTree = "<group>"; };
+		CB03EF4E79E7420DBD08DE2D /* ConfigRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigRepositoryTests.swift; sourceTree = "<group>"; };
+		1FAE43EB7C80411CA96B16E2 /* SlideshowRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowRepositoryTests.swift; sourceTree = "<group>"; };
+		ED679368B46B407E8B860B8D /* ImageRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageRepositoryTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -289,8 +295,19 @@
 				B0913E7732228A808F3F17C0 /* TenSlideTests.swift */,
 				7EF3A9BFEE9425429DB744DB /* DomainTests */,
 				0E2037303AB389C26E2783B0 /* InfrastructureTests */,
+				E6E0F722A7C6453382590AC2 /* RepositoriesTests */,
 			);
 			path = Tests;
+			sourceTree = "<group>";
+		};
+		E6E0F722A7C6453382590AC2 /* RepositoriesTests */ = {
+			isa = PBXGroup;
+			children = (
+				CB03EF4E79E7420DBD08DE2D /* ConfigRepositoryTests.swift */,
+				1FAE43EB7C80411CA96B16E2 /* SlideshowRepositoryTests.swift */,
+				ED679368B46B407E8B860B8D /* ImageRepositoryTests.swift */,
+			);
+			path = RepositoriesTests;
 			sourceTree = "<group>";
 		};
 		D302F5B7E3ECE9B8A2D331A4 /* Protocols */ = {
@@ -417,8 +434,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				0B0ED5C1E5928821C56E123F /* ConfigStoreTests.swift in Sources */,
+				7009B2302DA540028016102E /* ConfigRepositoryTests.swift in Sources */,
+				6A13D1A59A474B36A147AD8A /* ImageRepositoryTests.swift in Sources */,
 				3FD65AE12AD243F3AAAD426C /* SlideshowConfigTests.swift in Sources */,
 				E7EFA63F394C44E8CB60D342 /* SlideshowDataSourceTests.swift in Sources */,
+				5EA6366002AF40CE86E9DCE3 /* SlideshowRepositoryTests.swift in Sources */,
 				F5F0AF52787D5A962FE45D64 /* SlideshowTests.swift in Sources */,
 				2B8699775931563AFD416A4F /* TenSlideTests.swift in Sources */,
 				CFA74A6CCDB04FE469505DC1 /* TransitionTypeTests.swift in Sources */,
@@ -505,6 +525,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -607,6 +628,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
