@@ -1,4 +1,8 @@
 name: 10slide
+packages:
+  SwiftLint:
+    url: https://github.com/realm/SwiftLint
+    from: "0.57.1"
 options:
   bundleIdPrefix: com.sage0196
   createIntermediateGroups: true
@@ -12,6 +16,9 @@ targets:
     platform: iOS
     sources:
       - Sources
+    dependencies:
+      - plugin: SwiftLintBuildToolPlugin
+        package: SwiftLint
     settings:
       base:
         SWIFT_VERSION: "6.0"
