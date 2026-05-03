@@ -28,6 +28,9 @@
 		4BC1902569BB4D353D423382 /* SlideshowConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38762E7EC73E4D786240B29 /* SlideshowConfig.swift */; };
 		9E3145BBED62F76A4BB06E23 /* TransitionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F430B55EBE627965083330E /* TransitionType.swift */; };
 		CD1DA8DD6C5B86726F3C77D2 /* SlideRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7D18A6E875B16BF168795F3 /* SlideRepository.swift */; };
+		CFA74A6CCDB04FE469505DC1 /* TransitionTypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD60F0A03CF4FE7AFC93BD38 /* TransitionTypeTests.swift */; };
+		3FD65AE12AD243F3AAAD426C /* SlideshowConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FDF72D96CFFEBE499163A25 /* SlideshowConfigTests.swift */; };
+		F5F0AF52787D5A962FE45D64 /* SlideshowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F7637CE9B8204701F952D4 /* SlideshowTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +67,9 @@
 		8F430B55EBE627965083330E /* TransitionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitionType.swift; sourceTree = "<group>"; };
 		F38762E7EC73E4D786240B29 /* SlideshowConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowConfig.swift; sourceTree = "<group>"; };
 		FAAD7BD09DCEDB0F61EF5A3C /* ImageDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDTO.swift; sourceTree = "<group>"; };
+		CD60F0A03CF4FE7AFC93BD38 /* TransitionTypeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitionTypeTests.swift; sourceTree = "<group>"; };
+		5FDF72D96CFFEBE499163A25 /* SlideshowConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowConfigTests.swift; sourceTree = "<group>"; };
+		F2F7637CE9B8204701F952D4 /* SlideshowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -203,8 +209,19 @@
 			isa = PBXGroup;
 			children = (
 				B0913E7732228A808F3F17C0 /* TenSlideTests.swift */,
+				7EF3A9BFEE9425429DB744DB /* DomainTests */,
 			);
 			path = Tests;
+			sourceTree = "<group>";
+		};
+		7EF3A9BFEE9425429DB744DB /* DomainTests */ = {
+			isa = PBXGroup;
+			children = (
+				CD60F0A03CF4FE7AFC93BD38 /* TransitionTypeTests.swift */,
+				5FDF72D96CFFEBE499163A25 /* SlideshowConfigTests.swift */,
+				F2F7637CE9B8204701F952D4 /* SlideshowTests.swift */,
+			);
+			path = DomainTests;
 			sourceTree = "<group>";
 		};
 		D302F5B7E3ECE9B8A2D331A4 /* Protocols */ = {
@@ -318,6 +335,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				2B8699775931563AFD416A4F /* TenSlideTests.swift in Sources */,
+				CFA74A6CCDB04FE469505DC1 /* TransitionTypeTests.swift in Sources */,
+				3FD65AE12AD243F3AAAD426C /* SlideshowConfigTests.swift in Sources */,
+				F5F0AF52787D5A962FE45D64 /* SlideshowTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -387,6 +407,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -491,6 +512,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
