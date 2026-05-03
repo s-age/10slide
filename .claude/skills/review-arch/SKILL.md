@@ -33,11 +33,17 @@ flowchart TD
     CheckSecurity --> CheckPerformance["--- CHECK 6: Performance ---\n\nN+1 fetches, synchronous I/O on main actor,\nrepeated ModelContext creation, unbounded iteration."]
 
     CheckPerformance --> Tally{Any violations\nfound?}
-    Tally -- No --> ReportClean["Report: Clean — no violations found"]
+    Tally -- No --> ReportClean["Report: Clean — no violations found\nDo NOT write ng_output_path"]
     Tally -- Yes --> BuildReport["Write violation report using references/template.md format\nGroup by: Architecture / Security / Performance"]
 
-    ReportClean --> Done([Done])
-    BuildReport --> Done
+    ReportClean --> CleanupNG{ng_output_path\nprovided AND\nfile exists?}
+    CleanupNG -- Yes --> DeleteNG[rm ng_output_path]
+    CleanupNG -- No --> Done
+    DeleteNG --> Done([Print report to stdout and done])
+    BuildReport --> WriteOut{ng_output_path\nprovided?}
+    WriteOut -- No --> Done
+    WriteOut -- Yes --> WriteFile["mkdir -p dirname ng_output_path\nWrite full violation report to ng_output_path"]
+    WriteFile --> Done2([Done])
 ```
 
 ## Report format
