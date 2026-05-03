@@ -25,6 +25,8 @@
 		96E61C2C8D1347AE5BCC2F51 /* TenSlideApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BEE58527F43ADC4CF43653 /* TenSlideApp.swift */; };
 		9E7B8A5E8DF2C38EB8455D95 /* ImageDataSourceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ECDC3C1FBFBFC2D2B79052D /* ImageDataSourceProtocol.swift */; };
 		AA8F68C29CC1696292E536F6 /* InfrastructureContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249694D115F7F33068AD9B07 /* InfrastructureContainer.swift */; };
+		4BC1902569BB4D353D423382 /* SlideshowConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38762E7EC73E4D786240B29 /* SlideshowConfig.swift */; };
+		9E3145BBED62F76A4BB06E23 /* TransitionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F430B55EBE627965083330E /* TransitionType.swift */; };
 		CD1DA8DD6C5B86726F3C77D2 /* SlideRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7D18A6E875B16BF168795F3 /* SlideRepository.swift */; };
 /* End PBXBuildFile section */
 
@@ -59,6 +61,8 @@
 		D92E75FE6E16E943DF0F6C38 /* Slideshow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Slideshow.swift; sourceTree = "<group>"; };
 		E9CB57A25B5590DD6978FA8A /* UseCaseContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UseCaseContainer.swift; sourceTree = "<group>"; };
 		F8BEE58527F43ADC4CF43653 /* TenSlideApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TenSlideApp.swift; sourceTree = "<group>"; };
+		8F430B55EBE627965083330E /* TransitionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitionType.swift; sourceTree = "<group>"; };
+		F38762E7EC73E4D786240B29 /* SlideshowConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowConfig.swift; sourceTree = "<group>"; };
 		FAAD7BD09DCEDB0F61EF5A3C /* ImageDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDTO.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -158,6 +162,8 @@
 			children = (
 				1CF7E20D69F66682C53D7501 /* Slide.swift */,
 				D92E75FE6E16E943DF0F6C38 /* Slideshow.swift */,
+				F38762E7EC73E4D786240B29 /* SlideshowConfig.swift */,
+				8F430B55EBE627965083330E /* TransitionType.swift */,
 			);
 			path = Entities;
 			sourceTree = "<group>";
@@ -334,7 +340,9 @@
 				CD1DA8DD6C5B86726F3C77D2 /* SlideRepository.swift in Sources */,
 				3262BF41F48BDE724A8E9C3A /* SlideRepositoryProtocol.swift in Sources */,
 				39197A1BEC165EF0ACFE4692 /* Slideshow.swift in Sources */,
+				4BC1902569BB4D353D423382 /* SlideshowConfig.swift in Sources */,
 				1C5B06DD1302FCF11E315EA1 /* SlideshowModel.swift in Sources */,
+				9E3145BBED62F76A4BB06E23 /* TransitionType.swift in Sources */,
 				96E61C2C8D1347AE5BCC2F51 /* TenSlideApp.swift in Sources */,
 				2A462736B505212969F5F434 /* UseCaseContainer.swift in Sources */,
 			);

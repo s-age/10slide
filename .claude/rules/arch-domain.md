@@ -10,7 +10,7 @@ When creating, editing, or reviewing any file in `Sources/Domain/`:
 
 ## Patterns
 
-**Entity — `struct` conforming to `Identifiable`, `Equatable`, `Sendable`**
+**Entity — `struct` conforming to `Identifiable`, `Equatable`, `Sendable`; closed variant sets use `enum`**
 
 ```swift
 // Good
@@ -34,6 +34,6 @@ class Slide: Identifiable {   // NG: should be struct
 
 - Never import `SwiftData`, `Photos`, `SwiftUI`, or `UIKit` — enforced by SwiftLint
 - Never add persistence annotations (`@Model`, `@Attribute`) — those belong in `Infrastructure/SwiftData/DTO/`
-- Never use `class` for entities — all domain types are `struct`
+- Never use `class` for entities — all domain types are `struct` or `enum` (value types only)
 - Never hold references to repository or infrastructure types
 - Never add computed UI formatters — keep entities free of display concerns
