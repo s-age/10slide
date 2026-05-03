@@ -1,24 +1,26 @@
 final class PresentationContainer {
-    let makeLibraryPicker: @MainActor () -> LibraryPickerViewModel
-    let makeCreateSlideshow: @MainActor () -> CreateSlideshowViewModel
-    let makePlayer: @MainActor (Slideshow) -> SlideshowPlayerViewModel
+    private let fetchLibrary: any FetchLibraryUseCaseProtocol
+    private let createSlideshow: any CreateSlideshowUseCaseProtocol
+    private let loadSlideImage: any LoadSlideImageUseCaseProtocol
 
     init(useCases: UseCaseContainer) {
-        let fetchLibrary = useCases.fetchLibrary
-        let createSlideshow = useCases.createSlideshow
-        let loadSlideImage = useCases.loadSlideImage
+        fetchLibrary = useCases.fetchLibrary
+        createSlideshow = useCases.createSlideshow
+        loadSlideImage = useCases.loadSlideImage
+    }
 
-        makeLibraryPicker = {
-            LibraryPickerViewModel(fetchLibrary: fetchLibrary)
-        }
-        makeCreateSlideshow = {
-            CreateSlideshowViewModel(createSlideshow: createSlideshow)
-        }
-        makePlayer = { slideshow in
-            SlideshowPlayerViewModel(
-                slideshow: slideshow,
-                loadSlideImage: loadSlideImage
-            )
-        }
+    @MainActor
+    func makeLibraryPickerViewModel() -> LibraryPickerViewModel {
+        LibraryPickerViewModel(fetchLibrary: fetchLibrary)
+    }
+
+    @MainActor
+    func makeCreateSlideshowViewModel() -> CreateSlideshowViewModel {
+        CreateSlideshowViewModel(createSlideshow: createSlideshow)
+    }
+
+    @MainActor
+    func makeSlideshowPlayerViewModel(slideshow: Slideshow) -> SlideshowPlayerViewModel {
+        SlideshowPlayerViewModel(slideshow: slideshow, loadSlideImage: loadSlideImage)
     }
 }

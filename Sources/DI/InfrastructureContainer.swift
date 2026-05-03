@@ -2,6 +2,8 @@ import Foundation
 import SwiftData
 
 final class InfrastructureContainer {
+    enum Error: Swift.Error { case missingApplicationSupportDirectory }
+
     let modelContainer: ModelContainer
     let imageDataSource: any ImageDataSourceProtocol
     let slideDataSource: any SlideDataSourceProtocol
@@ -13,7 +15,11 @@ final class InfrastructureContainer {
         imageDataSource = ImageDataSource()
         slideDataSource = SlideDataSource(container: modelContainer)
         slideshowDataSource = SlideshowDataSource(container: modelContainer)
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        guard let appSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask
+        ).first else {
+            throw Error.missingApplicationSupportDirectory
+        }
         configDataSource = ConfigStore(fileURL: appSupport.appendingPathComponent("10slide/config.yml"))
     }
 }
