@@ -2,8 +2,9 @@ name: 10slide
 options:
   bundleIdPrefix: com.sage0196
   createIntermediateGroups: true
+  xcodeVersion: "2650"
   deploymentTarget:
-    iOS: "18.0"
+    iOS: "26.0"
 
 targets:
   10slide:
@@ -21,6 +22,8 @@ targets:
         MARKETING_VERSION: "1.0"
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "Apple Development"
 
   10slideTests:
     type: bundle.unit-test
@@ -33,3 +36,21 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sage0196.10slideTests
         PRODUCT_MODULE_NAME: TenSlideTests
+
+schemes:
+  10slide:
+    build:
+      targets:
+        10slide: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - 10slideTests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
