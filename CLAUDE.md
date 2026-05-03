@@ -1,0 +1,54 @@
+# 10slide
+
+SwiftUI slideshow app for iOS (Swift 6.0, iOS 26).
+
+## Overview
+
+Lets users select photos and arrange them into timed slideshows.
+
+## Architecture
+
+Clean Architecture with per-layer DI containers.
+
+```
+Presentation → UseCases → Repositories → Infrastructure
+                    ↕
+               Domain/Entities (shared value types)
+```
+
+When creating, editing, or reviewing files under `Sources/`: the `arch` rule and the rule for the target layer (`arch-presentation`, `arch-usecases`, etc.) are auto-injected from `.claude/rules/`. No manual loading needed.
+
+## Layer Map
+
+| Directory | Role |
+|-----------|------|
+| `Sources/App/` | Entry point — `@main`, boots root `Container` |
+| `Sources/DI/` | DI containers — one per layer, wired in `Container.swift` |
+| `Sources/Domain/Entities/` | Pure structs — no framework imports |
+| `Sources/Infrastructure/` | Raw I/O — SwiftData, Photos, network |
+| `Sources/Repositories/` | DTO ↔ entity conversion; protocol implementations |
+| `Sources/UseCases/` | Business logic — orchestrates repository protocols |
+| `Sources/Presentation/` | SwiftUI views and ViewModels |
+
+## Development
+
+```bash
+# Build
+xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+
+# Test
+xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' test
+
+# Lint (runs automatically as an Xcode build phase)
+swiftlint lint --config .swiftlint.yml
+```
+
+> **After any `Sources/` change**: verify with `xcodebuild build`. SwiftLint runs automatically as a build phase.
+
+## Key Files
+
+- `Sources/DI/Container.swift` — Root container; boots all sub-containers in dependency order
+- `Sources/App/TenSlideApp.swift` — `@main`; initializes `Container`, passes `modelContainer` to the SwiftUI environment
+- `project.yml` — XcodeGen spec; run `xcodegen generate` after structural changes
+- `.swiftlint.yml` — SwiftLint config including custom layer-dependency enforcement rules
+- `.claude/rules/*.md` — Auto-injected layer rules (path-triggered)
