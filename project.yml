@@ -34,6 +34,7 @@ targets:
         MARKETING_VERSION: "1.0"
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "Apple Development"
+        DEVELOPMENT_TEAM: 7VF2T8G76X
 
   10slideTests:
     type: bundle.unit-test
@@ -46,6 +47,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sage0196.10slideTests
         PRODUCT_MODULE_NAME: TenSlideTests
+        GENERATE_INFOPLIST_FILE: YES
+        DEVELOPMENT_TEAM: 7VF2T8G76X
 
 schemes:
   10slide:
