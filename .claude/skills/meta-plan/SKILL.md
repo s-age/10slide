@@ -35,3 +35,20 @@ flowchart TD
 ```
 
 Consult `.claude/rules/arch.md` for layer rules and import constraints before writing any protocol definition.
+
+## Test-first implementation guidance
+
+Plans must include test-first advice in `gotchas.md`. Tests are the specification — implementation is written to make them pass.
+
+Each `<layer>.md` should define signatures precise enough that tests can be written before implementation. When writing protocol definitions:
+
+- **Domain**: include `static let default` values and enum rawValues so tests can assert concrete expectations
+- **Repository**: define the DTO ↔ Entity mapping direction so tests can verify conversion correctness with Mock DataSources
+- **UseCase**: specify input → output contracts and which repository methods are called, so tests can verify call counts and return values with Mock Repositories
+- **Presentation (ViewModel)**: list observable state properties and their transitions (e.g. `isPlaying: false → true` on `play()`) so tests can assert state changes with Mock UseCases
+
+`gotchas.md` must contain a **テストファースト** section reminding implementers:
+1. Write tests first — tests define the expected behavior
+2. Mock at protocol boundaries — each layer tests in isolation
+3. Assert call counts on mocks — verify collaborator interactions, not just return values
+4. Domain → Repository → UseCase → ViewModel — test from the innermost layer outward
