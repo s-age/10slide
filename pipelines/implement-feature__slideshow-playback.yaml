@@ -34,7 +34,7 @@ tasks:
             Add field: var config: SlideshowConfig
 
           After editing verify with:
-          xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+          xcodebuild -scheme 10slide -destination 'platform=macOS' build
         model: sonnet
         allowed_tools:
           - Read
@@ -59,7 +59,7 @@ tasks:
           max_retries: 3
 
       - type: script
-        command: xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-domain-implementer
           max_retries: 3
@@ -114,7 +114,7 @@ tasks:
           max_retries: 3
 
       - type: script
-        command: xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' test
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' test
         rejected:
           to: slideshow-playback-domain-test-implementer
           max_retries: 3
@@ -193,7 +193,7 @@ tasks:
           Note: Add Yams to project.yml SPM dependencies if not already present.
 
           After editing verify with:
-          xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+          xcodebuild -scheme 10slide -destination 'platform=macOS' build
         model: sonnet
         allowed_tools:
           - Read
@@ -219,7 +219,7 @@ tasks:
           max_retries: 3
 
       - type: script
-        command: xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-infrastructure-implementer
           max_retries: 3
@@ -277,7 +277,7 @@ tasks:
           max_retries: 3
 
       - type: script
-        command: xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' test
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' test
         rejected:
           to: slideshow-playback-infrastructure-test-implementer
           max_retries: 3
@@ -345,7 +345,7 @@ tasks:
             }
 
           After editing verify with:
-          xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+          xcodebuild -scheme 10slide -destination 'platform=macOS' build
         model: sonnet
         allowed_tools:
           - Read
@@ -371,7 +371,7 @@ tasks:
           max_retries: 3
 
       - type: script
-        command: xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-repositories-implementer
           max_retries: 3
@@ -425,7 +425,7 @@ tasks:
           max_retries: 3
 
       - type: script
-        command: xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' test
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' test
         rejected:
           to: slideshow-playback-repositories-test-implementer
           max_retries: 3
@@ -483,7 +483,7 @@ tasks:
             execute(_ config: SlideshowConfig) async throws
 
           After editing verify with:
-          xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+          xcodebuild -scheme 10slide -destination 'platform=macOS' build
         model: sonnet
         allowed_tools:
           - Read
@@ -509,7 +509,7 @@ tasks:
           max_retries: 3
 
       - type: script
-        command: xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-usecases-implementer
           max_retries: 3
@@ -569,7 +569,7 @@ tasks:
           max_retries: 3
 
       - type: script
-        command: xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' test
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' test
         rejected:
           to: slideshow-playback-usecases-test-implementer
           max_retries: 3
@@ -643,7 +643,7 @@ tasks:
             init(slides: [Slide], currentIndex: Int, onSelect: (Int) -> Void)
 
           After editing verify with:
-          xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+          xcodebuild -scheme 10slide -destination 'platform=macOS' build
         model: sonnet
         allowed_tools:
           - Read
@@ -669,7 +669,7 @@ tasks:
           max_retries: 3
 
       - type: script
-        command: xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-presentation-implementer
           max_retries: 3
@@ -721,7 +721,7 @@ tasks:
           max_retries: 3
 
       - type: script
-        command: xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' test
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' test
         rejected:
           to: slideshow-playback-presentation-test-implementer
           max_retries: 3
@@ -781,7 +781,7 @@ tasks:
               func makeSlideshowPlayerViewModel(slideshow: Slideshow) -> SlideshowPlayerViewModel
 
           After editing verify with:
-          xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+          xcodebuild -scheme 10slide -destination 'platform=macOS' build
         model: sonnet
         allowed_tools:
           - Read
@@ -807,7 +807,7 @@ tasks:
           max_retries: 3
 
       - type: script
-        command: xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-di-implementer
           max_retries: 3

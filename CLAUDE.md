@@ -1,6 +1,6 @@
 # 10slide
 
-SwiftUI slideshow app for iOS (Swift 6.0, iOS 26).
+SwiftUI slideshow app for macOS (Swift 6.0, macOS 26).
 
 ## Overview
 
@@ -34,10 +34,10 @@ When creating, editing, or reviewing files under `Sources/`: the `arch` rule and
 
 ```bash
 # Build
-xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+xcodebuild -scheme 10slide -destination 'platform=macOS' build
 
 # Test
-xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' test
+xcodebuild -scheme 10slide -destination 'platform=macOS' test
 
 # Lint (runs automatically as an Xcode build phase)
 swiftlint lint --config .swiftlint.yml
