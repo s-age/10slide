@@ -1,21 +1,20 @@
 tasks:
   - type: script
     command: mkdir -p .claude/tmp && rm -f .claude/tmp/slideshow-playback-*
-
-  # ═══════════════════════════════════════════════════════
-  # Layer 1: Domain
-  # ═══════════════════════════════════════════════════════
-
+    done: true
   - type: pipeline
     name: slideshow-playback-domain-implement
     tasks:
       - type: agent
         name: slideshow-playback-domain-implementer
-        task: |
+        task: >
           Implement the Domain layer for the slideshow-playback feature.
+
           Reference: plans/slideshow-playback/domain.md
 
+
           New files:
+
           - Sources/Domain/Entities/TransitionType.swift
             enum TransitionType: String, Equatable, Sendable, CaseIterable, Codable {
               case none, fade, slide, dissolve
@@ -30,10 +29,12 @@ tasks:
             }
 
           Modified:
+
           - Sources/Domain/Entities/Slideshow.swift
             Add field: var config: SlideshowConfig
 
           After editing verify with:
+
           xcodebuild -scheme 10slide -destination 'platform=macOS' build
         model: sonnet
         allowed_tools:
@@ -41,14 +42,17 @@ tasks:
           - Write
           - Edit
           - Bash
-
+        done: true
       - type: agent
         name: slideshow-playback-domain-reviewer
-        task: |
+        task: >
           target_path: Sources/Domain/Entities/
+
           ng_output_path: .claude/tmp/slideshow-playback-domain-reviewer
 
-          Review TransitionType.swift, SlideshowConfig.swift (new) and Slideshow.swift (modified).
+
+          Review TransitionType.swift, SlideshowConfig.swift (new) and
+          Slideshow.swift (modified).
         skill: review-arch
         model: sonnet
         allowed_tools:
@@ -57,39 +61,53 @@ tasks:
         rejected:
           to: slideshow-playback-domain-implementer
           max_retries: 3
-
+        done: true
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-domain-implementer
           max_retries: 3
-
+        done: true
+    done: true
   - type: agent
     name: slideshow-playback-domain-implementer
-    task: |
-      Domain entities implemented and build passes. Commit with message: feat(domain): add SlideshowConfig, TransitionType; add config field to Slideshow
+    task: >
+      Domain entities implemented and build passes. Commit with message:
+      feat(domain): add SlideshowConfig, TransitionType; add config field to
+      Slideshow
     model: haiku
     allowed_tools:
       - Read
       - Bash
-
+    done: true
   - type: pipeline
     name: slideshow-playback-domain-unit-test
     tasks:
       - type: agent
         name: slideshow-playback-domain-test-implementer
-        task: |
+        task: >
           Write unit tests for the Domain layer (slideshow-playback feature).
 
+
           Files to create:
+
           - Tests/DomainTests/TransitionTypeTests.swift
+
           - Tests/DomainTests/SlideshowConfigTests.swift
+
           - Tests/DomainTests/SlideshowTests.swift
 
+
           Coverage required (gotchas.md):
-          - SlideshowConfig.default: defaultDuration == 5.0, transition == .fade, loop == true
-          - TransitionType.rawValue round-trip for all 4 cases (none, fade, slide, dissolve)
+
+          - SlideshowConfig.default: defaultDuration == 5.0, transition ==
+          .fade, loop == true
+
+          - TransitionType.rawValue round-trip for all 4 cases (none, fade,
+          slide, dissolve)
+
           - TransitionType(rawValue:) returns nil for unknown string
+
           - Slideshow can be initialised with a config field
         skill: implement-unit-test
         model: sonnet
@@ -98,7 +116,7 @@ tasks:
           - Write
           - Edit
           - Bash
-
+        done: true
       - type: agent
         name: slideshow-playback-domain-test-reviewer
         task: |
@@ -112,36 +130,37 @@ tasks:
         rejected:
           to: slideshow-playback-domain-test-implementer
           max_retries: 3
-
+        done: true
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' test
         rejected:
           to: slideshow-playback-domain-test-implementer
           max_retries: 3
-
+        done: true
+    done: true
   - type: agent
     name: slideshow-playback-domain-test-implementer
-    task: |
-      Domain unit tests written and passing. Commit with message: test(domain): add unit tests for TransitionType, SlideshowConfig, Slideshow
+    task: >
+      Domain unit tests written and passing. Commit with message: test(domain):
+      add unit tests for TransitionType, SlideshowConfig, Slideshow
     model: haiku
     allowed_tools:
       - Read
       - Bash
-
-  # ═══════════════════════════════════════════════════════
-  # Layer 2: Infrastructure
-  # ═══════════════════════════════════════════════════════
-
+    done: true
   - type: pipeline
     name: slideshow-playback-infrastructure-implement
     tasks:
       - type: agent
         name: slideshow-playback-infrastructure-implementer
-        task: |
+        task: >
           Implement the Infrastructure layer for the slideshow-playback feature.
+
           Reference: plans/slideshow-playback/infrastructure.md
 
+
           New files:
+
           - Sources/Infrastructure/Protocols/ConfigDataSourceProtocol.swift
             protocol ConfigDataSourceProtocol: Sendable {
               func load() async throws -> ConfigDTO
@@ -178,6 +197,7 @@ tasks:
             }
 
           Modified:
+
           - Sources/Infrastructure/SwiftData/DTO/SlideshowModel.swift
             Add fields with defaults (safe for SwiftData migration):
               var defaultDuration: TimeInterval = 5.0
@@ -192,7 +212,9 @@ tasks:
 
           Note: Add Yams to project.yml SPM dependencies if not already present.
 
+
           After editing verify with:
+
           xcodebuild -scheme 10slide -destination 'platform=macOS' build
         model: sonnet
         allowed_tools:
@@ -200,15 +222,20 @@ tasks:
           - Write
           - Edit
           - Bash
-
+        done: true
       - type: agent
         name: slideshow-playback-infrastructure-reviewer
-        task: |
+        task: >
           target_path: Sources/Infrastructure/
+
           ng_output_path: .claude/tmp/slideshow-playback-infrastructure-reviewer
 
-          Review: ConfigDataSourceProtocol.swift, SlideshowDataSourceProtocol.swift, ConfigDTO.swift,
-          ConfigStore.swift, SlideshowDataSource.swift (new); SlideshowModel.swift, ImageDataSource.swift (modified).
+
+          Review: ConfigDataSourceProtocol.swift,
+          SlideshowDataSourceProtocol.swift, ConfigDTO.swift,
+
+          ConfigStore.swift, SlideshowDataSource.swift (new);
+          SlideshowModel.swift, ImageDataSource.swift (modified).
         skill: review-arch
         model: sonnet
         allowed_tools:
@@ -217,43 +244,61 @@ tasks:
         rejected:
           to: slideshow-playback-infrastructure-implementer
           max_retries: 3
-
+        done: true
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-infrastructure-implementer
           max_retries: 3
-
+        done: true
+    done: true
   - type: agent
     name: slideshow-playback-infrastructure-implementer
-    task: |
-      Infrastructure layer implemented and build passes. Commit with message: feat(infrastructure): add ConfigStore, SlideshowDataSource; update SlideshowModel and ImageDataSource
+    task: >
+      Infrastructure layer implemented and build passes. Commit with message:
+      feat(infrastructure): add ConfigStore, SlideshowDataSource; update
+      SlideshowModel and ImageDataSource
     model: haiku
     allowed_tools:
       - Read
       - Bash
-
   - type: pipeline
     name: slideshow-playback-infrastructure-unit-test
     tasks:
       - type: agent
         name: slideshow-playback-infrastructure-test-implementer
-        task: |
-          Write unit tests for the Infrastructure layer (slideshow-playback feature).
+        task: >
+          Write unit tests for the Infrastructure layer (slideshow-playback
+          feature).
+
 
           Files to create:
+
           - Tests/InfrastructureTests/ConfigStoreTests.swift
+
           - Tests/InfrastructureTests/SlideshowDataSourceTests.swift
 
+
           Coverage required (gotchas.md):
-          - ConfigStore.load() returns default ConfigDTO when file does not exist (not an error)
-          - ConfigStore round-trip: save() then load() returns the same ConfigDTO values
+
+          - ConfigStore.load() returns default ConfigDTO when file does not
+          exist (not an error)
+
+          - ConfigStore round-trip: save() then load() returns the same
+          ConfigDTO values
+
           - ConfigStore YAML uses transition String, not TransitionType
-          - SlideshowDataSource.fetchAll() returns empty array on fresh ModelContainer
+
+          - SlideshowDataSource.fetchAll() returns empty array on fresh
+          ModelContainer
+
           - SlideshowDataSource save() then fetch(id:) returns the saved model
+
           - SlideshowDataSource delete(id:) removes the model
 
-          Use a temporary directory for ConfigStore tests. Use in-memory ModelContainer for SlideshowDataSource tests.
+
+          Use a temporary directory for ConfigStore tests. Use in-memory
+          ModelContainer for SlideshowDataSource tests.
         skill: implement-unit-test
         model: sonnet
         allowed_tools:
@@ -261,12 +306,13 @@ tasks:
           - Write
           - Edit
           - Bash
-
       - type: agent
         name: slideshow-playback-infrastructure-test-reviewer
-        task: |
+        task: >
           target_path: Tests/InfrastructureTests/
-          ng_output_path: .claude/tmp/slideshow-playback-infrastructure-test-reviewer
+
+          ng_output_path:
+          .claude/tmp/slideshow-playback-infrastructure-test-reviewer
         skill: review-test
         model: sonnet
         allowed_tools:
@@ -275,36 +321,34 @@ tasks:
         rejected:
           to: slideshow-playback-infrastructure-test-implementer
           max_retries: 3
-
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' test
         rejected:
           to: slideshow-playback-infrastructure-test-implementer
           max_retries: 3
-
   - type: agent
     name: slideshow-playback-infrastructure-test-implementer
-    task: |
-      Infrastructure unit tests written and passing. Commit with message: test(infrastructure): add unit tests for ConfigStore and SlideshowDataSource
+    task: >
+      Infrastructure unit tests written and passing. Commit with message:
+      test(infrastructure): add unit tests for ConfigStore and
+      SlideshowDataSource
     model: haiku
     allowed_tools:
       - Read
       - Bash
-
-  # ═══════════════════════════════════════════════════════
-  # Layer 3: Repositories
-  # ═══════════════════════════════════════════════════════
-
   - type: pipeline
     name: slideshow-playback-repositories-implement
     tasks:
       - type: agent
         name: slideshow-playback-repositories-implementer
-        task: |
+        task: >
           Implement the Repositories layer for the slideshow-playback feature.
+
           Reference: plans/slideshow-playback/repositories.md
 
+
           New files:
+
           - Sources/Repositories/Protocols/ConfigRepositoryProtocol.swift
             protocol ConfigRepositoryProtocol: Sendable {
               func load() async throws -> SlideshowConfig
@@ -345,6 +389,7 @@ tasks:
             }
 
           After editing verify with:
+
           xcodebuild -scheme 10slide -destination 'platform=macOS' build
         model: sonnet
         allowed_tools:
@@ -352,15 +397,19 @@ tasks:
           - Write
           - Edit
           - Bash
-
       - type: agent
         name: slideshow-playback-repositories-reviewer
-        task: |
+        task: >
           target_path: Sources/Repositories/
+
           ng_output_path: .claude/tmp/slideshow-playback-repositories-reviewer
 
-          Review: ConfigRepositoryProtocol.swift, SlideshowRepositoryProtocol.swift, ImageRepositoryProtocol.swift,
-          ConfigRepository.swift, SlideshowRepository.swift, ImageRepository.swift (all new).
+
+          Review: ConfigRepositoryProtocol.swift,
+          SlideshowRepositoryProtocol.swift, ImageRepositoryProtocol.swift,
+
+          ConfigRepository.swift, SlideshowRepository.swift,
+          ImageRepository.swift (all new).
         skill: review-arch
         model: sonnet
         allowed_tools:
@@ -369,39 +418,53 @@ tasks:
         rejected:
           to: slideshow-playback-repositories-implementer
           max_retries: 3
-
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-repositories-implementer
           max_retries: 3
-
   - type: agent
     name: slideshow-playback-repositories-implementer
-    task: |
-      Repositories layer implemented and build passes. Commit with message: feat(repositories): add ConfigRepository, SlideshowRepository, ImageRepository and their protocols
+    task: >
+      Repositories layer implemented and build passes. Commit with message:
+      feat(repositories): add ConfigRepository, SlideshowRepository,
+      ImageRepository and their protocols
     model: haiku
     allowed_tools:
       - Read
       - Bash
-
   - type: pipeline
     name: slideshow-playback-repositories-unit-test
     tasks:
       - type: agent
         name: slideshow-playback-repositories-test-implementer
-        task: |
-          Write unit tests for the Repositories layer (slideshow-playback feature).
+        task: >
+          Write unit tests for the Repositories layer (slideshow-playback
+          feature).
+
 
           Files to create:
+
           - Tests/RepositoriesTests/ConfigRepositoryTests.swift
+
           - Tests/RepositoriesTests/SlideshowRepositoryTests.swift
+
           - Tests/RepositoriesTests/ImageRepositoryTests.swift
 
+
           Coverage required (gotchas.md):
-          - ConfigRepository: mock ConfigDataSourceProtocol with call counter; verify load() maps DTO to SlideshowConfig; verify unknown rawValue falls back to .fade; verify save() encodes transition as rawValue string
-          - SlideshowRepository: mock SlideshowDataSourceProtocol + SlideDataSourceProtocol; verify config fields (defaultDuration, transitionRawValue, loop) survive DTO↔Entity round-trip
-          - ImageRepository: mock ImageDataSourceProtocol; verify fetchImageData returns dto.data; verify localIdentifier is forwarded unchanged
+
+          - ConfigRepository: mock ConfigDataSourceProtocol with call counter;
+          verify load() maps DTO to SlideshowConfig; verify unknown rawValue
+          falls back to .fade; verify save() encodes transition as rawValue
+          string
+
+          - SlideshowRepository: mock SlideshowDataSourceProtocol +
+          SlideDataSourceProtocol; verify config fields (defaultDuration,
+          transitionRawValue, loop) survive DTO↔Entity round-trip
+
+          - ImageRepository: mock ImageDataSourceProtocol; verify fetchImageData
+          returns dto.data; verify localIdentifier is forwarded unchanged
         skill: implement-unit-test
         model: sonnet
         allowed_tools:
@@ -409,12 +472,13 @@ tasks:
           - Write
           - Edit
           - Bash
-
       - type: agent
         name: slideshow-playback-repositories-test-reviewer
-        task: |
+        task: >
           target_path: Tests/RepositoriesTests/
-          ng_output_path: .claude/tmp/slideshow-playback-repositories-test-reviewer
+
+          ng_output_path:
+          .claude/tmp/slideshow-playback-repositories-test-reviewer
         skill: review-test
         model: sonnet
         allowed_tools:
@@ -423,36 +487,34 @@ tasks:
         rejected:
           to: slideshow-playback-repositories-test-implementer
           max_retries: 3
-
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' test
         rejected:
           to: slideshow-playback-repositories-test-implementer
           max_retries: 3
-
   - type: agent
     name: slideshow-playback-repositories-test-implementer
-    task: |
-      Repositories unit tests written and passing. Commit with message: test(repositories): add unit tests for ConfigRepository, SlideshowRepository, ImageRepository
+    task: >
+      Repositories unit tests written and passing. Commit with message:
+      test(repositories): add unit tests for ConfigRepository,
+      SlideshowRepository, ImageRepository
     model: haiku
     allowed_tools:
       - Read
       - Bash
-
-  # ═══════════════════════════════════════════════════════
-  # Layer 4: UseCases
-  # ═══════════════════════════════════════════════════════
-
   - type: pipeline
     name: slideshow-playback-usecases-implement
     tasks:
       - type: agent
         name: slideshow-playback-usecases-implementer
-        task: |
+        task: >
           Implement the UseCases layer for the slideshow-playback feature.
+
           Reference: plans/slideshow-playback/usecases.md
 
+
           New files (all final class, Sendable):
+
           - Sources/UseCases/CreateSlideshowUseCase.swift
             init(slideshowRepository: any SlideshowRepositoryProtocol, configRepository: any ConfigRepositoryProtocol)
             execute(name: String, localIdentifiers: [String]) async throws -> Slideshow
@@ -483,6 +545,7 @@ tasks:
             execute(_ config: SlideshowConfig) async throws
 
           After editing verify with:
+
           xcodebuild -scheme 10slide -destination 'platform=macOS' build
         model: sonnet
         allowed_tools:
@@ -490,15 +553,19 @@ tasks:
           - Write
           - Edit
           - Bash
-
       - type: agent
         name: slideshow-playback-usecases-reviewer
-        task: |
+        task: >
           target_path: Sources/UseCases/
+
           ng_output_path: .claude/tmp/slideshow-playback-usecases-reviewer
 
-          Review: CreateSlideshowUseCase.swift, FetchSlideshowUseCase.swift, FetchLibraryUseCase.swift,
-          LoadSlideImageUseCase.swift, LoadConfigUseCase.swift, SaveConfigUseCase.swift (all new).
+
+          Review: CreateSlideshowUseCase.swift, FetchSlideshowUseCase.swift,
+          FetchLibraryUseCase.swift,
+
+          LoadSlideImageUseCase.swift, LoadConfigUseCase.swift,
+          SaveConfigUseCase.swift (all new).
         skill: review-arch
         model: sonnet
         allowed_tools:
@@ -507,45 +574,67 @@ tasks:
         rejected:
           to: slideshow-playback-usecases-implementer
           max_retries: 3
-
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-usecases-implementer
           max_retries: 3
-
   - type: agent
     name: slideshow-playback-usecases-implementer
-    task: |
-      UseCases layer implemented and build passes. Commit with message: feat(usecases): add 6 use cases for slideshow-playback (create, fetch, library, image, config)
+    task: >
+      UseCases layer implemented and build passes. Commit with message:
+      feat(usecases): add 6 use cases for slideshow-playback (create, fetch,
+      library, image, config)
     model: haiku
     allowed_tools:
       - Read
       - Bash
-
   - type: pipeline
     name: slideshow-playback-usecases-unit-test
     tasks:
       - type: agent
         name: slideshow-playback-usecases-test-implementer
-        task: |
+        task: >
           Write unit tests for the UseCases layer (slideshow-playback feature).
 
+
           Files to create:
+
           - Tests/UseCasesTests/CreateSlideshowUseCaseTests.swift
+
           - Tests/UseCasesTests/FetchSlideshowUseCaseTests.swift
+
           - Tests/UseCasesTests/FetchLibraryUseCaseTests.swift
+
           - Tests/UseCasesTests/LoadSlideImageUseCaseTests.swift
+
           - Tests/UseCasesTests/LoadConfigUseCaseTests.swift
+
           - Tests/UseCasesTests/SaveConfigUseCaseTests.swift
 
-          Coverage required (gotchas.md) — use protocol mocks with call counters:
-          - CreateSlideshowUseCase: verify configRepository.load() called once; slides built with config.defaultDuration; slideshowRepository.save() called once with correct Slideshow
-          - FetchSlideshowUseCase: verify slideshowRepository.fetch(id:) called once with the given UUID
-          - FetchLibraryUseCase: verify imageRepository.fetchAllIdentifiers() called once; result forwarded unchanged
-          - LoadSlideImageUseCase: verify imageRepository.fetchImageData(localIdentifier:) called once; localIdentifier forwarded
-          - LoadConfigUseCase: verify configRepository.load() called once; result forwarded
-          - SaveConfigUseCase: verify configRepository.save(_:) called once with the given config
+
+          Coverage required (gotchas.md) — use protocol mocks with call
+          counters:
+
+          - CreateSlideshowUseCase: verify configRepository.load() called once;
+          slides built with config.defaultDuration; slideshowRepository.save()
+          called once with correct Slideshow
+
+          - FetchSlideshowUseCase: verify slideshowRepository.fetch(id:) called
+          once with the given UUID
+
+          - FetchLibraryUseCase: verify imageRepository.fetchAllIdentifiers()
+          called once; result forwarded unchanged
+
+          - LoadSlideImageUseCase: verify
+          imageRepository.fetchImageData(localIdentifier:) called once;
+          localIdentifier forwarded
+
+          - LoadConfigUseCase: verify configRepository.load() called once;
+          result forwarded
+
+          - SaveConfigUseCase: verify configRepository.save(_:) called once with
+          the given config
         skill: implement-unit-test
         model: sonnet
         allowed_tools:
@@ -553,7 +642,6 @@ tasks:
           - Write
           - Edit
           - Bash
-
       - type: agent
         name: slideshow-playback-usecases-test-reviewer
         task: |
@@ -567,36 +655,33 @@ tasks:
         rejected:
           to: slideshow-playback-usecases-test-implementer
           max_retries: 3
-
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' test
         rejected:
           to: slideshow-playback-usecases-test-implementer
           max_retries: 3
-
   - type: agent
     name: slideshow-playback-usecases-test-implementer
-    task: |
-      UseCases unit tests written and passing. Commit with message: test(usecases): add unit tests for slideshow-playback use cases
+    task: >
+      UseCases unit tests written and passing. Commit with message:
+      test(usecases): add unit tests for slideshow-playback use cases
     model: haiku
     allowed_tools:
       - Read
       - Bash
-
-  # ═══════════════════════════════════════════════════════
-  # Layer 5: Presentation
-  # ═══════════════════════════════════════════════════════
-
   - type: pipeline
     name: slideshow-playback-presentation-implement
     tasks:
       - type: agent
         name: slideshow-playback-presentation-implementer
-        task: |
+        task: >
           Implement the Presentation layer for the slideshow-playback feature.
+
           Reference: plans/slideshow-playback/presentation.md
 
+
           New files:
+
           - Sources/Presentation/ViewModels/LibraryPickerViewModel.swift
             @Observable @MainActor final class LibraryPickerViewModel {
               private(set) var identifiers: [String] = []
@@ -643,6 +728,7 @@ tasks:
             init(slides: [Slide], currentIndex: Int, onSelect: (Int) -> Void)
 
           After editing verify with:
+
           xcodebuild -scheme 10slide -destination 'platform=macOS' build
         model: sonnet
         allowed_tools:
@@ -650,15 +736,19 @@ tasks:
           - Write
           - Edit
           - Bash
-
       - type: agent
         name: slideshow-playback-presentation-reviewer
-        task: |
+        task: >
           target_path: Sources/Presentation/
+
           ng_output_path: .claude/tmp/slideshow-playback-presentation-reviewer
 
-          Review: LibraryPickerViewModel.swift, SlideshowPlayerViewModel.swift (new ViewModels);
-          LibraryPickerView.swift, SlideshowPlayerView.swift, FilmstripView.swift (new Views).
+
+          Review: LibraryPickerViewModel.swift, SlideshowPlayerViewModel.swift
+          (new ViewModels);
+
+          LibraryPickerView.swift, SlideshowPlayerView.swift,
+          FilmstripView.swift (new Views).
         skill: review-arch
         model: sonnet
         allowed_tools:
@@ -667,37 +757,52 @@ tasks:
         rejected:
           to: slideshow-playback-presentation-implementer
           max_retries: 3
-
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-presentation-implementer
           max_retries: 3
-
   - type: agent
     name: slideshow-playback-presentation-implementer
-    task: |
-      Presentation layer implemented and build passes. Commit with message: feat(presentation): add LibraryPickerViewModel, SlideshowPlayerViewModel, and 3 views for slideshow-playback
+    task: >
+      Presentation layer implemented and build passes. Commit with message:
+      feat(presentation): add LibraryPickerViewModel, SlideshowPlayerViewModel,
+      and 3 views for slideshow-playback
     model: haiku
     allowed_tools:
       - Read
       - Bash
-
   - type: pipeline
     name: slideshow-playback-presentation-unit-test
     tasks:
       - type: agent
         name: slideshow-playback-presentation-test-implementer
-        task: |
-          Write unit tests for the Presentation ViewModels (slideshow-playback feature).
+        task: >
+          Write unit tests for the Presentation ViewModels (slideshow-playback
+          feature).
+
 
           Files to create:
+
           - Tests/PresentationTests/LibraryPickerViewModelTests.swift
+
           - Tests/PresentationTests/SlideshowPlayerViewModelTests.swift
 
+
           Coverage required (gotchas.md) — use UseCase mocks with call counters:
-          - LibraryPickerViewModel: mock FetchLibraryUseCase returning known identifiers; verify identifiers populated after loadLibrary(); verify isLoading transitions (true during load, false after); verify errorMessage set on thrown error; verify createSlideshow() calls CreateSlideshowUseCase with slideshowName and selectedIdentifiers
-          - SlideshowPlayerViewModel: verify isPlaying becomes true after play() and false after pause(); verify currentIndex advances on next(); verify currentIndex decrements on previous() (clamped at 0); verify jumpTo(index:) sets currentIndex; verify showFilmstrip becomes false after 3s idle (use test clock / fast-forward); verify userDidInteract() sets showFilmstrip to true
+
+          - LibraryPickerViewModel: mock FetchLibraryUseCase returning known
+          identifiers; verify identifiers populated after loadLibrary(); verify
+          isLoading transitions (true during load, false after); verify
+          errorMessage set on thrown error; verify createSlideshow() calls
+          CreateSlideshowUseCase with slideshowName and selectedIdentifiers
+
+          - SlideshowPlayerViewModel: verify isPlaying becomes true after play()
+          and false after pause(); verify currentIndex advances on next();
+          verify currentIndex decrements on previous() (clamped at 0); verify
+          jumpTo(index:) sets currentIndex; verify showFilmstrip becomes false
+          after 3s idle (use test clock / fast-forward); verify
+          userDidInteract() sets showFilmstrip to true
         skill: implement-unit-test
         model: sonnet
         allowed_tools:
@@ -705,12 +810,13 @@ tasks:
           - Write
           - Edit
           - Bash
-
       - type: agent
         name: slideshow-playback-presentation-test-reviewer
-        task: |
+        task: >
           target_path: Tests/PresentationTests/
-          ng_output_path: .claude/tmp/slideshow-playback-presentation-test-reviewer
+
+          ng_output_path:
+          .claude/tmp/slideshow-playback-presentation-test-reviewer
         skill: review-test
         model: sonnet
         allowed_tools:
@@ -719,36 +825,34 @@ tasks:
         rejected:
           to: slideshow-playback-presentation-test-implementer
           max_retries: 3
-
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' test
         rejected:
           to: slideshow-playback-presentation-test-implementer
           max_retries: 3
-
   - type: agent
     name: slideshow-playback-presentation-test-implementer
-    task: |
-      Presentation ViewModel unit tests written and passing. Commit with message: test(presentation): add unit tests for LibraryPickerViewModel and SlideshowPlayerViewModel
+    task: >
+      Presentation ViewModel unit tests written and passing. Commit with
+      message: test(presentation): add unit tests for LibraryPickerViewModel and
+      SlideshowPlayerViewModel
     model: haiku
     allowed_tools:
       - Read
       - Bash
-
-  # ═══════════════════════════════════════════════════════
-  # Layer 6: DI (no unit tests — pure wiring)
-  # ═══════════════════════════════════════════════════════
-
   - type: pipeline
     name: slideshow-playback-di-implement
     tasks:
       - type: agent
         name: slideshow-playback-di-implementer
-        task: |
+        task: >
           Wire DI containers for the slideshow-playback feature.
+
           Reference: plans/slideshow-playback/di.md
 
+
           Modified files:
+
           - Sources/DI/InfrastructureContainer.swift
             Add properties:
               let slideshowDataSource: any SlideshowDataSourceProtocol
@@ -781,6 +885,7 @@ tasks:
               func makeSlideshowPlayerViewModel(slideshow: Slideshow) -> SlideshowPlayerViewModel
 
           After editing verify with:
+
           xcodebuild -scheme 10slide -destination 'platform=macOS' build
         model: sonnet
         allowed_tools:
@@ -788,14 +893,17 @@ tasks:
           - Write
           - Edit
           - Bash
-
       - type: agent
         name: slideshow-playback-di-reviewer
-        task: |
+        task: >
           target_path: Sources/DI/
+
           ng_output_path: .claude/tmp/slideshow-playback-di-reviewer
 
-          Review: InfrastructureContainer.swift, RepositoryContainer.swift, UseCaseContainer.swift,
+
+          Review: InfrastructureContainer.swift, RepositoryContainer.swift,
+          UseCaseContainer.swift,
+
           PresentationContainer.swift (all modified).
         skill: review-arch
         model: sonnet
@@ -805,17 +913,16 @@ tasks:
         rejected:
           to: slideshow-playback-di-implementer
           max_retries: 3
-
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-di-implementer
           max_retries: 3
-
   - type: agent
     name: slideshow-playback-di-implementer
-    task: |
-      DI containers wired and build passes. Commit with message: feat(di): wire slideshow-playback dependencies across all containers
+    task: >
+      DI containers wired and build passes. Commit with message: feat(di): wire
+      slideshow-playback dependencies across all containers
     model: haiku
     allowed_tools:
       - Read
