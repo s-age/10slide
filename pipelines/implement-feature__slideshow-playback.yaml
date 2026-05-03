@@ -136,7 +136,6 @@ tasks:
         rejected:
           to: slideshow-playback-domain-test-implementer
           max_retries: 3
-        done: true
     done: true
   - type: agent
     name: slideshow-playback-domain-test-implementer
@@ -262,6 +261,7 @@ tasks:
     allowed_tools:
       - Read
       - Bash
+    done: true
   - type: pipeline
     name: slideshow-playback-infrastructure-unit-test
     tasks:
@@ -306,6 +306,7 @@ tasks:
           - Write
           - Edit
           - Bash
+        done: true
       - type: agent
         name: slideshow-playback-infrastructure-test-reviewer
         task: >
@@ -321,11 +322,14 @@ tasks:
         rejected:
           to: slideshow-playback-infrastructure-test-implementer
           max_retries: 3
+        done: true
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' test
         rejected:
           to: slideshow-playback-infrastructure-test-implementer
           max_retries: 3
+        done: true
+    done: true
   - type: agent
     name: slideshow-playback-infrastructure-test-implementer
     task: >
@@ -336,6 +340,7 @@ tasks:
     allowed_tools:
       - Read
       - Bash
+    done: true
   - type: pipeline
     name: slideshow-playback-repositories-implement
     tasks:
@@ -397,6 +402,7 @@ tasks:
           - Write
           - Edit
           - Bash
+        done: true
       - type: agent
         name: slideshow-playback-repositories-reviewer
         task: >
@@ -418,11 +424,14 @@ tasks:
         rejected:
           to: slideshow-playback-repositories-implementer
           max_retries: 3
+        done: true
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-repositories-implementer
           max_retries: 3
+        done: true
+    done: true
   - type: agent
     name: slideshow-playback-repositories-implementer
     task: >
@@ -433,6 +442,7 @@ tasks:
     allowed_tools:
       - Read
       - Bash
+    done: true
   - type: pipeline
     name: slideshow-playback-repositories-unit-test
     tasks:
@@ -472,6 +482,7 @@ tasks:
           - Write
           - Edit
           - Bash
+        done: true
       - type: agent
         name: slideshow-playback-repositories-test-reviewer
         task: >
@@ -487,11 +498,14 @@ tasks:
         rejected:
           to: slideshow-playback-repositories-test-implementer
           max_retries: 3
+        done: true
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' test
         rejected:
           to: slideshow-playback-repositories-test-implementer
           max_retries: 3
+        done: true
+    done: true
   - type: agent
     name: slideshow-playback-repositories-test-implementer
     task: >
@@ -502,6 +516,7 @@ tasks:
     allowed_tools:
       - Read
       - Bash
+    done: true
   - type: pipeline
     name: slideshow-playback-usecases-implement
     tasks:
@@ -553,6 +568,7 @@ tasks:
           - Write
           - Edit
           - Bash
+        done: true
       - type: agent
         name: slideshow-playback-usecases-reviewer
         task: >
@@ -574,11 +590,14 @@ tasks:
         rejected:
           to: slideshow-playback-usecases-implementer
           max_retries: 3
+        done: true
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-usecases-implementer
           max_retries: 3
+        done: true
+    done: true
   - type: agent
     name: slideshow-playback-usecases-implementer
     task: >
@@ -589,6 +608,7 @@ tasks:
     allowed_tools:
       - Read
       - Bash
+    done: true
   - type: pipeline
     name: slideshow-playback-usecases-unit-test
     tasks:
@@ -642,6 +662,7 @@ tasks:
           - Write
           - Edit
           - Bash
+        done: true
       - type: agent
         name: slideshow-playback-usecases-test-reviewer
         task: |
@@ -655,11 +676,14 @@ tasks:
         rejected:
           to: slideshow-playback-usecases-test-implementer
           max_retries: 3
+        done: true
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' test
         rejected:
           to: slideshow-playback-usecases-test-implementer
           max_retries: 3
+        done: true
+    done: true
   - type: agent
     name: slideshow-playback-usecases-test-implementer
     task: >
@@ -669,6 +693,7 @@ tasks:
     allowed_tools:
       - Read
       - Bash
+    done: true
   - type: pipeline
     name: slideshow-playback-presentation-implement
     tasks:
@@ -736,6 +761,7 @@ tasks:
           - Write
           - Edit
           - Bash
+        done: true
       - type: agent
         name: slideshow-playback-presentation-reviewer
         task: >
@@ -757,11 +783,14 @@ tasks:
         rejected:
           to: slideshow-playback-presentation-implementer
           max_retries: 3
+        done: true
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-presentation-implementer
           max_retries: 3
+        done: true
+    done: true
   - type: agent
     name: slideshow-playback-presentation-implementer
     task: >
@@ -772,6 +801,7 @@ tasks:
     allowed_tools:
       - Read
       - Bash
+    done: true
   - type: pipeline
     name: slideshow-playback-presentation-unit-test
     tasks:
@@ -810,6 +840,7 @@ tasks:
           - Write
           - Edit
           - Bash
+        done: true
       - type: agent
         name: slideshow-playback-presentation-test-reviewer
         task: >
@@ -825,11 +856,14 @@ tasks:
         rejected:
           to: slideshow-playback-presentation-test-implementer
           max_retries: 3
+        done: true
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' test
         rejected:
           to: slideshow-playback-presentation-test-implementer
           max_retries: 3
+        done: true
+    done: true
   - type: agent
     name: slideshow-playback-presentation-test-implementer
     task: >

@@ -11,12 +11,18 @@ final class SlideshowPlayerViewModel {
     private(set) var showFilmstrip: Bool = true
 
     private let loadSlideImageUseCase: any LoadSlideImageUseCaseProtocol
+    private let filmstripHideDuration: Duration
     private var timerTask: Task<Void, Never>?
     private var hideFilmstripTask: Task<Void, Never>?
 
-    init(slideshow: Slideshow, loadSlideImage: any LoadSlideImageUseCaseProtocol) {
+    init(
+        slideshow: Slideshow,
+        loadSlideImage: any LoadSlideImageUseCaseProtocol,
+        filmstripHideDuration: Duration = .seconds(3)
+    ) {
         self.slideshow = slideshow
         self.loadSlideImageUseCase = loadSlideImage
+        self.filmstripHideDuration = filmstripHideDuration
     }
 
     private var currentSlide: Slide? {
@@ -107,7 +113,7 @@ final class SlideshowPlayerViewModel {
         hideFilmstripTask = nil
         guard isPlaying else { return }
         hideFilmstripTask = Task {
-            try? await Task.sleep(for: .seconds(3))
+            try? await Task.sleep(for: filmstripHideDuration)
             guard !Task.isCancelled else { return }
             showFilmstrip = false
         }

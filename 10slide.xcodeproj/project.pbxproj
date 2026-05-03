@@ -72,6 +72,9 @@
 		E7EFA63F394C44E8CB60D342 /* SlideshowDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B6B2155586832557D080939 /* SlideshowDataSourceTests.swift */; };
 		F5F0AF52787D5A962FE45D64 /* SlideshowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F7637CE9B8204701F952D4 /* SlideshowTests.swift */; };
 		FC36D50C2062454BC56A2D55 /* CreateSlideshowUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3021B321BAB9086465868A81 /* CreateSlideshowUseCaseTests.swift */; };
+		2151A16710F14F5DB5AB570C /* LibraryPickerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FDC840F7D344D97A83732D3 /* LibraryPickerViewModelTests.swift */; };
+		2F4AEEEC9D584A919E74F581 /* SlideshowPlayerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9023D5BE52C4EB0BA3E745C /* SlideshowPlayerViewModelTests.swift */; };
+		4FA9B2B712E845F8AE4ED52D /* CreateSlideshowViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF1A8B3DADDD4880BC304135 /* CreateSlideshowViewModelTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -151,6 +154,9 @@
 		F8BEE58527F43ADC4CF43653 /* TenSlideApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TenSlideApp.swift; sourceTree = "<group>"; };
 		FAAD7BD09DCEDB0F61EF5A3C /* ImageDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDTO.swift; sourceTree = "<group>"; };
 		FC4A92D858C119A0A9C90A4C /* ConfigRepositoryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigRepositoryProtocol.swift; sourceTree = "<group>"; };
+		0FDC840F7D344D97A83732D3 /* LibraryPickerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryPickerViewModelTests.swift; sourceTree = "<group>"; };
+		E9023D5BE52C4EB0BA3E745C /* SlideshowPlayerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowPlayerViewModelTests.swift; sourceTree = "<group>"; };
+		DF1A8B3DADDD4880BC304135 /* CreateSlideshowViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateSlideshowViewModelTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -328,6 +334,16 @@
 			path = DTO;
 			sourceTree = "<group>";
 		};
+		912335AF987C4117A48FF242 /* PresentationTests */ = {
+			isa = PBXGroup;
+			children = (
+				DF1A8B3DADDD4880BC304135 /* CreateSlideshowViewModelTests.swift */,
+				0FDC840F7D344D97A83732D3 /* LibraryPickerViewModelTests.swift */,
+				E9023D5BE52C4EB0BA3E745C /* SlideshowPlayerViewModelTests.swift */,
+			);
+			path = PresentationTests;
+			sourceTree = "<group>";
+		};
 		BB4E38FD12C729A86095B97E /* UseCasesTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -385,6 +401,7 @@
 				0E2037303AB389C26E2783B0 /* InfrastructureTests */,
 				F9DA7DD6B35CC22EE184BCF1 /* RepositoriesTests */,
 				BB4E38FD12C729A86095B97E /* UseCasesTests */,
+				912335AF987C4117A48FF242 /* PresentationTests */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -547,7 +564,10 @@
 				E35F8D7CE4CD03380317898C /* FetchLibraryUseCaseTests.swift in Sources */,
 				1ED0371325A7688170334093 /* FetchSlideshowUseCaseTests.swift in Sources */,
 				AEA4337D96713621704F9444 /* ImageRepositoryTests.swift in Sources */,
+				4FA9B2B712E845F8AE4ED52D /* CreateSlideshowViewModelTests.swift in Sources */,
+				2151A16710F14F5DB5AB570C /* LibraryPickerViewModelTests.swift in Sources */,
 				742FAC94109893947A1A82E9 /* LoadConfigUseCaseTests.swift in Sources */,
+				2F4AEEEC9D584A919E74F581 /* SlideshowPlayerViewModelTests.swift in Sources */,
 				CD274777A18CC9B0974C8E3E /* LoadSlideImageUseCaseTests.swift in Sources */,
 				032DAA91CE7C92972A5339F5 /* SaveConfigUseCaseTests.swift in Sources */,
 				3FD65AE12AD243F3AAAD426C /* SlideshowConfigTests.swift in Sources */,
