@@ -874,6 +874,7 @@ tasks:
     allowed_tools:
       - Read
       - Bash
+    done: true
   - type: pipeline
     name: slideshow-playback-di-implement
     tasks:
@@ -927,6 +928,7 @@ tasks:
           - Write
           - Edit
           - Bash
+        done: true
       - type: agent
         name: slideshow-playback-di-reviewer
         task: >
@@ -947,11 +949,14 @@ tasks:
         rejected:
           to: slideshow-playback-di-implementer
           max_retries: 3
+        done: true
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: slideshow-playback-di-implementer
           max_retries: 3
+        done: true
+    done: true
   - type: agent
     name: slideshow-playback-di-implementer
     task: >
@@ -961,3 +966,4 @@ tasks:
     allowed_tools:
       - Read
       - Bash
+    done: true
