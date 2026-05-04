@@ -301,6 +301,7 @@ tasks:
     allowed_tools:
       - Read
       - Bash
+    done: true
   - type: pipeline
     name: implement-phase4-library-persistence-di
     tasks:
@@ -386,6 +387,7 @@ tasks:
           - Write
           - Edit
           - Bash
+        done: true
       - type: agent
         name: implement-phase4-library-persistence-di-reviewer
         task: >
@@ -401,11 +403,14 @@ tasks:
         rejected:
           to: implement-phase4-library-persistence-di-implementer
           max_retries: 3
+        done: true
       - type: script
         command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
         rejected:
           to: implement-phase4-library-persistence-di-implementer
           max_retries: 3
+        done: true
+    done: true
   - type: agent
     name: implement-phase4-library-persistence-di-implementer
     task: >
@@ -418,3 +423,4 @@ tasks:
     allowed_tools:
       - Read
       - Bash
+    done: true
