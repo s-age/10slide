@@ -5,22 +5,33 @@ struct SlideshowLibraryPanel: View {
     @State private var slideshowPendingDelete: Slideshow?
     let onSelect: (Slideshow) -> Void
     let onEdit: (Slideshow) -> Void
+    let onCreate: () -> Void
 
     init(
         viewModel: SlideshowLibraryViewModel,
         onSelect: @escaping (Slideshow) -> Void,
-        onEdit: @escaping (Slideshow) -> Void
+        onEdit: @escaping (Slideshow) -> Void,
+        onCreate: @escaping () -> Void
     ) {
         self._viewModel = State(initialValue: viewModel)
         self.onSelect = onSelect
         self.onEdit = onEdit
+        self.onCreate = onCreate
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("Library")
-                .font(.headline)
-                .padding(.vertical, 8)
+            HStack {
+                Text("Library")
+                    .font(.headline)
+                Spacer()
+                Button { onCreate() } label: {
+                    Image(systemName: "plus")
+                }
+                .buttonStyle(.borderless)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
             Divider()
             if viewModel.isLoading {
                 ProgressView().padding()
@@ -43,6 +54,11 @@ struct SlideshowLibraryPanel: View {
                         .buttonStyle(.plain)
 
                         Spacer()
+
+                        Button { onSelect(slideshow) } label: {
+                            Image(systemName: "play.circle")
+                        }
+                        .buttonStyle(.borderless)
 
                         Button { onEdit(slideshow) } label: {
                             Image(systemName: "pencil")

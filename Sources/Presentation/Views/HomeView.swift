@@ -5,6 +5,7 @@ struct HomeView: View {
     @State private var createViewModel: CreateSlideshowViewModel
     @State private var slideshowLibraryViewModel: SlideshowLibraryViewModel
     @State private var pendingEditSlideshow: Slideshow?
+    @State private var pendingNewSlideshow = false
     @State private var showDiscardWorkDialog = false
     let onSlideshowSelected: (Slideshow) -> Void
 
@@ -26,7 +27,8 @@ struct HomeView: View {
                 SlideshowLibraryPanel(
                     viewModel: slideshowLibraryViewModel,
                     onSelect: onSlideshowSelected,
-                    onEdit: handleEdit
+                    onEdit: handleEdit,
+                    onCreate: handleNewSlideshow
                 )
                 .frame(
                     minWidth: 200,
@@ -47,16 +49,29 @@ struct HomeView: View {
         }
         .alert("Discard current work?", isPresented: $showDiscardWorkDialog) {
             Button("Discard", role: .destructive) {
-                if let slideshow = pendingEditSlideshow {
+                if pendingNewSlideshow {
+                    createViewModel.reset()
+                    pendingNewSlideshow = false
+                } else if let slideshow = pendingEditSlideshow {
                     applyEdit(slideshow)
+                    pendingEditSlideshow = nil
                 }
-                pendingEditSlideshow = nil
             }
             Button("Cancel", role: .cancel) {
                 pendingEditSlideshow = nil
+                pendingNewSlideshow = false
             }
         } message: {
             Text("Starting a new edit will clear your current photo selection and slideshow name.")
+        }
+    }
+
+    private func handleNewSlideshow() {
+        if createViewModel.hasUnsavedWork {
+            pendingNewSlideshow = true
+            showDiscardWorkDialog = true
+        } else {
+            createViewModel.reset()
         }
     }
 
