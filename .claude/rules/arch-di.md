@@ -61,9 +61,40 @@ final class RepositoryContainer {
 }
 ```
 
+## Protocol extraction pattern
+
+Sub-containers receive an upstream container in `init()` but must **extract protocol-typed properties immediately** and discard the container reference. This prevents cross-layer coupling and hidden dependencies.
+
+```swift
+// Good — extract protocols at init, discard container
+final class RepositoryContainer {
+    let slideRepository: any SlideRepositoryProtocol
+
+    init(infrastructure: InfrastructureContainer) {
+        let slideDataSource = infrastructure.slideDataSource
+        let imageDataSource = infrastructure.imageDataSource
+        slideRepository = SlideRepository(
+            slideDataSource: slideDataSource,
+            imageDataSource: imageDataSource
+        )
+        // infrastructure reference is NOT stored
+    }
+}
+
+// Bad — storing the upstream container as a property
+final class RepositoryContainer {
+    private let infrastructure: InfrastructureContainer   // NG: retains cross-layer coupling
+
+    init(infrastructure: InfrastructureContainer) {
+        self.infrastructure = infrastructure
+    }
+}
+```
+
 ## Prohibitions
 
 - Never add business logic to a DI container
 - Never let one sub-container reference another sub-container — only `Container.swift` knows all layers
 - Never initialize dependencies lazily inside container properties — eagerly initialize in `init()`
 - Never make a container `@Observable` or `ObservableObject` — inject individual use cases or ViewModels instead
+- Never store an upstream container as a property — extract protocol values at init and discard

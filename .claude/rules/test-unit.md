@@ -133,6 +133,61 @@ func testSave_persistsCorrectID() async throws {
 }
 ```
 
+## Parameterized durations for timer tests
+
+When a ViewModel has timer-based behavior (auto-hide, auto-advance), parameterize the duration in the constructor with a production default. Tests pass short durations (milliseconds) to avoid slow waits.
+
+```swift
+// Good — parameterized duration with production default
+@Observable
+final class SlideshowPlayerViewModel {
+    private let autoAdvanceInterval: Duration
+
+    init(autoAdvanceInterval: Duration = .seconds(5)) {
+        self.autoAdvanceInterval = autoAdvanceInterval
+    }
+}
+
+// Test — fast, deterministic
+func testAutoAdvance_advancesAfterInterval() async throws {
+    let sut = SlideshowPlayerViewModel(autoAdvanceInterval: .milliseconds(50))
+    // ...
+}
+```
+
+## `@Model` fixtures without `ModelContext`
+
+`@Model` instances can be created and used freely outside a `ModelContext` in unit tests — the `@Model` macro generates in-memory backing storage. Relationships and properties work on uninserted models, allowing lightweight fixture creation without persistence overhead.
+
+```swift
+// Good — no ModelContainer/ModelContext needed for unit tests
+func testSlideDTO_mapsCorrectly() {
+    let model = SlideModel(localIdentifier: "abc", order: 0)
+    // use model directly as test fixture — no context insertion required
+}
+```
+
+Reserve real `ModelContainer` (in-memory) for integration tests only.
+
+## Async error testing
+
+`XCTAssertThrowsError` does **not** accept `async` closures — the compiler rejects it with "async call in an autoclosure that does not support concurrency". Use `do/catch` instead.
+
+```swift
+// Good — do/catch for async error assertions
+func testDelete_throwsWhenNotFound() async throws {
+    do {
+        try await sut.delete(id: UUID())
+        XCTFail("Expected error")
+    } catch {
+        XCTAssertEqual(error as? AppError, .notFound)
+    }
+}
+
+// Bad — does not compile with async closures
+XCTAssertThrowsError(try await sut.delete(id: UUID()))   // NG: compiler error
+```
+
 ## What NOT to do
 
 - Never test implementation details — test the observable behavior (protocol contract)
@@ -140,3 +195,4 @@ func testSave_persistsCorrectID() async throws {
 - Never import concrete infrastructure classes in tests — mock at the protocol boundary
 - Never define more than one `XCTestCase` subclass per file
 - Never use `XCTestExpectation` when `async/await` suffices
+- Never use `XCTAssertThrowsError` in `async` test methods — use `do/catch`
