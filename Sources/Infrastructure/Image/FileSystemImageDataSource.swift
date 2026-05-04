@@ -45,7 +45,7 @@ final class FileSystemImageDataSource: ImageDataSourceProtocol {
     func fetchImage(localIdentifier: String) async throws -> ImageDTO {
         let (data, creationDate) = try await Task.detached(priority: .userInitiated) {
             let url = URL(fileURLWithPath: localIdentifier)
-            let data = try Data(contentsOf: url)
+            let data = try Data(contentsOf: url, options: .mappedIfSafe)
             let attributes = try? FileManager.default.attributesOfItem(atPath: localIdentifier)
             let creationDate = attributes?[.creationDate] as? Date
             return (data, creationDate)

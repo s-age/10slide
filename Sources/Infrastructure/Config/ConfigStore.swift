@@ -26,7 +26,7 @@ final class ConfigStore: ConfigDataSourceProtocol {
         try await Task.detached(priority: .utility) {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let yaml = try YAMLEncoder().encode(dto)
-            try Data(yaml.utf8).write(to: fileURL)
+            try Data(yaml.utf8).write(to: fileURL, options: .atomic)
         }.value
     }
 }
