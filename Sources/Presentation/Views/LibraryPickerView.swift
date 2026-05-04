@@ -85,9 +85,9 @@ struct LibraryPickerView: View {
             TextField("Slideshow name", text: $createViewModel.slideshowName)
                 .textFieldStyle(.roundedBorder)
 
-            Button("Create") {
+            Button(createViewModel.isEditing ? "Update" : "Create") {
                 Task {
-                    if let slideshow = await createViewModel.createSlideshow() {
+                    if let slideshow = await createViewModel.saveSlideshow() {
                         onSlideshowCreated(slideshow)
                     }
                 }
@@ -110,15 +110,15 @@ private struct PhotoCell: View {
 
     var body: some View {
         ZStack {
+            Color.gray.opacity(0.15)
             if let nsImage = image {
                 Image(nsImage: nsImage)
                     .resizable()
-                    .scaledToFill()
-            } else {
-                Color.gray.opacity(0.3)
+                    .scaledToFit()
             }
         }
-        .frame(height: 100)
+        .frame(maxWidth: .infinity)
+        .aspectRatio(1, contentMode: .fit)
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .overlay(alignment: .topTrailing) {
             Button(action: onRemove) {
