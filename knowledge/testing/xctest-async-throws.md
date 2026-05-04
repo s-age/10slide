@@ -6,7 +6,8 @@ keywords: [XCTest, async/await, error handling, throwsError]
 
 ## What
 
-`XCTAssertThrowsError` does not accept `async` closures. In Swift async/await tests, the pattern fails at compile time:
+`XCTAssertThrowsError` does not accept `async` closures. In Swift async/await tests, the pattern
+fails at compile time:
 
 ```swift
 // ❌ Does not compile
@@ -36,7 +37,3 @@ func testLoad_whenFileContainsInvalidYAML_throws() async {
 
 - Don't force-unwrap or suppress errors to avoid the pattern (`try? sut.load()` masks errors).
 - Don't use `XCTestExpectation` — the `do/catch` approach is simpler and idiomatic for async.
-
-## See also
-
-- `test-unit.md`: "Async tests" section shows `async throws` on test methods (required for async code under test).
