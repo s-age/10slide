@@ -66,22 +66,6 @@ struct LibraryPickerView: View {
 
     private var bottomBar: some View {
         HStack(spacing: 12) {
-            Picker("Duration", selection: $createViewModel.selectedDuration) {
-                ForEach(SlideDuration.allCases, id: \.self) { duration in
-                    Text(duration.displayLabel).tag(duration)
-                }
-            }
-            .pickerStyle(.menu)
-            .frame(width: 100)
-
-            Picker("Transition", selection: $createViewModel.selectedTransition) {
-                ForEach(TransitionType.allCases, id: \.self) { transition in
-                    Text(transition.rawValue.capitalized).tag(transition)
-                }
-            }
-            .pickerStyle(.menu)
-            .frame(width: 110)
-
             TextField("Slideshow name", text: $createViewModel.slideshowName)
                 .textFieldStyle(.roundedBorder)
 

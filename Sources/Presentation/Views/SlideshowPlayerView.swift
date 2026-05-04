@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SlideshowPlayerView: View {
     @State private var viewModel: SlideshowPlayerViewModel
+    @State private var decodedImage: NSImage?
     let onBack: () -> Void
 
     init(viewModel: SlideshowPlayerViewModel, onBack: @escaping () -> Void) {
@@ -23,11 +24,13 @@ struct SlideshowPlayerView: View {
                 FilmstripView(
                     slides: viewModel.slideshow.slides,
                     currentIndex: viewModel.currentIndex,
-                    duration: viewModel.slideshow.config.duration.seconds ?? 0,
+                    duration: viewModel.slideshow.config.duration,
                     transition: viewModel.slideshow.config.transition,
                     onSelect: { index in
                         Task { await viewModel.jumpTo(index: index) }
-                    }
+                    },
+                    onDurationChange: { viewModel.updateDuration($0) },
+                    onTransitionChange: { viewModel.updateTransition($0) }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -55,11 +58,17 @@ struct SlideshowPlayerView: View {
             await viewModel.loadCurrentImage()
             viewModel.play()
         }
+        .task(id: viewModel.currentImage) {
+            guard let data = viewModel.currentImage else { decodedImage = nil; return }
+            decodedImage = await Task.detached(priority: .userInitiated) {
+                NSImage(data: data)
+            }.value
+        }
     }
 
     @ViewBuilder
     private var slideImage: some View {
-        if let nsImage = viewModel.currentImage {
+        if let nsImage = decodedImage {
             Image(nsImage: nsImage)
                 .resizable()
                 .scaledToFit()

@@ -1,4 +1,3 @@
-import AppKit
 import Foundation
 import Observation
 
@@ -7,26 +6,26 @@ import Observation
 final class SlideshowPlayerViewModel {
     private(set) var slideshow: Slideshow
     private(set) var currentIndex: Int = 0
-    private(set) var currentImage: NSImage?
+    private(set) var currentImage: Data?
     private(set) var isPlaying: Bool = false
     private(set) var showFilmstrip: Bool = true
 
     private let loadSlideImageUseCase: any LoadSlideImageUseCaseProtocol
+    private let updateSlideshowConfigUseCase: any UpdateSlideshowConfigUseCaseProtocol
     private let filmstripHideDuration: Duration
-    private let imageDecoder: @Sendable (Data) -> NSImage?
     private var timerTask: Task<Void, Never>?
     private var hideFilmstripTask: Task<Void, Never>?
 
     init(
         slideshow: Slideshow,
         loadSlideImage: any LoadSlideImageUseCaseProtocol,
-        filmstripHideDuration: Duration = .seconds(3),
-        imageDecoder: @escaping @Sendable (Data) -> NSImage? = { NSImage(data: $0) }
+        updateSlideshowConfig: any UpdateSlideshowConfigUseCaseProtocol,
+        filmstripHideDuration: Duration = .seconds(3)
     ) {
         self.slideshow = slideshow
         self.loadSlideImageUseCase = loadSlideImage
+        self.updateSlideshowConfigUseCase = updateSlideshowConfig
         self.filmstripHideDuration = filmstripHideDuration
-        self.imageDecoder = imageDecoder
     }
 
     private var currentSlide: Slide? {
@@ -101,14 +100,25 @@ final class SlideshowPlayerViewModel {
             return
         }
         do {
-            let data = try await loadSlideImageUseCase.execute(localIdentifier: slide.localIdentifier)
-            let decode = imageDecoder
-            currentImage = await Task.detached(priority: .userInitiated) {
-                decode(data)
-            }.value
+            currentImage = try await loadSlideImageUseCase.execute(localIdentifier: slide.localIdentifier)
         } catch {
             currentImage = nil
         }
+    }
+
+    // MARK: - Config mutation
+
+    func updateDuration(_ duration: SlideDuration) {
+        var config = slideshow.config
+        config.duration = duration
+        slideshow = updateSlideshowConfigUseCase.execute(slideshow: slideshow, config: config)
+        if isPlaying { play() }
+    }
+
+    func updateTransition(_ transition: TransitionType) {
+        var config = slideshow.config
+        config.transition = transition
+        slideshow = updateSlideshowConfigUseCase.execute(slideshow: slideshow, config: config)
     }
 
     // MARK: - Filmstrip visibility

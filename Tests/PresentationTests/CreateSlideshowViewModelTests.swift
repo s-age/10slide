@@ -62,14 +62,14 @@ final class CreateSlideshowViewModelTests: XCTestCase {
     }
 
     func testCreateSlideshow_passesSelectedIdentifiersToUseCase() async {
-        sut.selectedIdentifiers = ["id-1", "id-2"]
+        sut.toggleSelection("id-1")
+        sut.toggleSelection("id-2")
         _ = await sut.createSlideshow()
         let received = Set(mockCreateSlideshow.lastReceivedIdentifiers ?? [])
         XCTAssertEqual(received, Set(["id-1", "id-2"]))
     }
 
     func testCreateSlideshow_withEmptyIdentifiers_passesEmptyArrayToUseCase() async {
-        sut.selectedIdentifiers = []
         _ = await sut.createSlideshow()
         XCTAssertTrue(mockCreateSlideshow.lastReceivedIdentifiers?.isEmpty == true)
     }

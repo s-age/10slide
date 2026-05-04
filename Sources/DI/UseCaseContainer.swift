@@ -6,6 +6,7 @@ final class UseCaseContainer {
     let loadThumbnail: any LoadThumbnailUseCaseProtocol
     let loadConfig: any LoadConfigUseCaseProtocol
     let saveConfig: any SaveConfigUseCaseProtocol
+    let updateSlideshowConfig: any UpdateSlideshowConfigUseCaseProtocol
 
     init(repositories: RepositoryContainer) {
         createSlideshow = CreateSlideshowUseCase(
@@ -29,5 +30,6 @@ final class UseCaseContainer {
         saveConfig = SaveConfigUseCase(
             configRepository: repositories.configRepository
         )
+        updateSlideshowConfig = UpdateSlideshowConfigUseCase()
     }
 }

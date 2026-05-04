@@ -3,12 +3,14 @@ final class PresentationContainer {
     private let createSlideshow: any CreateSlideshowUseCaseProtocol
     private let loadSlideImage: any LoadSlideImageUseCaseProtocol
     private let loadThumbnail: any LoadThumbnailUseCaseProtocol
+    private let updateSlideshowConfig: any UpdateSlideshowConfigUseCaseProtocol
 
     init(useCases: UseCaseContainer) {
         fetchLibrary = useCases.fetchLibrary
         createSlideshow = useCases.createSlideshow
         loadSlideImage = useCases.loadSlideImage
         loadThumbnail = useCases.loadThumbnail
+        updateSlideshowConfig = useCases.updateSlideshowConfig
     }
 
     @MainActor
@@ -23,6 +25,10 @@ final class PresentationContainer {
 
     @MainActor
     func makeSlideshowPlayerViewModel(slideshow: Slideshow) -> SlideshowPlayerViewModel {
-        SlideshowPlayerViewModel(slideshow: slideshow, loadSlideImage: loadSlideImage)
+        SlideshowPlayerViewModel(
+            slideshow: slideshow,
+            loadSlideImage: loadSlideImage,
+            updateSlideshowConfig: updateSlideshowConfig
+        )
     }
 }
