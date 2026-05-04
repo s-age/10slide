@@ -5,14 +5,14 @@ struct ContentView: View {
     private let createViewModel: CreateSlideshowViewModel
     @State private var selectedSlideshow: Slideshow?
 
-    private let makeSlideshowPlayerViewModel: @MainActor (Slideshow) -> SlideshowPlayerViewModel
-    private let makeSlideshowLibraryViewModel: @MainActor () -> SlideshowLibraryViewModel
+    private let makeSlideshowPlayerViewModel: @MainActor @Sendable (Slideshow) -> SlideshowPlayerViewModel
+    private let makeSlideshowLibraryViewModel: @MainActor @Sendable () -> SlideshowLibraryViewModel
 
     init(
         thumbnailViewModel: ThumbnailViewModel,
         createViewModel: CreateSlideshowViewModel,
-        makeSlideshowPlayerViewModel: @escaping @MainActor (Slideshow) -> SlideshowPlayerViewModel,
-        makeSlideshowLibraryViewModel: @escaping @MainActor () -> SlideshowLibraryViewModel
+        makeSlideshowPlayerViewModel: @escaping @MainActor @Sendable (Slideshow) -> SlideshowPlayerViewModel,
+        makeSlideshowLibraryViewModel: @escaping @MainActor @Sendable () -> SlideshowLibraryViewModel
     ) {
         self.thumbnailViewModel = thumbnailViewModel
         self.createViewModel = createViewModel

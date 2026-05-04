@@ -1,4 +1,4 @@
-final class PresentationContainer {
+final class PresentationContainer: Sendable {
     private let createSlideshow: any CreateSlideshowUseCaseProtocol
     private let loadSlideImage: any LoadSlideImageUseCaseProtocol
     private let loadThumbnail: any LoadThumbnailUseCaseProtocol
