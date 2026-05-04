@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 
@@ -6,7 +7,7 @@ import Observation
 final class SlideshowPlayerViewModel {
     private(set) var slideshow: Slideshow
     private(set) var currentIndex: Int = 0
-    private(set) var currentImage: Data?
+    private(set) var currentNSImage: NSImage?
     private(set) var isPlaying: Bool = false
     private(set) var showFilmstrip: Bool = true
 
@@ -98,13 +99,20 @@ final class SlideshowPlayerViewModel {
 
     func loadCurrentImage() async {
         guard let slide = currentSlide else {
-            currentImage = nil
+            currentNSImage = nil
             return
         }
+        let expectedIndex = currentIndex
         do {
-            currentImage = try await loadSlideImageUseCase.execute(localIdentifier: slide.localIdentifier)
+            let data = try await loadSlideImageUseCase.execute(localIdentifier: slide.localIdentifier)
+            guard currentIndex == expectedIndex else { return }
+            let image = await Task.detached(priority: .userInitiated) {
+                NSImage(data: data)
+            }.value
+            guard currentIndex == expectedIndex else { return }
+            currentNSImage = image
         } catch {
-            currentImage = nil
+            currentNSImage = nil
         }
     }
 
