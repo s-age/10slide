@@ -125,10 +125,8 @@
 				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					CDEB89CEE8201701AE407B82 = {
-						DevelopmentTeam = 7VF2T8G76X;
-					};
+						};
 					E499EE3864096158A4ED7712 = {
-						DevelopmentTeam = 7VF2T8G76X;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -195,7 +193,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7VF2T8G76X;
+				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Select photos for your slideshow";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -203,7 +201,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sage0196.10slide;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.10slide;
 				PRODUCT_MODULE_NAME = TenSlide;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
@@ -215,14 +213,14 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = 7VF2T8G76X;
+				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.sage0196.10slideTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.10slideTests;
 				PRODUCT_MODULE_NAME = TenSlideTests;
 				SDKROOT = macosx;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/10slide.app/Contents/MacOS/10slide";
@@ -237,7 +235,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7VF2T8G76X;
+				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Select photos for your slideshow";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -245,7 +243,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sage0196.10slide;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.10slide;
 				PRODUCT_MODULE_NAME = TenSlide;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 6.0;
@@ -320,14 +318,14 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = 7VF2T8G76X;
+				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.sage0196.10slideTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.10slideTests;
 				PRODUCT_MODULE_NAME = TenSlideTests;
 				SDKROOT = macosx;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/10slide.app/Contents/MacOS/10slide";
