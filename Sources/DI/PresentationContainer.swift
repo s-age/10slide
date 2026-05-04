@@ -8,6 +8,7 @@ final class PresentationContainer {
     private let setDirectory: any SetDirectoryUseCaseProtocol
     private let addDroppedFiles: any AddDroppedFilesUseCaseProtocol
     private let fetchSlideshows: any FetchSlideshowsUseCaseProtocol
+    private let deleteSlideshow: any DeleteSlideshowUseCaseProtocol
 
     init(useCases: UseCaseContainer) {
         fetchLibrary = useCases.fetchLibrary
@@ -19,6 +20,7 @@ final class PresentationContainer {
         setDirectory = useCases.setDirectory
         addDroppedFiles = useCases.addDroppedFiles
         fetchSlideshows = useCases.fetchSlideshows
+        deleteSlideshow = useCases.deleteSlideshow
     }
 
     @MainActor
@@ -52,6 +54,6 @@ final class PresentationContainer {
 
     @MainActor
     func makeSlideshowLibraryViewModel() -> SlideshowLibraryViewModel {
-        SlideshowLibraryViewModel(fetchSlideshows: fetchSlideshows)
+        SlideshowLibraryViewModel(fetchSlideshows: fetchSlideshows, deleteSlideshow: deleteSlideshow)
     }
 }

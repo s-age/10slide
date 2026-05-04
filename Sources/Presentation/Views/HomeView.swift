@@ -5,6 +5,8 @@ struct HomeView: View {
     @State private var thumbnailViewModel: ThumbnailViewModel
     @State private var createViewModel: CreateSlideshowViewModel
     @State private var slideshowLibraryViewModel: SlideshowLibraryViewModel
+    @State private var pendingEditSlideshow: Slideshow?
+    @State private var showDiscardWorkDialog = false
     let onSlideshowSelected: (Slideshow) -> Void
 
     init(
@@ -23,6 +25,13 @@ struct HomeView: View {
 
     var body: some View {
         HSplitView {
+            SlideshowLibraryPanel(
+                viewModel: slideshowLibraryViewModel,
+                onSelect: onSlideshowSelected,
+                onEdit: handleEdit
+            )
+            .frame(minWidth: 200, idealWidth: 260)
+
             LibraryPickerView(
                 libraryViewModel: libraryViewModel,
                 thumbnailViewModel: thumbnailViewModel,
@@ -33,12 +42,33 @@ struct HomeView: View {
                 }
             )
             .frame(minWidth: 400)
-
-            SlideshowLibraryPanel(
-                viewModel: slideshowLibraryViewModel,
-                onSelect: onSlideshowSelected
-            )
-            .frame(minWidth: 200, idealWidth: 260)
         }
+        .alert("Discard current work?", isPresented: $showDiscardWorkDialog) {
+            Button("Discard", role: .destructive) {
+                if let slideshow = pendingEditSlideshow {
+                    applyEdit(slideshow)
+                }
+                pendingEditSlideshow = nil
+            }
+            Button("Cancel", role: .cancel) {
+                pendingEditSlideshow = nil
+            }
+        } message: {
+            Text("Starting a new edit will clear your current photo selection and slideshow name.")
+        }
+    }
+
+    private func handleEdit(_ slideshow: Slideshow) {
+        if createViewModel.hasUnsavedWork {
+            pendingEditSlideshow = slideshow
+            showDiscardWorkDialog = true
+        } else {
+            applyEdit(slideshow)
+        }
+    }
+
+    private func applyEdit(_ slideshow: Slideshow) {
+        createViewModel.loadSlideshow(slideshow)
+        Task { await libraryViewModel.loadLibrary() }
     }
 }

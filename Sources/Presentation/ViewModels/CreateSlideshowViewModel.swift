@@ -17,6 +17,20 @@ final class CreateSlideshowViewModel {
         self.createSlideshowUseCase = createSlideshow
     }
 
+    var hasUnsavedWork: Bool {
+        !slideshowName.isEmpty || !selectedIdentifiers.isEmpty
+    }
+
+    func loadSlideshow(_ slideshow: Slideshow) {
+        slideshowName = slideshow.name
+        selectedIdentifiers = Set(slideshow.slides.map(\.localIdentifier))
+    }
+
+    func reset() {
+        slideshowName = ""
+        selectedIdentifiers = []
+    }
+
     func toggleSelection(_ identifier: String) {
         if selectedIdentifiers.contains(identifier) {
             selectedIdentifiers.remove(identifier)

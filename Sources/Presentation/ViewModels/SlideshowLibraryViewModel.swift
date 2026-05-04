@@ -9,9 +9,14 @@ final class SlideshowLibraryViewModel {
     private(set) var errorMessage: String?
 
     private let fetchSlideshowsUseCase: any FetchSlideshowsUseCaseProtocol
+    private let deleteSlideshowUseCase: any DeleteSlideshowUseCaseProtocol
 
-    init(fetchSlideshows: any FetchSlideshowsUseCaseProtocol) {
+    init(
+        fetchSlideshows: any FetchSlideshowsUseCaseProtocol,
+        deleteSlideshow: any DeleteSlideshowUseCaseProtocol
+    ) {
         self.fetchSlideshowsUseCase = fetchSlideshows
+        self.deleteSlideshowUseCase = deleteSlideshow
     }
 
     func loadLibrary() async {
@@ -19,6 +24,15 @@ final class SlideshowLibraryViewModel {
         defer { isLoading = false }
         do {
             slideshows = try await fetchSlideshowsUseCase.execute()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func deleteSlideshow(id: UUID) async {
+        do {
+            try await deleteSlideshowUseCase.execute(id: id)
+            slideshows.removeAll { $0.id == id }
         } catch {
             errorMessage = error.localizedDescription
         }

@@ -11,6 +11,7 @@ final class UseCaseContainer {
     let advanceSlide: any AdvanceSlideUseCaseProtocol
     let setDirectory: any SetDirectoryUseCaseProtocol
     let addDroppedFiles: any AddDroppedFilesUseCaseProtocol
+    let deleteSlideshow: any DeleteSlideshowUseCaseProtocol
 
     init(repositories: RepositoryContainer) {
         createSlideshow = CreateSlideshowUseCase(
@@ -41,5 +42,6 @@ final class UseCaseContainer {
         advanceSlide = AdvanceSlideUseCase()
         setDirectory = SetDirectoryUseCase(imageRepository: repositories.imageRepository)
         addDroppedFiles = AddDroppedFilesUseCase(imageRepository: repositories.imageRepository)
+        deleteSlideshow = DeleteSlideshowUseCase(slideshowRepository: repositories.slideshowRepository)
     }
 }

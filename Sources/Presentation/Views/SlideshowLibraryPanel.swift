@@ -2,11 +2,18 @@ import SwiftUI
 
 struct SlideshowLibraryPanel: View {
     @State private var viewModel: SlideshowLibraryViewModel
+    @State private var slideshowPendingDelete: Slideshow?
     let onSelect: (Slideshow) -> Void
+    let onEdit: (Slideshow) -> Void
 
-    init(viewModel: SlideshowLibraryViewModel, onSelect: @escaping (Slideshow) -> Void) {
+    init(
+        viewModel: SlideshowLibraryViewModel,
+        onSelect: @escaping (Slideshow) -> Void,
+        onEdit: @escaping (Slideshow) -> Void
+    ) {
         self._viewModel = State(initialValue: viewModel)
         self.onSelect = onSelect
+        self.onEdit = onEdit
     }
 
     var body: some View {
@@ -25,17 +32,49 @@ struct SlideshowLibraryPanel: View {
                 )
             } else {
                 List(viewModel.slideshows) { slideshow in
-                    Button { onSelect(slideshow) } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(slideshow.name).fontWeight(.medium)
-                            Text("\(slideshow.slides.count) slides · \(slideshow.config.duration.displayLabel)")
-                                .font(.caption).foregroundStyle(.secondary)
+                    HStack {
+                        Button { onSelect(slideshow) } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(slideshow.name).fontWeight(.medium)
+                                Text("\(slideshow.slides.count) slides · \(slideshow.config.duration.displayLabel)")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
                         }
+                        .buttonStyle(.plain)
+
+                        Spacer()
+
+                        Button { onEdit(slideshow) } label: {
+                            Image(systemName: "pencil")
+                        }
+                        .buttonStyle(.borderless)
+
+                        Button { slideshowPendingDelete = slideshow } label: {
+                            Image(systemName: "trash")
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.red)
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
         .task { await viewModel.loadLibrary() }
+        .confirmationDialog(
+            "Delete \"\(slideshowPendingDelete?.name ?? "")\"?",
+            isPresented: Binding(
+                get: { slideshowPendingDelete != nil },
+                set: { if !$0 { slideshowPendingDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let slideshow = slideshowPendingDelete {
+                    Task { await viewModel.deleteSlideshow(id: slideshow.id) }
+                }
+                slideshowPendingDelete = nil
+            }
+        } message: {
+            Text("This action cannot be undone.")
+        }
     }
 }
