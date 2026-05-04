@@ -16,16 +16,9 @@ actor SlideshowDataSource: SlideshowDataSourceProtocol {
     }
 
     func save(_ dto: SlideshowDTO) throws {
-        let model = SlideshowModel(
-            id: dto.id,
-            name: dto.name,
-            createdAt: dto.createdAt,
-            durationRawValue: dto.durationRawValue,
-            transitionRawValue: dto.transitionRawValue,
-            loop: dto.loop
-        )
-        modelContext.insert(model)
-        let slideModels = dto.slides.map { slide in
+        let id = dto.id
+        let descriptor = FetchDescriptor<SlideshowModel>(predicate: #Predicate { $0.id == id })
+        let newSlides = dto.slides.map { slide in
             SlideModel(
                 id: slide.id,
                 localIdentifier: slide.localIdentifier,
@@ -34,8 +27,27 @@ actor SlideshowDataSource: SlideshowDataSourceProtocol {
                 title: slide.title
             )
         }
-        slideModels.forEach { modelContext.insert($0) }
-        model.slides = slideModels
+        if let existing = try modelContext.fetch(descriptor).first {
+            existing.name = dto.name
+            existing.durationRawValue = dto.durationRawValue
+            existing.transitionRawValue = dto.transitionRawValue
+            existing.loop = dto.loop
+            existing.slides.forEach { modelContext.delete($0) }
+            newSlides.forEach { modelContext.insert($0) }
+            existing.slides = newSlides
+        } else {
+            let model = SlideshowModel(
+                id: dto.id,
+                name: dto.name,
+                createdAt: dto.createdAt,
+                durationRawValue: dto.durationRawValue,
+                transitionRawValue: dto.transitionRawValue,
+                loop: dto.loop
+            )
+            modelContext.insert(model)
+            newSlides.forEach { modelContext.insert($0) }
+            model.slides = newSlides
+        }
         try modelContext.save()
     }
 

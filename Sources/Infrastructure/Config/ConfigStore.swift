@@ -8,11 +8,11 @@ final class ConfigStore: ConfigDataSourceProtocol {
         self.fileURL = fileURL
     }
 
-    func load() async throws -> ConfigDTO {
+    func load() async throws -> ConfigDTO? {
         let fileURL = self.fileURL
         return try await Task.detached(priority: .utility) {
             guard FileManager.default.fileExists(atPath: fileURL.path) else {
-                return ConfigDTO(duration: "5", transition: "fade", loop: true)
+                return nil
             }
             let data = try Data(contentsOf: fileURL)
             let yaml = String(decoding: data, as: UTF8.self)

@@ -8,7 +8,9 @@ final class ConfigRepository: ConfigRepositoryProtocol {
     }
 
     func load() async throws -> SlideshowConfig {
-        let dto = try await configDataSource.load()
+        guard let dto = try await configDataSource.load() else {
+            return .default
+        }
         return SlideshowConfig(
             duration: SlideDuration(rawValue: dto.duration) ?? .five,
             transition: TransitionType(rawValue: dto.transition) ?? .default,

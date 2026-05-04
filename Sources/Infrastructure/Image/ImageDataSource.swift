@@ -1,5 +1,5 @@
-import AppKit
 import Foundation
+import ImageIO
 import Photos
 
 enum ImageDataSourceError: Error {
@@ -58,25 +58,43 @@ final class ImageDataSource: ImageDataSourceProtocol {
             throw ImageDataSourceError.assetNotFound
         }
         let options = PHImageRequestOptions()
-        options.deliveryMode = .opportunistic
+        options.deliveryMode = .highQualityFormat
         options.isNetworkAccessAllowed = true
-        return try await withCheckedThrowingContinuation { continuation in
-            PHImageManager.default().requestImage(
+        let rawData: Data = try await withCheckedThrowingContinuation { continuation in
+            PHImageManager.default().requestImageDataAndOrientation(
                 for: asset,
-                targetSize: CGSize(width: 200, height: 200),
-                contentMode: .aspectFill,
                 options: options
-            ) { image, info in
-                let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
-                if isDegraded { return }
-                if let image,
-                   let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
-                   let data = NSBitmapImageRep(cgImage: cgImage).representation(using: .jpeg, properties: [.compressionFactor: 0.8]) {
+            ) { data, _, _, _ in
+                if let data {
                     continuation.resume(returning: data)
                 } else {
                     continuation.resume(throwing: ImageDataSourceError.dataUnavailable)
                 }
             }
         }
+        return try await Task.detached(priority: .userInitiated) {
+            let sourceOptions: [CFString: Any] = [kCGImageSourceShouldCache: false]
+            guard let source = CGImageSourceCreateWithData(rawData as CFData, sourceOptions as CFDictionary) else {
+                throw ImageDataSourceError.dataUnavailable
+            }
+            let thumbnailOptions: [CFString: Any] = [
+                kCGImageSourceThumbnailMaxPixelSize: 200,
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true
+            ]
+            guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions as CFDictionary) else {
+                throw ImageDataSourceError.dataUnavailable
+            }
+            let destData = NSMutableData()
+            guard let dest = CGImageDestinationCreateWithData(destData, "public.jpeg" as CFString, 1, nil) else {
+                throw ImageDataSourceError.dataUnavailable
+            }
+            let destOptions: [CFString: Any] = [kCGImageDestinationLossyCompressionQuality: 0.8]
+            CGImageDestinationAddImage(dest, cgImage, destOptions as CFDictionary)
+            guard CGImageDestinationFinalize(dest) else {
+                throw ImageDataSourceError.dataUnavailable
+            }
+            return destData as Data
+        }.value
     }
 }
