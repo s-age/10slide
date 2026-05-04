@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Photos
 
@@ -68,7 +69,9 @@ final class ImageDataSource: ImageDataSourceProtocol {
             ) { image, info in
                 let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
                 if isDegraded { return }
-                if let image, let data = image.tiffRepresentation {
+                if let image,
+                   let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
+                   let data = NSBitmapImageRep(cgImage: cgImage).representation(using: .jpeg, properties: [.compressionFactor: 0.8]) {
                     continuation.resume(returning: data)
                 } else {
                     continuation.resume(throwing: ImageDataSourceError.dataUnavailable)

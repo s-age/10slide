@@ -10,27 +10,27 @@ final class SlideRepository: SlideRepositoryProtocol {
     }
 
     func fetchAll() async throws -> [Slide] {
-        let models = try await slideDataSource.fetchAll()
-        return models.map { model in
+        let dtos = try await slideDataSource.fetchAll()
+        return dtos.map { dto in
             Slide(
-                id: model.id,
-                localIdentifier: model.localIdentifier,
-                order: model.order,
-                duration: model.duration,
-                title: model.title
+                id: dto.id,
+                localIdentifier: dto.localIdentifier,
+                order: dto.order,
+                duration: dto.duration,
+                title: dto.title
             )
         }
     }
 
     func save(_ slide: Slide, in slideshowID: UUID) async throws {
-        let model = SlideModel(
+        let dto = SlideDTO(
             id: slide.id,
             localIdentifier: slide.localIdentifier,
             order: slide.order,
             duration: slide.duration,
             title: slide.title
         )
-        try await slideDataSource.save(model)
+        try await slideDataSource.save(dto)
     }
 
     func delete(id: UUID) async throws {

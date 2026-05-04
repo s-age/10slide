@@ -1,44 +1,66 @@
 import Foundation
 import SwiftData
-import Synchronization
 
-final class SlideshowDataSource: SlideshowDataSourceProtocol {
-    private let sharedContext: Mutex<ModelContext>
-    private let container: ModelContainer
-
-    init(container: ModelContainer) {
-        self.container = container
-        sharedContext = Mutex(ModelContext(container))
+@ModelActor
+actor SlideshowDataSource: SlideshowDataSourceProtocol {
+    func fetchAll() throws -> [SlideshowDTO] {
+        let models = try modelContext.fetch(FetchDescriptor<SlideshowModel>())
+        return models.map(dto(from:))
     }
 
-    func fetchAll() async throws -> [SlideshowModel] {
-        try sharedContext.withLock { ctx in
-            try ctx.fetch(FetchDescriptor<SlideshowModel>())
-        }
+    func fetch(id: UUID) throws -> SlideshowDTO? {
+        let descriptor = FetchDescriptor<SlideshowModel>(
+            predicate: #Predicate { $0.id == id }
+        )
+        return try modelContext.fetch(descriptor).first.map(dto(from:))
     }
 
-    func fetch(id: UUID) async throws -> SlideshowModel? {
-        try sharedContext.withLock { ctx in
-            let descriptor = FetchDescriptor<SlideshowModel>(
-                predicate: #Predicate { $0.id == id }
+    func save(_ dto: SlideshowDTO) throws {
+        let model = SlideshowModel(
+            id: dto.id,
+            name: dto.name,
+            createdAt: dto.createdAt,
+            durationRawValue: dto.durationRawValue,
+            transitionRawValue: dto.transitionRawValue,
+            loop: dto.loop
+        )
+        model.slides = dto.slides.map { slide in
+            SlideModel(
+                id: slide.id,
+                localIdentifier: slide.localIdentifier,
+                order: slide.order,
+                duration: slide.duration,
+                title: slide.title
             )
-            return try ctx.fetch(descriptor).first
         }
+        modelContext.insert(model)
+        try modelContext.save()
     }
 
-    func save(_ model: SlideshowModel) async throws {
-        // Swift 6: inserting a task-isolated @Model into an inout sending ModelContext
-        // is a region isolation violation, so save uses a scoped context that writes
-        // to the persistent store (visible to sharedContext on next fetch).
-        let context = ModelContext(container)
-        context.insert(model)
-        try context.save()
+    func delete(id: UUID) throws {
+        try modelContext.delete(model: SlideshowModel.self, where: #Predicate { $0.id == id })
+        try modelContext.save()
     }
 
-    func delete(id: UUID) async throws {
-        try sharedContext.withLock { ctx in
-            try ctx.delete(model: SlideshowModel.self, where: #Predicate { $0.id == id })
-            try ctx.save()
-        }
+    // MARK: - Private
+
+    private func dto(from model: SlideshowModel) -> SlideshowDTO {
+        SlideshowDTO(
+            id: model.id,
+            name: model.name,
+            createdAt: model.createdAt,
+            durationRawValue: model.durationRawValue,
+            transitionRawValue: model.transitionRawValue,
+            loop: model.loop,
+            slides: model.slides.map { slide in
+                SlideDTO(
+                    id: slide.id,
+                    localIdentifier: slide.localIdentifier,
+                    order: slide.order,
+                    duration: slide.duration,
+                    title: slide.title
+                )
+            }
+        )
     }
 }

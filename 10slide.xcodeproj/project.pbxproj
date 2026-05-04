@@ -34,6 +34,8 @@
 		3D6E33DC1E1ABF43577647EE /* SlideModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1E376CEE59C8B916BCE625 /* SlideModel.swift */; };
 		3EC89D500370AC5AAB20216E /* LoadSlideImageUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDC76B337264B86A6F586C78 /* LoadSlideImageUseCaseProtocol.swift */; };
 		3EFB1FECB36ABB9BF11C1F5A /* ImageDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAD7BD09DCEDB0F61EF5A3C /* ImageDTO.swift */; };
+		AA11BB22CC33DD44EE55FF66 /* SlideDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF01 /* SlideDTO.swift */; };
+		BB22CC33DD44EE55FF6600AA /* SlideshowDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF660011 /* SlideshowDTO.swift */; };
 		3F8455328F3FA870727A7251 /* PresentationContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8E215733E67DFAAFC15884 /* PresentationContainer.swift */; };
 		3FD65AE12AD243F3AAAD426C /* SlideshowConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FDF72D96CFFEBE499163A25 /* SlideshowConfigTests.swift */; };
 		488127CC9D57E47F0BDEA534 /* FetchSlideshowUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 362214CD7AD4D592D957C002 /* FetchSlideshowUseCase.swift */; };
@@ -111,6 +113,8 @@
 		32D1F37F748E410984D6F3A9 /* SlideshowPlayerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowPlayerViewModelTests.swift; sourceTree = "<group>"; };
 		362214CD7AD4D592D957C002 /* FetchSlideshowUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchSlideshowUseCase.swift; sourceTree = "<group>"; };
 		3BE2A12E6B1C9AEBAB958E79 /* SlideshowModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowModel.swift; sourceTree = "<group>"; };
+		AA11BB22CC33DD44EE55FF01 /* SlideDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideDTO.swift; sourceTree = "<group>"; };
+		BB22CC33DD44EE55FF660011 /* SlideshowDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowDTO.swift; sourceTree = "<group>"; };
 		4ACEA093A26B874A5604093B /* ImageDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDataSource.swift; sourceTree = "<group>"; };
 		504E41FA1F52345A6A000234 /* CreateSlideshowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateSlideshowViewModel.swift; sourceTree = "<group>"; };
 		50B9A558734A483256EC23E6 /* SaveConfigUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveConfigUseCaseTests.swift; sourceTree = "<group>"; };
@@ -345,7 +349,9 @@
 		BB1BFFC31ED55E05C9DC556B /* DTO */ = {
 			isa = PBXGroup;
 			children = (
+				AA11BB22CC33DD44EE55FF01 /* SlideDTO.swift */,
 				7B1E376CEE59C8B916BCE625 /* SlideModel.swift */,
+				BB22CC33DD44EE55FF660011 /* SlideshowDTO.swift */,
 				3BE2A12E6B1C9AEBAB958E79 /* SlideshowModel.swift */,
 			);
 			path = DTO;
@@ -629,6 +635,7 @@
 				492C0740E3AFFE097F6E6A93 /* SlideDataSource.swift in Sources */,
 				8212E492BDE37EC28202197C /* SlideDataSourceProtocol.swift in Sources */,
 				EAC20EB875221A24540128B3 /* SlideDuration.swift in Sources */,
+				AA11BB22CC33DD44EE55FF66 /* SlideDTO.swift in Sources */,
 				3D6E33DC1E1ABF43577647EE /* SlideModel.swift in Sources */,
 				CD1DA8DD6C5B86726F3C77D2 /* SlideRepository.swift in Sources */,
 				3262BF41F48BDE724A8E9C3A /* SlideRepositoryProtocol.swift in Sources */,
@@ -636,6 +643,7 @@
 				54CB5C02AD76DA9CBDD871CD /* SlideshowConfig.swift in Sources */,
 				603B4AA1C2096AFB66B4CD66 /* SlideshowDataSource.swift in Sources */,
 				03F97172C7A6BC443E46C6E4 /* SlideshowDataSourceProtocol.swift in Sources */,
+				BB22CC33DD44EE55FF6600AA /* SlideshowDTO.swift in Sources */,
 				1C5B06DD1302FCF11E315EA1 /* SlideshowModel.swift in Sources */,
 				6217EBB28931B4E2921CC820 /* SlideshowPlayerView.swift in Sources */,
 				367D45247474A7B2969DA6CD /* SlideshowPlayerViewModel.swift in Sources */,

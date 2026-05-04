@@ -10,8 +10,7 @@ final class RepositoryContainer {
             imageDataSource: infrastructure.imageDataSource
         )
         slideshowRepository = SlideshowRepository(
-            slideshowDataSource: infrastructure.slideshowDataSource,
-            slideDataSource: infrastructure.slideDataSource
+            slideshowDataSource: infrastructure.slideshowDataSource
         )
         configRepository = ConfigRepository(configDataSource: infrastructure.configDataSource)
         imageRepository = ImageRepository(imageDataSource: infrastructure.imageDataSource)

@@ -4,15 +4,15 @@ import XCTest
 // MARK: - Mocks
 
 final class MockSlideshowDataSource: SlideshowDataSourceProtocol, @unchecked Sendable {
-    var fetchAllResult: [SlideshowModel] = []
+    var fetchAllResult: [SlideshowDTO] = []
     var fetchAllCallCount = 0
 
-    var fetchResult: SlideshowModel?
+    var fetchResult: SlideshowDTO?
     var fetchCallCount = 0
     var fetchedID: UUID?
 
     var saveCallCount = 0
-    var savedModel: SlideshowModel?
+    var savedModel: SlideshowDTO?
 
     var deleteCallCount = 0
     var deletedID: UUID?
@@ -22,22 +22,22 @@ final class MockSlideshowDataSource: SlideshowDataSourceProtocol, @unchecked Sen
     var throwOnSave = false
     var throwOnDelete = false
 
-    func fetchAll() async throws -> [SlideshowModel] {
+    func fetchAll() async throws -> [SlideshowDTO] {
         fetchAllCallCount += 1
         if throwOnFetchAll { throw SlideshowRepoTestError.intentional }
         return fetchAllResult
     }
 
-    func fetch(id: UUID) async throws -> SlideshowModel? {
+    func fetch(id: UUID) async throws -> SlideshowDTO? {
         fetchCallCount += 1
         fetchedID = id
         if throwOnFetch { throw SlideshowRepoTestError.intentional }
         return fetchResult
     }
 
-    func save(_ model: SlideshowModel) async throws {
+    func save(_ dto: SlideshowDTO) async throws {
         saveCallCount += 1
-        savedModel = model
+        savedModel = dto
         if throwOnSave { throw SlideshowRepoTestError.intentional }
     }
 
@@ -46,12 +46,6 @@ final class MockSlideshowDataSource: SlideshowDataSourceProtocol, @unchecked Sen
         deletedID = id
         if throwOnDelete { throw SlideshowRepoTestError.intentional }
     }
-}
-
-final class MockSlideDataSourceForSlideshowRepo: SlideDataSourceProtocol, @unchecked Sendable {
-    func fetchAll() async throws -> [SlideModel] { [] }
-    func save(_ model: SlideModel) async throws {}
-    func delete(id: UUID) async throws {}
 }
 
 private enum SlideshowRepoTestError: Error {
@@ -67,10 +61,7 @@ final class SlideshowRepositoryTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockSlideshowDataSource = MockSlideshowDataSource()
-        sut = SlideshowRepository(
-            slideshowDataSource: mockSlideshowDataSource,
-            slideDataSource: MockSlideDataSourceForSlideshowRepo()
-        )
+        sut = SlideshowRepository(slideshowDataSource: mockSlideshowDataSource)
     }
 
     override func tearDown() {
@@ -94,8 +85,8 @@ final class SlideshowRepositoryTests: XCTestCase {
 
     func testFetchAll_returnsCorrectCount() async throws {
         mockSlideshowDataSource.fetchAllResult = [
-            SlideshowModel(id: UUID(), name: "A"),
-            SlideshowModel(id: UUID(), name: "B")
+            SlideshowDTO(id: UUID(), name: "A"),
+            SlideshowDTO(id: UUID(), name: "B")
         ]
         let result = try await sut.fetchAll()
         XCTAssertEqual(result.count, 2)
@@ -103,20 +94,20 @@ final class SlideshowRepositoryTests: XCTestCase {
 
     func testFetchAll_mapsID() async throws {
         let id = UUID()
-        mockSlideshowDataSource.fetchAllResult = [SlideshowModel(id: id, name: "X")]
+        mockSlideshowDataSource.fetchAllResult = [SlideshowDTO(id: id, name: "X")]
         let result = try await sut.fetchAll()
         XCTAssertEqual(result[0].id, id)
     }
 
     func testFetchAll_mapsName() async throws {
-        mockSlideshowDataSource.fetchAllResult = [SlideshowModel(id: UUID(), name: "My Show")]
+        mockSlideshowDataSource.fetchAllResult = [SlideshowDTO(id: UUID(), name: "My Show")]
         let result = try await sut.fetchAll()
         XCTAssertEqual(result[0].name, "My Show")
     }
 
     func testFetchAll_mapsDurationRawValue() async throws {
         mockSlideshowDataSource.fetchAllResult = [
-            SlideshowModel(id: UUID(), name: "X", durationRawValue: "30")
+            SlideshowDTO(id: UUID(), name: "X", durationRawValue: "30")
         ]
         let result = try await sut.fetchAll()
         XCTAssertEqual(result[0].config.duration, .thirty)
@@ -124,7 +115,7 @@ final class SlideshowRepositoryTests: XCTestCase {
 
     func testFetchAll_mapsTransitionRawValueToEnum() async throws {
         mockSlideshowDataSource.fetchAllResult = [
-            SlideshowModel(id: UUID(), name: "X", transitionRawValue: "dissolve")
+            SlideshowDTO(id: UUID(), name: "X", transitionRawValue: "dissolve")
         ]
         let result = try await sut.fetchAll()
         XCTAssertEqual(result[0].config.transition, .dissolve)
@@ -132,7 +123,7 @@ final class SlideshowRepositoryTests: XCTestCase {
 
     func testFetchAll_mapsLoopFalse() async throws {
         mockSlideshowDataSource.fetchAllResult = [
-            SlideshowModel(id: UUID(), name: "X", loop: false)
+            SlideshowDTO(id: UUID(), name: "X", loop: false)
         ]
         let result = try await sut.fetchAll()
         XCTAssertFalse(result[0].config.loop)
@@ -140,7 +131,7 @@ final class SlideshowRepositoryTests: XCTestCase {
 
     func testFetchAll_mapsLoopTrue() async throws {
         mockSlideshowDataSource.fetchAllResult = [
-            SlideshowModel(id: UUID(), name: "X", loop: true)
+            SlideshowDTO(id: UUID(), name: "X", loop: true)
         ]
         let result = try await sut.fetchAll()
         XCTAssertTrue(result[0].config.loop)
@@ -148,7 +139,7 @@ final class SlideshowRepositoryTests: XCTestCase {
 
     func testFetchAll_unknownTransitionRawValue_fallsBackToFade() async throws {
         mockSlideshowDataSource.fetchAllResult = [
-            SlideshowModel(id: UUID(), name: "X", transitionRawValue: "zoom")
+            SlideshowDTO(id: UUID(), name: "X", transitionRawValue: "zoom")
         ]
         let result = try await sut.fetchAll()
         XCTAssertEqual(result[0].config.transition, .fade)
@@ -184,38 +175,38 @@ final class SlideshowRepositoryTests: XCTestCase {
     }
 
     func testFetch_whenModelFound_returnsNonNil() async throws {
-        mockSlideshowDataSource.fetchResult = SlideshowModel(id: UUID(), name: "Found")
+        mockSlideshowDataSource.fetchResult = SlideshowDTO(id: UUID(), name: "Found")
         let result = try await sut.fetch(id: UUID())
         XCTAssertNotNil(result)
     }
 
     func testFetch_mapsID() async throws {
         let id = UUID()
-        mockSlideshowDataSource.fetchResult = SlideshowModel(id: id, name: "X")
+        mockSlideshowDataSource.fetchResult = SlideshowDTO(id: id, name: "X")
         let result = try await sut.fetch(id: id)
         XCTAssertEqual(result?.id, id)
     }
 
     func testFetch_mapsDurationRawValue() async throws {
-        mockSlideshowDataSource.fetchResult = SlideshowModel(id: UUID(), name: "X", durationRawValue: "60")
+        mockSlideshowDataSource.fetchResult = SlideshowDTO(id: UUID(), name: "X", durationRawValue: "60")
         let result = try await sut.fetch(id: UUID())
         XCTAssertEqual(result?.config.duration, .sixty)
     }
 
     func testFetch_mapsTransitionRawValue() async throws {
-        mockSlideshowDataSource.fetchResult = SlideshowModel(id: UUID(), name: "X", transitionRawValue: "slide")
+        mockSlideshowDataSource.fetchResult = SlideshowDTO(id: UUID(), name: "X", transitionRawValue: "slide")
         let result = try await sut.fetch(id: UUID())
         XCTAssertEqual(result?.config.transition, .slide)
     }
 
     func testFetch_mapsLoop() async throws {
-        mockSlideshowDataSource.fetchResult = SlideshowModel(id: UUID(), name: "X", loop: false)
+        mockSlideshowDataSource.fetchResult = SlideshowDTO(id: UUID(), name: "X", loop: false)
         let result = try await sut.fetch(id: UUID())
         XCTAssertFalse(result?.config.loop ?? true)
     }
 
     func testFetch_unknownTransitionRawValue_fallsBackToFade() async throws {
-        mockSlideshowDataSource.fetchResult = SlideshowModel(id: UUID(), name: "X", transitionRawValue: "wipe")
+        mockSlideshowDataSource.fetchResult = SlideshowDTO(id: UUID(), name: "X", transitionRawValue: "wipe")
         let result = try await sut.fetch(id: UUID())
         XCTAssertEqual(result?.config.transition, .fade)
     }
@@ -317,73 +308,85 @@ final class SlideshowRepositoryTests: XCTestCase {
     // MARK: - fetchAll() slides mapping
 
     func testFetchAll_mapsSlideCount() async throws {
-        let model = SlideshowModel(id: UUID(), name: "X")
-        model.slides = [
-            SlideModel(id: UUID(), localIdentifier: "a", order: 0, duration: 3.0),
-            SlideModel(id: UUID(), localIdentifier: "b", order: 1, duration: 3.0)
+        mockSlideshowDataSource.fetchAllResult = [
+            SlideshowDTO(id: UUID(), name: "X", slides: [
+                SlideDTO(localIdentifier: "a", order: 0),
+                SlideDTO(localIdentifier: "b", order: 1)
+            ])
         ]
-        mockSlideshowDataSource.fetchAllResult = [model]
         let result = try await sut.fetchAll()
         XCTAssertEqual(result[0].slides.count, 2)
     }
 
     func testFetchAll_mapsSlideLocalIdentifier() async throws {
-        let model = SlideshowModel(id: UUID(), name: "X")
-        model.slides = [SlideModel(id: UUID(), localIdentifier: "slide-id", order: 0, duration: 4.0)]
-        mockSlideshowDataSource.fetchAllResult = [model]
+        mockSlideshowDataSource.fetchAllResult = [
+            SlideshowDTO(id: UUID(), name: "X", slides: [
+                SlideDTO(localIdentifier: "slide-id", order: 0, duration: 4.0)
+            ])
+        ]
         let result = try await sut.fetchAll()
         XCTAssertEqual(result[0].slides[0].localIdentifier, "slide-id")
     }
 
     func testFetchAll_mapsSlideOrder() async throws {
-        let model = SlideshowModel(id: UUID(), name: "X")
-        model.slides = [SlideModel(id: UUID(), localIdentifier: "x", order: 7, duration: 3.0)]
-        mockSlideshowDataSource.fetchAllResult = [model]
+        mockSlideshowDataSource.fetchAllResult = [
+            SlideshowDTO(id: UUID(), name: "X", slides: [
+                SlideDTO(localIdentifier: "x", order: 7)
+            ])
+        ]
         let result = try await sut.fetchAll()
         XCTAssertEqual(result[0].slides[0].order, 7)
     }
 
     func testFetchAll_mapsSlideID() async throws {
         let slideID = UUID()
-        let model = SlideshowModel(id: UUID(), name: "X")
-        model.slides = [SlideModel(id: slideID, localIdentifier: "x", order: 0, duration: 3.0)]
-        mockSlideshowDataSource.fetchAllResult = [model]
+        mockSlideshowDataSource.fetchAllResult = [
+            SlideshowDTO(id: UUID(), name: "X", slides: [
+                SlideDTO(id: slideID, localIdentifier: "x", order: 0)
+            ])
+        ]
         let result = try await sut.fetchAll()
         XCTAssertEqual(result[0].slides[0].id, slideID)
     }
 
     func testFetchAll_mapsSlideTitle() async throws {
-        let model = SlideshowModel(id: UUID(), name: "X")
-        model.slides = [SlideModel(id: UUID(), localIdentifier: "x", order: 0, duration: 3.0, title: "My Title")]
-        mockSlideshowDataSource.fetchAllResult = [model]
+        mockSlideshowDataSource.fetchAllResult = [
+            SlideshowDTO(id: UUID(), name: "X", slides: [
+                SlideDTO(localIdentifier: "x", order: 0, title: "My Title")
+            ])
+        ]
         let result = try await sut.fetchAll()
         XCTAssertEqual(result[0].slides[0].title, "My Title")
     }
 
     func testFetchAll_mapsSlideNilTitle() async throws {
-        let model = SlideshowModel(id: UUID(), name: "X")
-        model.slides = [SlideModel(id: UUID(), localIdentifier: "x", order: 0, duration: 3.0, title: nil)]
-        mockSlideshowDataSource.fetchAllResult = [model]
+        mockSlideshowDataSource.fetchAllResult = [
+            SlideshowDTO(id: UUID(), name: "X", slides: [
+                SlideDTO(localIdentifier: "x", order: 0, title: nil)
+            ])
+        ]
         let result = try await sut.fetchAll()
         XCTAssertNil(result[0].slides[0].title)
     }
 
     func testFetchAll_sortsSlidesByOrder_firstSlideIsFirst() async throws {
-        let model = SlideshowModel(id: UUID(), name: "X")
-        let first = SlideModel(id: UUID(), localIdentifier: "first", order: 0, duration: 3.0)
-        let second = SlideModel(id: UUID(), localIdentifier: "second", order: 1, duration: 3.0)
-        model.slides = [second, first]
-        mockSlideshowDataSource.fetchAllResult = [model]
+        mockSlideshowDataSource.fetchAllResult = [
+            SlideshowDTO(id: UUID(), name: "X", slides: [
+                SlideDTO(localIdentifier: "second", order: 1),
+                SlideDTO(localIdentifier: "first", order: 0)
+            ])
+        ]
         let result = try await sut.fetchAll()
         XCTAssertEqual(result[0].slides[0].localIdentifier, "first")
     }
 
     func testFetchAll_sortsSlidesByOrder_secondSlideIsSecond() async throws {
-        let model = SlideshowModel(id: UUID(), name: "X")
-        let first = SlideModel(id: UUID(), localIdentifier: "first", order: 0, duration: 3.0)
-        let second = SlideModel(id: UUID(), localIdentifier: "second", order: 1, duration: 3.0)
-        model.slides = [second, first]
-        mockSlideshowDataSource.fetchAllResult = [model]
+        mockSlideshowDataSource.fetchAllResult = [
+            SlideshowDTO(id: UUID(), name: "X", slides: [
+                SlideDTO(localIdentifier: "second", order: 1),
+                SlideDTO(localIdentifier: "first", order: 0)
+            ])
+        ]
         let result = try await sut.fetchAll()
         XCTAssertEqual(result[0].slides[1].localIdentifier, "second")
     }
@@ -391,40 +394,36 @@ final class SlideshowRepositoryTests: XCTestCase {
     // MARK: - fetch(id:) slides mapping
 
     func testFetch_mapsSlideCount() async throws {
-        let model = SlideshowModel(id: UUID(), name: "X")
-        model.slides = [
-            SlideModel(id: UUID(), localIdentifier: "a", order: 0, duration: 3.0),
-            SlideModel(id: UUID(), localIdentifier: "b", order: 1, duration: 3.0)
-        ]
-        mockSlideshowDataSource.fetchResult = model
+        mockSlideshowDataSource.fetchResult = SlideshowDTO(id: UUID(), name: "X", slides: [
+            SlideDTO(localIdentifier: "a", order: 0),
+            SlideDTO(localIdentifier: "b", order: 1)
+        ])
         let result = try await sut.fetch(id: UUID())
         XCTAssertEqual(result?.slides.count, 2)
     }
 
     func testFetch_mapsSlideLocalIdentifier() async throws {
-        let model = SlideshowModel(id: UUID(), name: "X")
-        model.slides = [SlideModel(id: UUID(), localIdentifier: "slide-id", order: 0, duration: 4.0)]
-        mockSlideshowDataSource.fetchResult = model
+        mockSlideshowDataSource.fetchResult = SlideshowDTO(id: UUID(), name: "X", slides: [
+            SlideDTO(localIdentifier: "slide-id", order: 0, duration: 4.0)
+        ])
         let result = try await sut.fetch(id: UUID())
         XCTAssertEqual(result?.slides[0].localIdentifier, "slide-id")
     }
 
     func testFetch_sortsSlidesByOrder_firstSlideIsFirst() async throws {
-        let model = SlideshowModel(id: UUID(), name: "X")
-        let first = SlideModel(id: UUID(), localIdentifier: "first", order: 0, duration: 3.0)
-        let second = SlideModel(id: UUID(), localIdentifier: "second", order: 1, duration: 3.0)
-        model.slides = [second, first]
-        mockSlideshowDataSource.fetchResult = model
+        mockSlideshowDataSource.fetchResult = SlideshowDTO(id: UUID(), name: "X", slides: [
+            SlideDTO(localIdentifier: "second", order: 1),
+            SlideDTO(localIdentifier: "first", order: 0)
+        ])
         let result = try await sut.fetch(id: UUID())
         XCTAssertEqual(result?.slides[0].localIdentifier, "first")
     }
 
     func testFetch_sortsSlidesByOrder_secondSlideIsSecond() async throws {
-        let model = SlideshowModel(id: UUID(), name: "X")
-        let first = SlideModel(id: UUID(), localIdentifier: "first", order: 0, duration: 3.0)
-        let second = SlideModel(id: UUID(), localIdentifier: "second", order: 1, duration: 3.0)
-        model.slides = [second, first]
-        mockSlideshowDataSource.fetchResult = model
+        mockSlideshowDataSource.fetchResult = SlideshowDTO(id: UUID(), name: "X", slides: [
+            SlideDTO(localIdentifier: "second", order: 1),
+            SlideDTO(localIdentifier: "first", order: 0)
+        ])
         let result = try await sut.fetch(id: UUID())
         XCTAssertEqual(result?.slides[1].localIdentifier, "second")
     }

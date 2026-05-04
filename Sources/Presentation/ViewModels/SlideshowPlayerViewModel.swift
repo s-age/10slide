@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 
@@ -6,23 +7,26 @@ import Observation
 final class SlideshowPlayerViewModel {
     private(set) var slideshow: Slideshow
     private(set) var currentIndex: Int = 0
-    private(set) var currentImageData: Data?
+    private(set) var currentImage: NSImage?
     private(set) var isPlaying: Bool = false
     private(set) var showFilmstrip: Bool = true
 
     private let loadSlideImageUseCase: any LoadSlideImageUseCaseProtocol
     private let filmstripHideDuration: Duration
+    private let imageDecoder: @Sendable (Data) -> NSImage?
     private var timerTask: Task<Void, Never>?
     private var hideFilmstripTask: Task<Void, Never>?
 
     init(
         slideshow: Slideshow,
         loadSlideImage: any LoadSlideImageUseCaseProtocol,
-        filmstripHideDuration: Duration = .seconds(3)
+        filmstripHideDuration: Duration = .seconds(3),
+        imageDecoder: @escaping @Sendable (Data) -> NSImage? = { NSImage(data: $0) }
     ) {
         self.slideshow = slideshow
         self.loadSlideImageUseCase = loadSlideImage
         self.filmstripHideDuration = filmstripHideDuration
+        self.imageDecoder = imageDecoder
     }
 
     private var currentSlide: Slide? {
@@ -39,7 +43,11 @@ final class SlideshowPlayerViewModel {
         timerTask?.cancel()
         timerTask = Task {
             while !Task.isCancelled, isPlaying {
-                try? await Task.sleep(for: .seconds(duration))
+                do {
+                    try await Task.sleep(for: .seconds(duration))
+                } catch {
+                    break
+                }
                 guard !Task.isCancelled, isPlaying else { break }
                 await next()
             }
@@ -89,15 +97,17 @@ final class SlideshowPlayerViewModel {
 
     func loadCurrentImage() async {
         guard let slide = currentSlide else {
-            currentImageData = nil
+            currentImage = nil
             return
         }
         do {
-            currentImageData = try await loadSlideImageUseCase.execute(
-                localIdentifier: slide.localIdentifier
-            )
+            let data = try await loadSlideImageUseCase.execute(localIdentifier: slide.localIdentifier)
+            let decode = imageDecoder
+            currentImage = await Task.detached(priority: .userInitiated) {
+                decode(data)
+            }.value
         } catch {
-            currentImageData = nil
+            currentImage = nil
         }
     }
 

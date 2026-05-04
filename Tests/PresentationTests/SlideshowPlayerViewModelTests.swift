@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 @testable import TenSlide
 
@@ -42,7 +43,8 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
                 loop: false
             ),
             loadSlideImage: mockLoadSlideImage,
-            filmstripHideDuration: .milliseconds(50)
+            filmstripHideDuration: .milliseconds(50),
+            imageDecoder: { _ in NSImage(size: NSSize(width: 1, height: 1)) }
         )
     }
 
@@ -221,11 +223,9 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
 
     // MARK: - loadCurrentImage()
 
-    func testLoadCurrentImage_whenSlideExists_setsCurrentImageData() async {
-        let data = Data([0x01, 0x02, 0x03])
-        mockLoadSlideImage.executeResult = data
+    func testLoadCurrentImage_whenSlideExists_setsCurrentImage() async {
         await sut.loadCurrentImage()
-        XCTAssertEqual(sut.currentImageData, data)
+        XCTAssertNotNil(sut.currentImage)
     }
 
     func testLoadCurrentImage_callsUseCaseOnce() async {
@@ -233,19 +233,19 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
         XCTAssertEqual(mockLoadSlideImage.executeCallCount, 1)
     }
 
-    func testLoadCurrentImage_withEmptySlides_setsCurrentImageDataToNil() async {
+    func testLoadCurrentImage_withEmptySlides_setsCurrentImageToNil() async {
         sut = SlideshowPlayerViewModel(
             slideshow: Self.makeSlideshow(slides: [], loop: false),
             loadSlideImage: mockLoadSlideImage
         )
         await sut.loadCurrentImage()
-        XCTAssertNil(sut.currentImageData)
+        XCTAssertNil(sut.currentImage)
     }
 
-    func testLoadCurrentImage_whenUseCaseThrows_setsCurrentImageDataToNil() async {
+    func testLoadCurrentImage_whenUseCaseThrows_setsCurrentImageToNil() async {
         mockLoadSlideImage.throwOnExecute = true
         await sut.loadCurrentImage()
-        XCTAssertNil(sut.currentImageData)
+        XCTAssertNil(sut.currentImage)
     }
 
     // MARK: - userDidInteract()

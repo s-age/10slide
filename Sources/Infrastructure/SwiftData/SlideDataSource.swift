@@ -1,27 +1,35 @@
-import SwiftData
 import Foundation
+import SwiftData
 
-final class SlideDataSource: SlideDataSourceProtocol {
-    private let container: ModelContainer
-
-    init(container: ModelContainer) {
-        self.container = container
+@ModelActor
+actor SlideDataSource: SlideDataSourceProtocol {
+    func fetchAll() throws -> [SlideDTO] {
+        let models = try modelContext.fetch(FetchDescriptor<SlideModel>())
+        return models.map { model in
+            SlideDTO(
+                id: model.id,
+                localIdentifier: model.localIdentifier,
+                order: model.order,
+                duration: model.duration,
+                title: model.title
+            )
+        }
     }
 
-    func fetchAll() async throws -> [SlideModel] {
-        let context = ModelContext(container)
-        return try context.fetch(FetchDescriptor<SlideModel>())
+    func save(_ dto: SlideDTO) throws {
+        let model = SlideModel(
+            id: dto.id,
+            localIdentifier: dto.localIdentifier,
+            order: dto.order,
+            duration: dto.duration,
+            title: dto.title
+        )
+        modelContext.insert(model)
+        try modelContext.save()
     }
 
-    func save(_ model: SlideModel) async throws {
-        let context = ModelContext(container)
-        context.insert(model)
-        try context.save()
-    }
-
-    func delete(id: UUID) async throws {
-        let context = ModelContext(container)
-        try context.delete(model: SlideModel.self, where: #Predicate { $0.id == id })
-        try context.save()
+    func delete(id: UUID) throws {
+        try modelContext.delete(model: SlideModel.self, where: #Predicate { $0.id == id })
+        try modelContext.save()
     }
 }

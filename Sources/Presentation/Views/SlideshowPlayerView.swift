@@ -41,8 +41,7 @@ struct SlideshowPlayerView: View {
 
     @ViewBuilder
     private var slideImage: some View {
-        if let data = viewModel.currentImageData,
-           let nsImage = NSImage(data: data) {
+        if let nsImage = viewModel.currentImage {
             Image(nsImage: nsImage)
                 .resizable()
                 .scaledToFit()
