@@ -1,0 +1,175 @@
+tasks:
+  - type: script
+    command: rm -f .claude/tmp/phase2-playback-controls-reviewer
+    done: true
+  - type: pipeline
+    name: phase2-playback-controls-presentation
+    tasks:
+      - type: agent
+        name: phase2-playback-controls-implementer
+        task: >
+          Implement Phase 2 playback controls for the slideshow player.
+
+          Both files are in the Presentation layer — modify them together so
+          they compile as a unit.
+
+
+          ## 1. `Sources/Presentation/Views/FilmstripView.swift`
+
+
+          Add four new stored properties to the struct (after the existing
+          `onSelect` closure):
+
+
+          ```swift
+
+          let isPlaying: Bool
+
+          let onPrevious: () -> Void
+
+          let onPlayPause: () -> Void
+
+          let onNext: () -> Void
+
+          ```
+
+
+          In the settings bar `HStack`, insert a centred playback-control group
+          between the
+
+          duration label and the transition label:
+
+
+          ```swift
+
+          Spacer()
+
+
+          HStack(spacing: 16) {
+              Button(action: onPrevious) {
+                  Image(systemName: "backward.fill")
+              }
+              Button(action: onPlayPause) {
+                  Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+              }
+              Button(action: onNext) {
+                  Image(systemName: "forward.fill")
+              }
+          }
+
+          .buttonStyle(.plain)
+
+          .font(.callout)
+
+          .foregroundStyle(.primary)
+
+
+          Spacer()
+
+          ```
+
+
+          Important: `FilmstripView` must NOT import or reference
+          `SlideshowPlayerViewModel`.
+
+          All behaviour is driven purely through the closure parameters.
+
+
+          ## 2. `Sources/Presentation/Views/SlideshowPlayerView.swift`
+
+
+          Wire up the new `FilmstripView` closure parameters at the call site:
+
+
+          ```swift
+
+          FilmstripView(
+              slides: viewModel.slideshow.slides,
+              currentIndex: viewModel.currentIndex,
+              duration: viewModel.slideshow.config.duration,
+              transition: viewModel.slideshow.config.transition,
+              isPlaying: viewModel.isPlaying,
+              onSelect: { index in Task { await viewModel.jumpTo(index: index) } },
+              onPrevious: { Task { await viewModel.previous() } },
+              onPlayPause: {
+                  if viewModel.isPlaying { viewModel.pause() } else { viewModel.play() }
+              },
+              onNext: { Task { await viewModel.next() } }
+          )
+
+          ```
+
+
+          Add keyboard shortcuts using `.onKeyPress` (available on macOS 14+,
+          safe for this
+
+          macOS 26 target). Attach them to the outermost view so they receive
+          focus:
+
+
+          ```swift
+
+          .focusable()
+
+          .onKeyPress(.space) {
+              if viewModel.isPlaying { viewModel.pause() } else { viewModel.play() }
+              return .handled
+          }
+
+          .onKeyPress(.leftArrow) {
+              Task { await viewModel.previous() }
+              return .handled
+          }
+
+          .onKeyPress(.rightArrow) {
+              Task { await viewModel.next() }
+              return .handled
+          }
+
+          ```
+
+
+          `Sources/Presentation/ViewModels/SlideshowPlayerViewModel.swift`
+          requires NO changes.
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Write
+          - Edit
+          - Bash
+        done: true
+      - type: agent
+        name: phase2-playback-controls-reviewer
+        task: |
+          target_file_path: Sources/Presentation/Views/FilmstripView.swift
+          also_review: Sources/Presentation/Views/SlideshowPlayerView.swift
+          ng_output_path: .claude/tmp/phase2-playback-controls-reviewer
+        skill: review-arch
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Bash
+        rejected:
+          to: phase2-playback-controls-implementer
+          max_retries: 3
+        done: true
+      - type: script
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
+        rejected:
+          to: phase2-playback-controls-implementer
+          max_retries: 3
+        done: true
+    done: true
+  - type: agent
+    name: phase2-playback-controls-implementer
+    task: >
+      Implementation complete and build passes. Commit the changes with an
+      appropriate
+
+      conventional commit message (e.g. feat(presentation): add playback
+      controls and keyboard shortcuts).
+    model: haiku
+    allowed_tools:
+      - Read
+      - Bash
+    done: true
