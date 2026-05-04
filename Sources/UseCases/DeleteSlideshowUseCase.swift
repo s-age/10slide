@@ -1,6 +1,6 @@
 import Foundation
 
-final class DeleteSlideshowUseCase: DeleteSlideshowUseCaseProtocol {
+final class DeleteSlideshowUseCase: DeleteSlideshowUseCaseProtocol, Sendable {
     private let slideshowRepository: any SlideshowRepositoryProtocol
 
     init(slideshowRepository: any SlideshowRepositoryProtocol) {

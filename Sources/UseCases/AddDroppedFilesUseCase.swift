@@ -1,6 +1,6 @@
 import Foundation
 
-final class AddDroppedFilesUseCase: AddDroppedFilesUseCaseProtocol {
+final class AddDroppedFilesUseCase: AddDroppedFilesUseCaseProtocol, Sendable {
     private let imageRepository: any ImageRepositoryProtocol
 
     init(imageRepository: any ImageRepositoryProtocol) {

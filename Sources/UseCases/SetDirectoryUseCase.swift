@@ -1,6 +1,6 @@
 import Foundation
 
-final class SetDirectoryUseCase: SetDirectoryUseCaseProtocol {
+final class SetDirectoryUseCase: SetDirectoryUseCaseProtocol, Sendable {
     private let imageRepository: any ImageRepositoryProtocol
 
     init(imageRepository: any ImageRepositoryProtocol) {

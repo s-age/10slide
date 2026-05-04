@@ -1,6 +1,6 @@
 import Foundation
 
-final class LoadThumbnailUseCase: LoadThumbnailUseCaseProtocol {
+final class LoadThumbnailUseCase: LoadThumbnailUseCaseProtocol, Sendable {
     private let imageRepository: any ImageRepositoryProtocol
 
     init(imageRepository: any ImageRepositoryProtocol) {

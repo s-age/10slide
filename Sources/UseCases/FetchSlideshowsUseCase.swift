@@ -1,4 +1,4 @@
-final class FetchSlideshowsUseCase: FetchSlideshowsUseCaseProtocol {
+final class FetchSlideshowsUseCase: FetchSlideshowsUseCaseProtocol, Sendable {
     private let slideshowRepository: any SlideshowRepositoryProtocol
 
     init(slideshowRepository: any SlideshowRepositoryProtocol) {

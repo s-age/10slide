@@ -51,17 +51,21 @@ let slides = try await slideRepository.fetchAll()   // NG: always go through a u
 **Use case with orchestration**
 
 ```swift
-// Good — coordinates multiple repositories and adds domain logic
+// Good — delegates entity construction to the domain factory; use case only orchestrates
 final class CreateSlideshowUseCase: CreateSlideshowUseCaseProtocol {
-    private let slideRepository: any SlideRepositoryProtocol
-    private let permissionRepository: any PermissionRepositoryProtocol
+    private let slideshowRepository: any SlideshowRepositoryProtocol
 
-    func execute(name: String, identifiers: [String]) async throws -> Slideshow {
-        try await permissionRepository.requirePhotosAccess()
-        let slides = identifiers.enumerated().map { idx, id in
-            Slide(id: UUID(), localIdentifier: id, order: idx, duration: 3.0, title: nil)
-        }
-        // persist and return...
+    func execute(name: String, identifiers: [String], config: SlideshowConfig) async throws -> Slideshow {
+        let slideshow = Slideshow.create(name: name, localIdentifiers: identifiers, config: config)
+        try await slideshowRepository.save(slideshow)
+        return slideshow
+    }
+}
+
+// Bad — use case hard-codes entity construction rules (UUID assignment, ordering, defaults)
+func execute(name: String, identifiers: [String]) async throws -> Slideshow {
+    let slides = identifiers.enumerated().map { idx, id in
+        Slide(id: UUID(), localIdentifier: id, order: idx, duration: 3.0, title: nil)   // NG: domain logic
     }
 }
 ```

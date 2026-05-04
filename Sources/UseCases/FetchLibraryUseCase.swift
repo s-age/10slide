@@ -1,6 +1,6 @@
 import Foundation
 
-final class FetchLibraryUseCase: FetchLibraryUseCaseProtocol {
+final class FetchLibraryUseCase: FetchLibraryUseCaseProtocol, Sendable {
     private let imageRepository: any ImageRepositoryProtocol
 
     init(imageRepository: any ImageRepositoryProtocol) {

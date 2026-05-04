@@ -1,6 +1,6 @@
 import Foundation
 
-final class UpdateSlideshowUseCase: UpdateSlideshowUseCaseProtocol {
+final class UpdateSlideshowUseCase: UpdateSlideshowUseCaseProtocol, Sendable {
     private let slideshowRepository: any SlideshowRepositoryProtocol
 
     init(slideshowRepository: any SlideshowRepositoryProtocol) {
@@ -8,13 +8,7 @@ final class UpdateSlideshowUseCase: UpdateSlideshowUseCaseProtocol {
     }
 
     func execute(slideshow: Slideshow, name: String, localIdentifiers: [String]) async throws -> Slideshow {
-        let slideDuration = slideshow.config.duration.seconds ?? 0
-        let slides = localIdentifiers.enumerated().map { index, id in
-            Slide(id: UUID(), localIdentifier: id, order: index, duration: slideDuration, title: nil)
-        }
-        var updated = slideshow
-        updated.name = name
-        updated.slides = slides
+        let updated = slideshow.updating(name: name, localIdentifiers: localIdentifiers)
         try await slideshowRepository.save(updated)
         return updated
     }

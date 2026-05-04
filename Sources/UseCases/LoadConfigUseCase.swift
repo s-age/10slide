@@ -1,6 +1,6 @@
 import Foundation
 
-final class LoadConfigUseCase: LoadConfigUseCaseProtocol {
+final class LoadConfigUseCase: LoadConfigUseCaseProtocol, Sendable {
     private let configRepository: any ConfigRepositoryProtocol
 
     init(configRepository: any ConfigRepositoryProtocol) {

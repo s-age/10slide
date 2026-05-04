@@ -1,6 +1,6 @@
 import Foundation
 
-final class SaveConfigUseCase: SaveConfigUseCaseProtocol {
+final class SaveConfigUseCase: SaveConfigUseCaseProtocol, Sendable {
     private let configRepository: any ConfigRepositoryProtocol
 
     init(configRepository: any ConfigRepositoryProtocol) {

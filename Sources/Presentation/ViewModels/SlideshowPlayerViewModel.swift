@@ -68,11 +68,7 @@ final class SlideshowPlayerViewModel {
     }
 
     func next() async {
-        if let nextIndex = advanceSlideUseCase.execute(
-            currentIndex: currentIndex,
-            slideCount: slideshow.slides.count,
-            loop: slideshow.config.loop
-        ) {
+        if let nextIndex = advanceSlideUseCase.execute(slideshow: slideshow, currentIndex: currentIndex) {
             currentIndex = nextIndex
             await loadCurrentImage()
         } else {
@@ -81,11 +77,7 @@ final class SlideshowPlayerViewModel {
     }
 
     func previous() async {
-        if let prevIndex = advanceSlideUseCase.executePrevious(
-            currentIndex: currentIndex,
-            slideCount: slideshow.slides.count,
-            loop: slideshow.config.loop
-        ) {
+        if let prevIndex = advanceSlideUseCase.executePrevious(slideshow: slideshow, currentIndex: currentIndex) {
             currentIndex = prevIndex
             await loadCurrentImage()
         }

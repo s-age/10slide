@@ -1,6 +1,6 @@
 import Foundation
 
-final class FetchSlideshowUseCase: FetchSlideshowUseCaseProtocol {
+final class FetchSlideshowUseCase: FetchSlideshowUseCaseProtocol, Sendable {
     private let slideshowRepository: any SlideshowRepositoryProtocol
 
     init(slideshowRepository: any SlideshowRepositoryProtocol) {

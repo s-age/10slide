@@ -1,9 +1,7 @@
 import Foundation
 
-final class UpdateSlideshowConfigUseCase: UpdateSlideshowConfigUseCaseProtocol {
+final class UpdateSlideshowConfigUseCase: UpdateSlideshowConfigUseCaseProtocol, Sendable {
     func execute(slideshow: Slideshow, config: SlideshowConfig) -> Slideshow {
-        var updated = slideshow
-        updated.config = config
-        return updated
+        slideshow.applying(config: config)
     }
 }

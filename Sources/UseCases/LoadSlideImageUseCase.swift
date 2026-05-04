@@ -1,6 +1,6 @@
 import Foundation
 
-final class LoadSlideImageUseCase: LoadSlideImageUseCaseProtocol {
+final class LoadSlideImageUseCase: LoadSlideImageUseCaseProtocol, Sendable {
     private let imageRepository: any ImageRepositoryProtocol
 
     init(imageRepository: any ImageRepositoryProtocol) {
