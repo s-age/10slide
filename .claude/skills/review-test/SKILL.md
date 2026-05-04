@@ -21,7 +21,7 @@ flowchart TD
 
     ReadBoth --> AnalyzeSource["Analyze source file\nIdentify: public methods, branches,\nerror paths, injected dependencies"]
 
-    AnalyzeSource --> RunTests["Run tests\nxcodebuild test -scheme 10slide\n-destination 'platform=iOS Simulator,name=iPhone 16'\n-only-testing TenSlideTests/<TestClass>"]
+    AnalyzeSource --> RunTests["Run tests\nxcodebuild test -scheme 10slide\n-destination 'platform=macOS'\n-only-testing TenSlideTests/<TestClass>"]
     RunTests --> NoteResults[Note passing / failing tests]
 
     NoteResults --> AuditCoverage["Audit coverage\n- At least one test per public method?\n- Happy path covered?\n- Each branch / conditional covered?\n- Error/throws paths covered?"]

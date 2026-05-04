@@ -59,7 +59,7 @@ flowchart TD
 ## Verification
 
 ```bash
-xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+xcodebuild -scheme 10slide -destination 'platform=macOS' build
 ```
 
 Consult `.claude/rules/arch.md` for the full import flow and `.claude/rules/arch-<layer>.md` for per-layer details.
