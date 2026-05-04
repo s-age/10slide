@@ -2,7 +2,15 @@
 type: problem
 context: when using SwiftData ModelContext in a Sendable class under Swift 6 strict concurrency
 keywords: [SwiftData, ModelContext, Swift6, region-isolation, Mutex, Sendable, insert]
+superseded-by:
+  - knowledge/infrastructure/swiftdata-modelactor-pattern.md
+  - knowledge/infrastructure/swiftdata-modelactor-dto.md
+  - knowledge/testing/swiftdata-modelactor-testing.md
 ---
+
+> ⚠️ **Superseded.** The `Mutex<ModelContext>` split-read/write pattern described below has been
+> replaced by `@ModelActor`. See `swiftdata-modelactor-pattern.md` for the current approach.
+> This file is retained for historical context only — do **not** implement this pattern.
 
 ## What
 
