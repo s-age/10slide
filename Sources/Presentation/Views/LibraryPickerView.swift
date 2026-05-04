@@ -102,11 +102,7 @@ struct LibraryPickerView: View {
     }
 
     private func toggleSelection(_ identifier: String) {
-        if createViewModel.selectedIdentifiers.contains(identifier) {
-            createViewModel.selectedIdentifiers.remove(identifier)
-        } else {
-            createViewModel.selectedIdentifiers.insert(identifier)
-        }
+        createViewModel.toggleSelection(identifier)
     }
 }
 

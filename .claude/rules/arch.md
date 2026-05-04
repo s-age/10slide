@@ -102,7 +102,7 @@ let repo = SlideRepository(...)   // should be `any SlideRepositoryProtocol`
 ## Verify after every change
 
 ```bash
-xcodebuild -scheme 10slide -destination 'platform=iOS Simulator,name=iPhone 16' build
+xcodebuild -scheme 10slide -destination 'platform=macOS' build
 ```
 
 SwiftLint runs automatically as a build phase. Fix all errors and warnings before completing.

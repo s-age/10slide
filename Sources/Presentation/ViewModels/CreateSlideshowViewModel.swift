@@ -4,7 +4,7 @@ import Observation
 @Observable
 @MainActor
 final class CreateSlideshowViewModel {
-    var selectedIdentifiers: Set<String> = []
+    private(set) var selectedIdentifiers: Set<String> = []
     var slideshowName: String = ""
     var selectedDuration: SlideDuration = .five
     var selectedTransition: TransitionType = .fade
@@ -15,6 +15,14 @@ final class CreateSlideshowViewModel {
 
     init(createSlideshow: any CreateSlideshowUseCaseProtocol) {
         self.createSlideshowUseCase = createSlideshow
+    }
+
+    func toggleSelection(_ identifier: String) {
+        if selectedIdentifiers.contains(identifier) {
+            selectedIdentifiers.remove(identifier)
+        } else {
+            selectedIdentifiers.insert(identifier)
+        }
     }
 
     func createSlideshow() async -> Slideshow? {

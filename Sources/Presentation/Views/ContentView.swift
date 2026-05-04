@@ -19,12 +19,10 @@ struct ContentView: View {
 
     var body: some View {
         if let slideshow = selectedSlideshow {
-            SlideshowPlayerView(viewModel: makeSlideshowPlayerViewModel(slideshow))
-                .toolbar {
-                    ToolbarItem(placement: .navigation) {
-                        Button("Back") { selectedSlideshow = nil }
-                    }
-                }
+            SlideshowPlayerView(
+                viewModel: makeSlideshowPlayerViewModel(slideshow),
+                onBack: { selectedSlideshow = nil }
+            )
         } else {
             LibraryPickerView(
                 libraryViewModel: libraryViewModel,

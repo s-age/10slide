@@ -1,0 +1,93 @@
+tasks:
+  - type: script
+    command: rm -f .claude/tmp/phase1-slideshow-ui-polish-reviewer
+    done: true
+  - type: pipeline
+    name: phase1-slideshow-ui-polish
+    tasks:
+      - type: agent
+        name: phase1-slideshow-ui-polish-implementer
+        task: >
+          Implement the three slideshow UI polish improvements from
+
+          plans/phase1-slideshow-ui-polish/brief.md.
+
+
+          ## Files to modify
+
+
+          ### 1. Sources/Presentation/Views/ContentView.swift
+
+          - Remove the Back button ToolbarItem from the `.toolbar` modifier
+
+          - Pass an `onBack` closure through to SlideshowPlayerView so it can
+            trigger navigation back from there
+
+          ### 2. Sources/Presentation/Views/SlideshowPlayerView.swift
+
+          - Accept the `onBack` closure passed down from ContentView
+
+          - Add a floating Back button as a ZStack overlay anchored to the
+            top-right corner of the window
+          - Tie Back button visibility to `viewModel.showFilmstrip` — show when
+            the filmstrip is visible, hide at the same time; no new state variable
+          - Update the FilmstripView(…) call to pass two new parameters:
+            `duration` (seconds per slide) and `transition` (TransitionStyle or
+            equivalent), sourced from the slideshow config via the ViewModel
+
+          ### 3. Sources/Presentation/Views/FilmstripView.swift
+
+          - Add two new parameters: `duration: Double` and `transition` (use
+            whatever type SlideshowConfig uses for its transition property)
+          - Add a compact display area showing duration and transition name —
+            either above the thumbnail strip or integrated into the bar header
+          - Adjust layout so everything still looks clean; expand
+          `.frame(height:
+            80)` slightly if required but keep it compact
+
+          ## Key design decisions (from brief)
+
+          - Removing the toolbar Back button and adding an overlay Back button
+          in
+            SlideshowPlayerView solve items 1 and 2 simultaneously — no extra state
+          - FilmstripView gets exactly 2 new parameters; its sole caller
+            (SlideshowPlayerView) must be updated in the same change
+
+          Read each file before editing to understand its current structure.
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Write
+          - Edit
+          - Bash
+        done: true
+      - type: agent
+        name: phase1-slideshow-ui-polish-reviewer
+        task: |
+          target_file_path: Sources/Presentation/Views/
+          ng_output_path: .claude/tmp/phase1-slideshow-ui-polish-reviewer
+        skill: review-arch
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Bash
+        rejected:
+          to: phase1-slideshow-ui-polish-implementer
+          max_retries: 3
+        done: true
+      - type: script
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
+        rejected:
+          to: phase1-slideshow-ui-polish-implementer
+          max_retries: 3
+        done: true
+    done: true
+  - type: agent
+    name: phase1-slideshow-ui-polish-implementer
+    task: |
+      Implementation complete and build passes. Commit the changes with an
+      appropriate conventional commit message (e.g. feat(presentation): ...).
+    model: haiku
+    allowed_tools:
+      - Read
+      - Bash

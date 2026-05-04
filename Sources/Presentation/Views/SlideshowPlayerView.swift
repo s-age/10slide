@@ -2,9 +2,11 @@ import SwiftUI
 
 struct SlideshowPlayerView: View {
     @State private var viewModel: SlideshowPlayerViewModel
+    let onBack: () -> Void
 
-    init(viewModel: SlideshowPlayerViewModel) {
+    init(viewModel: SlideshowPlayerViewModel, onBack: @escaping () -> Void) {
         self._viewModel = State(initialValue: viewModel)
+        self.onBack = onBack
     }
 
     var body: some View {
@@ -21,11 +23,27 @@ struct SlideshowPlayerView: View {
                 FilmstripView(
                     slides: viewModel.slideshow.slides,
                     currentIndex: viewModel.currentIndex,
+                    duration: viewModel.slideshow.config.duration.seconds ?? 0,
+                    transition: viewModel.slideshow.config.transition,
                     onSelect: { index in
                         Task { await viewModel.jumpTo(index: index) }
                     }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            if viewModel.showFilmstrip {
+                Button {
+                    onBack()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                        .padding(16)
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.5), value: viewModel.currentIndex)
