@@ -1,6 +1,6 @@
 # 10slide
 
-SwiftUI slideshow app for macOS (Swift 6.0, macOS 26).
+SwiftUI slideshow app for macOS (Swift 6.1, macOS 26).
 
 ## Overview
 

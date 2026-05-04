@@ -31,7 +31,7 @@ Presentation → UseCases → Repositories → Infrastructure
 
 - macOS 26+
 - Xcode 26+
-- Swift 6.0
+- Swift 6.1
 
 ## Building
 
