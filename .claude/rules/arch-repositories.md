@@ -3,42 +3,69 @@ paths:
   - 'Sources/Repositories/**/*.swift'
 ---
 
-Wraps infrastructure data sources into domain-meaningful operations. Converts DTOs ↔ domain entities. Never exposes raw SwiftData models outside this layer.
+Wraps the generic SwiftData store into domain-meaningful operations. Owns `@Model` types and query descriptors. Converts `@Model` instances → domain entities via transform closures. Never exposes `@Model` types outside this layer.
 
 ## Directory layout
 
 ```
 Repositories/
-├── Implementations/   # Concrete classes conforming to protocols
-└── Protocols/         # *RepositoryProtocol contracts consumed by UseCases
+├── Models/          # @Model classes (SwiftData persistence schema)
+├── Implementations/ # Concrete classes conforming to protocols
+└── Protocols/       # *RepositoryProtocol contracts consumed by UseCases
 ```
 
 ## Import Rules
 
 | May import | Must NOT import |
 |-----------|----------------|
-| `Foundation`, `Protocols/` (intra), `Domain/Entities` | `SwiftUI`, `UIKit`, `SwiftData` |
-| `Infrastructure/Protocols/` (data source protocols) | `Infrastructure` concrete classes directly |
-| | `UseCases` — dependency flows upward only |
+| `Foundation`, `SwiftData`, `Domain/Entities` | `SwiftUI`, `UIKit` |
+| `Infrastructure/Protocols/` (`SwiftDataStoreProtocol`, etc.) | `Infrastructure` concrete classes directly |
+| `Protocols/` (intra-layer) | `UseCases` — dependency flows upward only |
 
-> Repositories depend on infrastructure **protocols** (`*DataSourceProtocol`), never on concrete classes.
+> `SwiftData` is allowed here because this layer owns `@Model` types, builds `FetchDescriptor`s, and writes `#Predicate` expressions. It never exposes these types to callers — only domain entities cross the layer boundary.
 
 ## Patterns
 
-**DTO → entity conversion** — convert inside the repository; DTOs never leak to callers
+**fetch with transform** — build the descriptor here; pass a transform closure to stay inside the actor boundary
 
 ```swift
-// Good — entity returned, DTO stays internal
+// Good — @Model stays inside the store actor; entity is returned
 func fetchAll() async throws -> [Slide] {
-    let models = try await slideDataSource.fetchAll()
-    return models.map {
+    try await store.fetch(FetchDescriptor<SlideModel>()) {
         Slide(id: $0.id, localIdentifier: $0.localIdentifier,
               order: $0.order, duration: $0.duration, title: $0.title)
     }
 }
 
-// Bad — leaking SwiftData model to the caller
-func fetchAll() async throws -> [SlideModel] { ... }   // NG: DTO must not cross this boundary
+// Bad — leaking @Model to the caller
+func fetchAll() async throws -> [SlideModel] { ... }   // NG: @Model must not cross this boundary
+```
+
+**write for mutations** — upsert and other multi-step writes use `store.write(_:)` to execute atomically inside the actor
+
+```swift
+// Good — query building, mutation, and save happen in one actor call
+func save(_ slideshow: Slideshow) async throws {
+    let id = slideshow.id
+    try await store.write { context in
+        let descriptor = FetchDescriptor<SlideshowModel>(predicate: #Predicate { $0.id == id })
+        if let existing = try context.fetch(descriptor).first {
+            existing.name = slideshow.name
+            // ...
+        } else {
+            context.insert(SlideshowModel(...))
+        }
+        try context.save()
+    }
+}
+```
+
+**delete** — use `store.delete(_:where:)` for single-predicate deletes (auto-saves)
+
+```swift
+func delete(id: UUID) async throws {
+    try await store.delete(SlideshowModel.self, where: #Predicate { $0.id == id })
+}
 ```
 
 **Protocol placement** — every repository protocol lives in `Protocols/`, never in the implementation file
@@ -52,24 +79,24 @@ protocol SlideRepositoryProtocol: Sendable {
 }
 ```
 
-**Dependency injection** — inject data source protocols, not concrete classes
+**Dependency injection** — inject `SwiftDataStoreProtocol`, not the concrete `SwiftDataStore`
 
 ```swift
 // Good
 final class SlideRepository: SlideRepositoryProtocol {
-    private let slideDataSource: any SlideDataSourceProtocol
+    private let store: any SwiftDataStoreProtocol
 
-    init(slideDataSource: any SlideDataSourceProtocol) {
-        self.slideDataSource = slideDataSource
+    init(store: any SwiftDataStoreProtocol) {
+        self.store = store
     }
 }
 ```
 
 ## Prohibitions
 
-- Never import `SwiftData` directly — access persistence through `*DataSourceProtocol`
 - Never import `SwiftUI` or `UIKit`
 - Never import from `UseCases` — dependency flows upward only
 - Never add business logic (domain rules, cross-entity orchestration)
 - Never define a protocol in an implementation file — protocols live in `Protocols/`
-- Never return DTOs (`*Model`) from protocol methods — always return domain entities
+- Never return `@Model` types from protocol methods — always return domain entities
+- Never place `@Model` types outside `Models/` within this layer

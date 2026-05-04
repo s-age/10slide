@@ -99,6 +99,10 @@ final class SlideRepository: SlideRepositoryProtocol { ... }
 let repo = SlideRepository(...)   // should be `any SlideRepositoryProtocol`
 ```
 
+## Xcode project file
+
+`Sources/` is registered as a `PBXFileSystemSynchronizedRootGroup` in the `.xcodeproj`. Any `.swift` file created or deleted under `Sources/` is automatically included in or excluded from the build — no manual edits to `project.pbxproj` are needed.
+
 ## Verify after every change
 
 ```bash

@@ -5,16 +5,14 @@ final class InfrastructureContainer {
     enum Error: Swift.Error { case missingApplicationSupportDirectory }
 
     let modelContainer: ModelContainer
+    let swiftDataStore: any SwiftDataStoreProtocol
     let imageDataSource: any ImageDataSourceProtocol
-    let slideDataSource: any SlideDataSourceProtocol
-    let slideshowDataSource: any SlideshowDataSourceProtocol
     let configDataSource: any ConfigDataSourceProtocol
 
     init() throws {
-        modelContainer = try ModelContainer(for: SlideModel.self, SlideshowModel.self)
+        modelContainer = try ModelContainer(for: SlideshowModel.self, SlideModel.self)
+        swiftDataStore = SwiftDataStore(modelContainer: modelContainer)
         imageDataSource = FileSystemImageDataSource()
-        slideDataSource = SlideDataSource(modelContainer: modelContainer)
-        slideshowDataSource = SlideshowDataSource(modelContainer: modelContainer)
         guard let appSupport = FileManager.default.urls(
             for: .applicationSupportDirectory, in: .userDomainMask
         ).first else {

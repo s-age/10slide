@@ -1,37 +1,39 @@
 import Foundation
+import SwiftData
 
 final class SlideRepository: SlideRepositoryProtocol {
-    private let slideDataSource: any SlideDataSourceProtocol
+    private let store: any SwiftDataStoreProtocol
 
-    init(slideDataSource: any SlideDataSourceProtocol) {
-        self.slideDataSource = slideDataSource
+    init(store: any SwiftDataStoreProtocol) {
+        self.store = store
     }
 
     func fetchAll() async throws -> [Slide] {
-        let dtos = try await slideDataSource.fetchAll()
-        return dtos.map { dto in
-            Slide(
-                id: dto.id,
-                localIdentifier: dto.localIdentifier,
-                order: dto.order,
-                duration: dto.duration,
-                title: dto.title
-            )
+        try await store.fetch(FetchDescriptor<SlideModel>()) {
+            Slide(id: $0.id, localIdentifier: $0.localIdentifier, order: $0.order, duration: $0.duration, title: $0.title)
         }
     }
 
     func save(_ slide: Slide, in slideshowID: UUID) async throws {
-        let dto = SlideDTO(
-            id: slide.id,
-            localIdentifier: slide.localIdentifier,
-            order: slide.order,
-            duration: slide.duration,
-            title: slide.title
-        )
-        try await slideDataSource.save(dto)
+        let id = slide.id
+        let localIdentifier = slide.localIdentifier
+        let order = slide.order
+        let duration = slide.duration
+        let title = slide.title
+        try await store.write { context in
+            let model = SlideModel(
+                id: id,
+                localIdentifier: localIdentifier,
+                order: order,
+                duration: duration,
+                title: title
+            )
+            context.insert(model)
+            try context.save()
+        }
     }
 
     func delete(id: UUID) async throws {
-        try await slideDataSource.delete(id: id)
+        try await store.delete(SlideModel.self, where: #Predicate { $0.id == id })
     }
 }

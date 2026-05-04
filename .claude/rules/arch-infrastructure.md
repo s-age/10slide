@@ -9,11 +9,10 @@ The lowest layer — the only place that may directly use persistence (SwiftData
 
 | Path | Role |
 |------|------|
-| `SwiftData/` | `SlideDataSource` — SwiftData-backed implementation |
-| `SwiftData/DTO/` | `@Model` classes (`SlideModel`, `SlideshowModel`) — raw persistence schema |
+| `SwiftData/` | `SwiftDataStore` — generic `@ModelActor` store; executes fetch/delete/write on `ModelContext` |
 | `Image/` | `ImageDataSource` — Photos framework access |
 | `Image/DTO/` | Raw transport types (`ImageDTO`) returned from adapters |
-| `Protocols/` | `*DataSourceProtocol` — contracts consumed by `Repositories` |
+| `Protocols/` | `*Protocol` contracts consumed by `Repositories` |
 
 ## Import Rules
 
@@ -24,52 +23,30 @@ The lowest layer — the only place that may directly use persistence (SwiftData
 
 > **Exception**: `TenSlideApp.swift` in `App/` may import `SwiftData` solely to pass `ModelContainer` to the SwiftUI environment.
 
-## DTO placement
-
-DTOs live in `*/DTO/` subdirectories and are either SwiftData `@Model` classes or plain `Sendable` structs. They are internal to this layer — the `Repositories` layer depends on them only through protocol return types.
-
-```swift
-// Good — DTO is internal; protocol exposes it as a return type
-protocol SlideDataSourceProtocol: Sendable {
-    func fetchAll() async throws -> [SlideModel]   // SlideModel is the DTO
-}
-
-// Bad — repository holds a concrete SwiftData model directly
-final class SlideRepository {
-    private let model: SlideModel   // NG: repositories work through protocols
-}
-```
-
-## Adapter pattern
-
-Each infrastructure capability is a `final class` implementing a protocol from `Protocols/`. No bare function exports.
-
-```swift
-// Good
-final class SlideDataSource: SlideDataSourceProtocol {
-    private let container: ModelContainer
-    init(container: ModelContainer) { self.container = container }
-    func fetchAll() async throws -> [SlideModel] { ... }
-}
-
-// Bad — standalone function bypasses DI and the protocol boundary
-func fetchAllSlides(container: ModelContainer) async throws -> [SlideModel] { ... }
-```
-
-## SwiftData concurrency — `@ModelActor` + DTO
+## SwiftData concurrency — generic `@ModelActor` store
 
 `ModelContext` is thread-bound. The correct Swift 6 approach is `@ModelActor actor`, which synthesizes `init(modelContainer:)` and pins all model access to one executor. Never wrap `ModelContext` in a `Mutex`.
 
-Convert `@Model` instances to **Sendable DTO structs** inside the actor before returning across actor boundaries. `@Model` classes are non-Sendable and must not cross the actor boundary.
+`SwiftDataStore` is a thin generic actor that exposes three operations. `@Model` types live in `Repositories/Models/` — Infra works with them only through generic `PersistentModel` constraints.
 
 ```swift
-// Good — @ModelActor actor with DTO conversion
+// Good — generic actor; Repositories supply the concrete T and the transform
 @ModelActor
-actor SlideDataSource: SlideDataSourceProtocol {
-    func fetchAll() throws -> [SlideDTO] {
-        let descriptor = FetchDescriptor<SlideModel>()
-        let models = try modelContext.fetch(descriptor)
-        return models.map { SlideDTO(id: $0.id, order: $0.order) }
+actor SwiftDataStore: SwiftDataStoreProtocol {
+    func fetch<T: PersistentModel, R: Sendable>(
+        _ descriptor: FetchDescriptor<T>,
+        transform: @Sendable (T) throws -> R
+    ) throws -> [R] {
+        try modelContext.fetch(descriptor).map(transform)
+    }
+
+    func delete<T: PersistentModel>(_ type: T.Type, where predicate: Predicate<T>) throws {
+        try modelContext.delete(model: type, where: predicate)
+        try modelContext.save()
+    }
+
+    func write(_ work: @Sendable (ModelContext) throws -> Void) throws {
+        try work(modelContext)
     }
 }
 
@@ -79,9 +56,18 @@ final class SlideDataSource {
 }
 ```
 
-DTO structs live in `SwiftData/DTO/` alongside `@Model` classes:
-- `SlideModel` (`@Model`) — persistence schema, stays inside the actor
-- `SlideDTO` (`Sendable struct`) — crosses actor boundaries, consumed by Repositories
+## Adapter pattern
+
+Each infrastructure capability implements a protocol from `Protocols/`. No bare function exports.
+
+```swift
+// Good — protocol-backed actor in SwiftData/
+@ModelActor
+actor SwiftDataStore: SwiftDataStoreProtocol { ... }
+
+// Bad — standalone function bypasses DI and the protocol boundary
+func fetchAllSlides(container: ModelContainer) async throws -> [Slide] { ... }
+```
 
 ## Blocking work offload
 
@@ -160,5 +146,5 @@ options.deliveryMode = .opportunistic   // NG: callback fires twice → double r
 - Never convert DTOs to domain entities here — that belongs in `Repositories`
 - Never add business logic (validation, cross-entity rules)
 - Never wrap `ModelContext` in a `Mutex` — use `@ModelActor` actor
-- Never return `@Model` classes across actor boundaries — convert to Sendable DTOs first
+- Never define domain-specific query logic here — `FetchDescriptor` and `#Predicate` belong in `Repositories`
 - Never use `PHAccessLevel.readOnly` — it does not exist
