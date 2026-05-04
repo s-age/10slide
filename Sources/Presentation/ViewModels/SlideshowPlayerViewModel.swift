@@ -12,6 +12,7 @@ final class SlideshowPlayerViewModel {
 
     private let loadSlideImageUseCase: any LoadSlideImageUseCaseProtocol
     private let updateSlideshowConfigUseCase: any UpdateSlideshowConfigUseCaseProtocol
+    private let advanceSlideUseCase: any AdvanceSlideUseCaseProtocol
     private let filmstripHideDuration: Duration
     private var timerTask: Task<Void, Never>?
     private var hideFilmstripTask: Task<Void, Never>?
@@ -20,11 +21,13 @@ final class SlideshowPlayerViewModel {
         slideshow: Slideshow,
         loadSlideImage: any LoadSlideImageUseCaseProtocol,
         updateSlideshowConfig: any UpdateSlideshowConfigUseCaseProtocol,
+        advanceSlide: any AdvanceSlideUseCaseProtocol,
         filmstripHideDuration: Duration = .seconds(3)
     ) {
         self.slideshow = slideshow
         self.loadSlideImageUseCase = loadSlideImage
         self.updateSlideshowConfigUseCase = updateSlideshowConfig
+        self.advanceSlideUseCase = advanceSlide
         self.filmstripHideDuration = filmstripHideDuration
     }
 
@@ -64,13 +67,12 @@ final class SlideshowPlayerViewModel {
     }
 
     func next() async {
-        let count = slideshow.slides.count
-        guard count > 0 else { return }
-        if currentIndex < count - 1 {
-            currentIndex += 1
-            await loadCurrentImage()
-        } else if slideshow.config.loop {
-            currentIndex = 0
+        if let nextIndex = advanceSlideUseCase.execute(
+            currentIndex: currentIndex,
+            slideCount: slideshow.slides.count,
+            loop: slideshow.config.loop
+        ) {
+            currentIndex = nextIndex
             await loadCurrentImage()
         } else {
             pause()
@@ -78,14 +80,14 @@ final class SlideshowPlayerViewModel {
     }
 
     func previous() async {
-        let count = slideshow.slides.count
-        guard count > 0 else { return }
-        if currentIndex > 0 {
-            currentIndex -= 1
-        } else if slideshow.config.loop {
-            currentIndex = count - 1
+        if let prevIndex = advanceSlideUseCase.executePrevious(
+            currentIndex: currentIndex,
+            slideCount: slideshow.slides.count,
+            loop: slideshow.config.loop
+        ) {
+            currentIndex = prevIndex
+            await loadCurrentImage()
         }
-        await loadCurrentImage()
     }
 
     func jumpTo(index: Int) async {

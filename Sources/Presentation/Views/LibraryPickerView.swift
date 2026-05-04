@@ -1,21 +1,25 @@
 import SwiftUI
 
 struct LibraryPickerView: View {
-    @State private var libraryViewModel: LibraryPickerViewModel
+    @State private var libraryViewModel: LibraryViewModel
+    @State private var thumbnailViewModel: ThumbnailViewModel
     @State private var createViewModel: CreateSlideshowViewModel
     var onSlideshowCreated: (Slideshow) -> Void
 
     init(
-        libraryViewModel: LibraryPickerViewModel,
+        libraryViewModel: LibraryViewModel,
+        thumbnailViewModel: ThumbnailViewModel,
         createViewModel: CreateSlideshowViewModel,
         onSlideshowCreated: @escaping (Slideshow) -> Void
     ) {
         self._libraryViewModel = State(initialValue: libraryViewModel)
+        self._thumbnailViewModel = State(initialValue: thumbnailViewModel)
         self._createViewModel = State(initialValue: createViewModel)
         self.onSlideshowCreated = onSlideshowCreated
     }
 
     @State private var isShowingFolderPicker = false
+    @State private var decodedImages: [String: NSImage] = [:]
 
     private let columns = [GridItem(.adaptive(minimum: 100), spacing: 8)]
 
@@ -28,14 +32,19 @@ struct LibraryPickerView: View {
                 LazyVGrid(columns: columns, spacing: 8) {
                     ForEach(libraryViewModel.identifiers, id: \.self) { identifier in
                         PhotoCell(
-                            thumbnailData: libraryViewModel.thumbnails[identifier],
+                            image: decodedImages[identifier],
                             isSelected: createViewModel.selectedIdentifiers.contains(identifier)
                         )
                         .onTapGesture {
                             toggleSelection(identifier)
                         }
                         .task(id: identifier) {
-                            await libraryViewModel.loadThumbnail(identifier: identifier)
+                            await thumbnailViewModel.loadThumbnail(identifier: identifier)
+                            if let data = thumbnailViewModel.thumbnails[identifier] {
+                                decodedImages[identifier] = await Task.detached(priority: .userInitiated) {
+                                    NSImage(data: data)
+                                }.value
+                            }
                         }
                     }
                 }
@@ -121,12 +130,12 @@ struct LibraryPickerView: View {
 // MARK: - PhotoCell
 
 private struct PhotoCell: View {
-    let thumbnailData: Data?
+    let image: NSImage?
     let isSelected: Bool
 
     var body: some View {
         ZStack {
-            if let data = thumbnailData, let nsImage = NSImage(data: data) {
+            if let nsImage = image {
                 Image(nsImage: nsImage)
                     .resizable()
                     .scaledToFill()

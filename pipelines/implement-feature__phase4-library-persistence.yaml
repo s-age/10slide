@@ -1,0 +1,420 @@
+tasks:
+  - type: script
+    command: rm -f
+      .claude/tmp/implement-phase4-library-persistence-usecases-reviewer
+      .claude/tmp/implement-phase4-library-persistence-presentation-reviewer
+      .claude/tmp/implement-phase4-library-persistence-di-reviewer
+    done: true
+  - type: pipeline
+    name: implement-phase4-library-persistence-usecases
+    tasks:
+      - type: agent
+        name: implement-phase4-library-persistence-usecases-implementer
+        task: >
+          Implement the UseCases layer changes for Phase 4 (library
+          persistence).
+
+
+          ## Target files
+
+
+          ### `Sources/UseCases/CreateSlideshowUseCase.swift` (modify)
+
+          Add a `slideshowRepository.save(slideshow)` call after building the
+          slideshow:
+
+
+          ```swift
+
+          func execute(name: String, identifiers: [String], config:
+          SlideshowConfig) async throws -> Slideshow {
+              let slideshow = buildSlideshow(name: name, identifiers: identifiers, config: config)
+              try await slideshowRepository.save(slideshow)  // ← add this line
+              return slideshow
+          }
+
+          ```
+
+
+          ### `SlideshowRepositoryProtocol` (verify / modify)
+
+          Read the protocol file and confirm it declares:
+
+          ```swift
+
+          func save(_ slideshow: Slideshow) async throws
+
+          ```
+
+          If the method is absent, add it to the protocol and to any existing
+          concrete
+
+          implementations (stub with `fatalError` or throw on mocks; implement
+          properly
+
+          on the real repository).
+
+
+          ## Constraints
+
+          - Use `async throws` throughout; Swift 6 strict-concurrency must still
+          compile.
+
+          - Do not add any persistence logic beyond the single `save` call
+          above.
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Write
+          - Edit
+          - Bash
+        done: true
+      - type: agent
+        name: implement-phase4-library-persistence-usecases-reviewer
+        task: >
+          target_file_path: Sources/UseCases/CreateSlideshowUseCase.swift
+
+          ng_output_path:
+          .claude/tmp/implement-phase4-library-persistence-usecases-reviewer
+        skill: review-arch
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Bash
+        rejected:
+          to: implement-phase4-library-persistence-usecases-implementer
+          max_retries: 3
+        done: true
+      - type: script
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
+        rejected:
+          to: implement-phase4-library-persistence-usecases-implementer
+          max_retries: 3
+        done: true
+    done: true
+  - type: agent
+    name: implement-phase4-library-persistence-usecases-implementer
+    task: >
+      Implementation complete and build passes. Commit the changes with an
+      appropriate
+
+      conventional commit message (e.g. `feat(usecases): persist slideshow on
+      creation via SlideshowRepository.save`).
+    model: haiku
+    allowed_tools:
+      - Read
+      - Bash
+    done: true
+  - type: pipeline
+    name: implement-phase4-library-persistence-presentation
+    tasks:
+      - type: agent
+        name: implement-phase4-library-persistence-presentation-implementer
+        task: >
+          Implement the new Presentation-layer files for Phase 4 (library
+          persistence).
+
+          Do NOT modify ContentView.swift yet — that is handled in the DI group.
+
+
+          ## Files to create
+
+
+          ### `Sources/Presentation/ViewModels/SlideshowLibraryViewModel.swift`
+          (new)
+
+          ```swift
+
+          import Foundation
+
+          import Observation
+
+
+          @Observable
+
+          @MainActor
+
+          final class SlideshowLibraryViewModel {
+              private(set) var slideshows: [Slideshow] = []
+              private(set) var isLoading: Bool = false
+              private(set) var errorMessage: String?
+
+              private let fetchSlideshowUseCase: any FetchSlideshowUseCaseProtocol
+
+              init(fetchSlideshow: any FetchSlideshowUseCaseProtocol) {
+                  self.fetchSlideshowUseCase = fetchSlideshow
+              }
+
+              func loadLibrary() async {
+                  isLoading = true
+                  defer { isLoading = false }
+                  do {
+                      slideshows = try await fetchSlideshowUseCase.execute()
+                  } catch {
+                      errorMessage = error.localizedDescription
+                  }
+              }
+          }
+
+          ```
+
+
+          ### `Sources/Presentation/Views/SlideshowLibraryPanel.swift` (new)
+
+          Right panel that lists saved slideshows; fires `onSelect` on tap:
+
+          ```swift
+
+          import SwiftUI
+
+
+          struct SlideshowLibraryPanel: View {
+              @State private var viewModel: SlideshowLibraryViewModel
+              let onSelect: (Slideshow) -> Void
+
+              var body: some View {
+                  VStack(spacing: 0) {
+                      Text("Library")
+                          .font(.headline)
+                          .padding(.vertical, 8)
+                      Divider()
+                      if viewModel.isLoading {
+                          ProgressView().padding()
+                      } else if viewModel.slideshows.isEmpty {
+                          ContentUnavailableView(
+                              "No Slideshows",
+                              systemImage: "photo.on.rectangle",
+                              description: Text("Create a slideshow to see it here.")
+                          )
+                      } else {
+                          List(viewModel.slideshows) { slideshow in
+                              Button { onSelect(slideshow) } label: {
+                                  VStack(alignment: .leading, spacing: 2) {
+                                      Text(slideshow.name).fontWeight(.medium)
+                                      Text("\(slideshow.slides.count) slides · \(slideshow.config.duration.displayLabel)")
+                                          .font(.caption).foregroundStyle(.secondary)
+                                  }
+                              }
+                              .buttonStyle(.plain)
+                          }
+                      }
+                  }
+                  .task { await viewModel.loadLibrary() }
+              }
+          }
+
+          ```
+
+
+          ### `Sources/Presentation/Views/HomeView.swift` (new)
+
+          7:3 HSplitView layout. `HSplitView` does not support fractional
+          sizing, so use
+
+          `frame(minWidth:)` and `frame(minWidth:idealWidth:)` to approximate
+          the ratio:
+
+          ```swift
+
+          import SwiftUI
+
+
+          struct HomeView: View {
+              @State private var libraryViewModel: LibraryPickerViewModel
+              @State private var createViewModel: CreateSlideshowViewModel
+              @State private var slideshowLibraryViewModel: SlideshowLibraryViewModel
+              let onSlideshowSelected: (Slideshow) -> Void
+
+              var body: some View {
+                  HSplitView {
+                      LibraryPickerView(
+                          libraryViewModel: libraryViewModel,
+                          createViewModel: createViewModel,
+                          onSlideshowCreated: { slideshow in
+                              Task { await slideshowLibraryViewModel.loadLibrary() }
+                              onSlideshowSelected(slideshow)
+                          }
+                      )
+                      .frame(minWidth: 400)
+
+                      SlideshowLibraryPanel(
+                          viewModel: slideshowLibraryViewModel,
+                          onSelect: onSlideshowSelected
+                      )
+                      .frame(minWidth: 200, idealWidth: 260)
+                  }
+              }
+          }
+
+          ```
+
+
+          ## Constraints
+
+          - Use `@Observable` + `@MainActor` on the ViewModel; do not use
+          `@Published`
+            or `ObservableObject`.
+          - Verify `FetchSlideshowUseCaseProtocol` exists and its `execute()`
+          return
+            type matches `[Slideshow]`.
+          - Do not touch `ContentView.swift` or any DI file — those are in the
+          next group.
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Write
+          - Edit
+          - Bash
+        done: true
+      - type: agent
+        name: implement-phase4-library-persistence-presentation-reviewer
+        task: >
+          target_file_path: Sources/Presentation/
+
+          ng_output_path:
+          .claude/tmp/implement-phase4-library-persistence-presentation-reviewer
+        skill: review-arch
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Bash
+        rejected:
+          to: implement-phase4-library-persistence-presentation-implementer
+          max_retries: 3
+        done: true
+      - type: script
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
+        rejected:
+          to: implement-phase4-library-persistence-presentation-implementer
+          max_retries: 3
+        done: true
+    done: true
+  - type: agent
+    name: implement-phase4-library-persistence-presentation-implementer
+    task: >
+      Implementation complete and build passes. Commit the changes with an
+      appropriate
+
+      conventional commit message (e.g. `feat(presentation): add
+      SlideshowLibraryViewModel, SlideshowLibraryPanel, and HomeView`).
+    model: haiku
+    allowed_tools:
+      - Read
+      - Bash
+  - type: pipeline
+    name: implement-phase4-library-persistence-di
+    tasks:
+      - type: agent
+        name: implement-phase4-library-persistence-di-implementer
+        task: >
+          Wire the DI layer and update ContentView for Phase 4 (library
+          persistence).
+
+
+          ## Files to modify
+
+
+          ### `Sources/DI/PresentationContainer.swift` (modify)
+
+          Add a factory method for `SlideshowLibraryViewModel`:
+
+          ```swift
+
+          @MainActor
+
+          func makeSlideshowLibraryViewModel() -> SlideshowLibraryViewModel {
+              SlideshowLibraryViewModel(fetchSlideshow: useCases.fetchSlideshow)
+          }
+
+          ```
+
+          Check how `useCases` is referenced in `PresentationContainer` and use
+          the
+
+          same access pattern. The property name may differ — read the file
+          first.
+
+
+          ### `Sources/DI/UseCaseContainer.swift` (verify)
+
+          Confirm that `FetchSlideshowUseCase` is accessible via
+          `useCases.fetchSlideshow`
+
+          (or the equivalent property on `UseCaseContainer`). If the property is
+          not yet
+
+          exposed, add it. Do not change the existing implementation.
+
+
+          ### `Sources/Presentation/Views/ContentView.swift` (modify)
+
+          Replace the direct `LibraryPickerView` usage with `HomeView`. Read
+          ContentView
+
+          first to understand how other `make*` methods are called and mirror
+          that pattern.
+
+          The body's else-branch should become:
+
+          ```swift
+
+          HomeView(
+              libraryViewModel: libraryViewModel,
+              createViewModel: createViewModel,
+              slideshowLibraryViewModel: makeSlideshowLibraryViewModel(),
+              onSlideshowSelected: { selectedSlideshow = $0 }
+          )
+
+          ```
+
+          where `makeSlideshowLibraryViewModel()` follows the same calling
+          convention as
+
+          other factory methods already present in ContentView.
+
+
+          ## Constraints
+
+          - `makeSlideshowLibraryViewModel()` must be `@MainActor` because
+            `SlideshowLibraryViewModel` is `@MainActor`.
+          - Follow the existing per-layer container pattern in `Sources/DI/`.
+
+          - Do not modify any Presentation files other than ContentView.swift.
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Write
+          - Edit
+          - Bash
+      - type: agent
+        name: implement-phase4-library-persistence-di-reviewer
+        task: >
+          target_file_path: Sources/DI/PresentationContainer.swift
+
+          ng_output_path:
+          .claude/tmp/implement-phase4-library-persistence-di-reviewer
+        skill: review-arch
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Bash
+        rejected:
+          to: implement-phase4-library-persistence-di-implementer
+          max_retries: 3
+      - type: script
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
+        rejected:
+          to: implement-phase4-library-persistence-di-implementer
+          max_retries: 3
+  - type: agent
+    name: implement-phase4-library-persistence-di-implementer
+    task: >
+      Implementation complete and build passes. Commit the changes with an
+      appropriate
+
+      conventional commit message (e.g. `feat(di): wire
+      SlideshowLibraryViewModel and update ContentView to use HomeView`).
+    model: haiku
+    allowed_tools:
+      - Read
+      - Bash

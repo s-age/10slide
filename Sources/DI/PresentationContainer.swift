@@ -4,8 +4,10 @@ final class PresentationContainer {
     private let loadSlideImage: any LoadSlideImageUseCaseProtocol
     private let loadThumbnail: any LoadThumbnailUseCaseProtocol
     private let updateSlideshowConfig: any UpdateSlideshowConfigUseCaseProtocol
+    private let advanceSlide: any AdvanceSlideUseCaseProtocol
     private let setDirectory: any SetDirectoryUseCaseProtocol
     private let addDroppedFiles: any AddDroppedFilesUseCaseProtocol
+    private let fetchSlideshows: any FetchSlideshowsUseCaseProtocol
 
     init(useCases: UseCaseContainer) {
         fetchLibrary = useCases.fetchLibrary
@@ -13,18 +15,24 @@ final class PresentationContainer {
         loadSlideImage = useCases.loadSlideImage
         loadThumbnail = useCases.loadThumbnail
         updateSlideshowConfig = useCases.updateSlideshowConfig
+        advanceSlide = useCases.advanceSlide
         setDirectory = useCases.setDirectory
         addDroppedFiles = useCases.addDroppedFiles
+        fetchSlideshows = useCases.fetchSlideshows
     }
 
     @MainActor
-    func makeLibraryPickerViewModel() -> LibraryPickerViewModel {
-        LibraryPickerViewModel(
+    func makeLibraryViewModel() -> LibraryViewModel {
+        LibraryViewModel(
             fetchLibrary: fetchLibrary,
-            loadThumbnail: loadThumbnail,
             setDirectory: setDirectory,
             addDroppedFiles: addDroppedFiles
         )
+    }
+
+    @MainActor
+    func makeThumbnailViewModel() -> ThumbnailViewModel {
+        ThumbnailViewModel(loadThumbnail: loadThumbnail)
     }
 
     @MainActor
@@ -37,7 +45,13 @@ final class PresentationContainer {
         SlideshowPlayerViewModel(
             slideshow: slideshow,
             loadSlideImage: loadSlideImage,
-            updateSlideshowConfig: updateSlideshowConfig
+            updateSlideshowConfig: updateSlideshowConfig,
+            advanceSlide: advanceSlide
         )
+    }
+
+    @MainActor
+    func makeSlideshowLibraryViewModel() -> SlideshowLibraryViewModel {
+        SlideshowLibraryViewModel(fetchSlideshows: fetchSlideshows)
     }
 }
