@@ -24,24 +24,30 @@ struct HomeView: View {
     }
 
     var body: some View {
-        HSplitView {
-            SlideshowLibraryPanel(
-                viewModel: slideshowLibraryViewModel,
-                onSelect: onSlideshowSelected,
-                onEdit: handleEdit
-            )
-            .frame(minWidth: 200, idealWidth: 260)
+        GeometryReader { geometry in
+            HSplitView {
+                SlideshowLibraryPanel(
+                    viewModel: slideshowLibraryViewModel,
+                    onSelect: onSlideshowSelected,
+                    onEdit: handleEdit
+                )
+                .frame(
+                    minWidth: 200,
+                    idealWidth: geometry.size.width * 0.3,
+                    maxWidth: geometry.size.width * 0.3
+                )
 
-            LibraryPickerView(
-                libraryViewModel: libraryViewModel,
-                thumbnailViewModel: thumbnailViewModel,
-                createViewModel: createViewModel,
-                onSlideshowCreated: { slideshow in
-                    Task { await slideshowLibraryViewModel.loadLibrary() }
-                    onSlideshowSelected(slideshow)
-                }
-            )
-            .frame(minWidth: 400)
+                LibraryPickerView(
+                    libraryViewModel: libraryViewModel,
+                    thumbnailViewModel: thumbnailViewModel,
+                    createViewModel: createViewModel,
+                    onSlideshowCreated: { slideshow in
+                        Task { await slideshowLibraryViewModel.loadLibrary() }
+                        onSlideshowSelected(slideshow)
+                    }
+                )
+                .frame(minWidth: 400)
+            }
         }
         .alert("Discard current work?", isPresented: $showDiscardWorkDialog) {
             Button("Discard", role: .destructive) {
