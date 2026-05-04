@@ -8,6 +8,10 @@ struct FilmstripView: View {
     let onSelect: (Int) -> Void
     let onDurationChange: (SlideDuration) -> Void
     let onTransitionChange: (TransitionType) -> Void
+    let isPlaying: Bool
+    let onPrevious: () -> Void
+    let onPlayPause: () -> Void
+    let onNext: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,6 +32,25 @@ struct FilmstripView: View {
             .pickerStyle(.menu)
             .labelsHidden()
 
+            Spacer()
+
+            HStack(spacing: 16) {
+                Button(action: onPrevious) {
+                    Image(systemName: "backward.fill")
+                }
+                Button(action: onPlayPause) {
+                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                }
+                Button(action: onNext) {
+                    Image(systemName: "forward.fill")
+                }
+            }
+            .buttonStyle(.plain)
+            .font(.callout)
+            .foregroundStyle(.primary)
+
+            Spacer()
+
             Picker("Transition", selection: Binding(get: { transition }, set: { onTransitionChange($0) })) {
                 ForEach(TransitionType.allCases, id: \.self) { t in
                     Text(t.rawValue.capitalized).tag(t)
@@ -35,8 +58,6 @@ struct FilmstripView: View {
             }
             .pickerStyle(.menu)
             .labelsHidden()
-
-            Spacer()
         }
         .font(.caption)
         .padding(.horizontal, 12)

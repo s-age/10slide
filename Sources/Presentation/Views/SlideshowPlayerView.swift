@@ -26,11 +26,15 @@ struct SlideshowPlayerView: View {
                     currentIndex: viewModel.currentIndex,
                     duration: viewModel.slideshow.config.duration,
                     transition: viewModel.slideshow.config.transition,
-                    onSelect: { index in
-                        Task { await viewModel.jumpTo(index: index) }
-                    },
+                    onSelect: { index in Task { await viewModel.jumpTo(index: index) } },
                     onDurationChange: { viewModel.updateDuration($0) },
-                    onTransitionChange: { viewModel.updateTransition($0) }
+                    onTransitionChange: { viewModel.updateTransition($0) },
+                    isPlaying: viewModel.isPlaying,
+                    onPrevious: { Task { await viewModel.previous() } },
+                    onPlayPause: {
+                        if viewModel.isPlaying { viewModel.pause() } else { viewModel.play() }
+                    },
+                    onNext: { Task { await viewModel.next() } }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -51,6 +55,19 @@ struct SlideshowPlayerView: View {
         }
         .animation(.easeInOut(duration: 0.5), value: viewModel.currentIndex)
         .animation(.easeInOut(duration: 0.3), value: viewModel.showFilmstrip)
+        .focusable()
+        .onKeyPress(.space) {
+            if viewModel.isPlaying { viewModel.pause() } else { viewModel.play() }
+            return .handled
+        }
+        .onKeyPress(.leftArrow) {
+            Task { await viewModel.previous() }
+            return .handled
+        }
+        .onKeyPress(.rightArrow) {
+            Task { await viewModel.next() }
+            return .handled
+        }
         .onTapGesture {
             viewModel.userDidInteract()
         }
