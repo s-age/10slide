@@ -79,29 +79,28 @@ struct FilmstripView: View {
     @ViewBuilder
     private func thumbnailCell(index: Int) -> some View {
         let id = slides[index].localIdentifier
-        RoundedRectangle(cornerRadius: 4)
-            .fill(Color.gray.opacity(0.4))
-            .overlay {
-                if let nsImage = thumbnailViewModel.images[id] {
-                    Image(nsImage: nsImage)
-                        .resizable()
-                        .scaledToFill()
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
-                }
+        ZStack {
+            Color.gray.opacity(0.15)
+            if let nsImage = thumbnailViewModel.images[id] {
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .scaledToFit()
             }
-            .frame(width: 60, height: 60)
-            .overlay(
-                RoundedRectangle(cornerRadius: 4)
-                    .strokeBorder(
-                        index == currentIndex ? Color.white : Color.clear,
-                        lineWidth: 2
-                    )
-            )
-            .task(id: id) {
-                await thumbnailViewModel.loadThumbnail(identifier: id)
-            }
-            .onTapGesture {
-                onSelect(index)
-            }
+        }
+        .frame(width: 60, height: 60)
+        .clipShape(RoundedRectangle(cornerRadius: 4))
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .strokeBorder(
+                    index == currentIndex ? Color.white : Color.clear,
+                    lineWidth: 2
+                )
+        )
+        .task(id: id) {
+            await thumbnailViewModel.loadThumbnail(identifier: id)
+        }
+        .onTapGesture {
+            onSelect(index)
+        }
     }
 }
