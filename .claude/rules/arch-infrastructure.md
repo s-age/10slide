@@ -19,7 +19,7 @@ The lowest layer — the only place that may directly use persistence (SwiftData
 
 | May import | Must NOT import |
 |-----------|----------------|
-| `Foundation`, `SwiftData`, `Photos`, `CoreLocation`, `Network`, … | `SwiftUI`, `UIKit` |
+| `Foundation`, `SwiftData`, `Photos`, `CoreLocation`, `Network`, `ImageIO`, `CoreGraphics`, … | `SwiftUI`, `UIKit`, `AppKit` |
 | `Protocols/` (intra-layer) | `Repositories`, `UseCases`, `Domain` layer types |
 
 > **Exception**: `TenSlideApp.swift` in `App/` may import `SwiftData` solely to pass `ModelContainer` to the SwiftUI environment.
@@ -88,20 +88,28 @@ DTO structs live in `SwiftData/DTO/` alongside `@Model` classes:
 Synchronous CPU-bound work (file I/O, image decoding) must not block the current async executor. Use `Task.detached(priority:)` to offload.
 
 ```swift
-// Good — decode off the cooperative pool
-func loadImage(data: Data) async -> NSImage? {
-    await Task.detached(priority: .userInitiated) {
-        NSImage(data: data)
+// Good — thumbnail generation off the cooperative pool (ImageIO, no AppKit)
+func makeThumbnail(from data: Data) async throws -> Data {
+    try await Task.detached(priority: .userInitiated) {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                  kCGImageSourceThumbnailMaxPixelSize: 200,
+                  kCGImageSourceCreateThumbnailFromImageAlways: true
+              ] as CFDictionary)
+        else { throw ImageDataSourceError.dataUnavailable }
+        let dest = NSMutableData()
+        let imageDestination = CGImageDestinationCreateWithData(dest, "public.jpeg" as CFString, 1, nil)!
+        CGImageDestinationAddImage(imageDestination, cgImage, nil)
+        CGImageDestinationFinalize(imageDestination)
+        return dest as Data
     }.value
 }
 
 // Bad — blocks the caller's executor
-func loadImage(data: Data) -> NSImage? {
-    NSImage(data: data)   // NG: synchronous decode on current thread
+func makeThumbnail(from data: Data) throws -> Data {
+    // NG: synchronous CPU work on current thread
 }
 ```
-
-For `NSImage(data:)` specifically: decode in a detached task, then assign the result back on `@MainActor` where the ViewModel resides. Use an injectable decoder closure to keep testability.
 
 ## Photos framework
 
@@ -125,9 +133,28 @@ options.fetchLimit = 500
 let assets = PHAsset.fetchAssets(with: .image, options: options)
 ```
 
+**Continuation safety**: Never use `deliveryMode = .opportunistic` inside `withCheckedThrowingContinuation`. `.opportunistic` fires the callback twice (low-quality then high-quality), which causes a crash on the second `resume`. If only the low-quality version is available and you skip it with `if isDegraded { return }`, the continuation is never resumed and the task hangs forever (memory leak). Always use `.highQualityFormat` to guarantee exactly one callback.
+
+```swift
+// Good — single callback guaranteed
+let options = PHImageRequestOptions()
+options.deliveryMode = .highQualityFormat
+let data: Data = try await withCheckedThrowingContinuation { continuation in
+    PHImageManager.default().requestImageDataAndOrientation(for: asset, options: options) { data, _, _, _ in
+        if let data { continuation.resume(returning: data) }
+        else { continuation.resume(throwing: ImageDataSourceError.dataUnavailable) }
+    }
+}
+
+// Bad — crashes or hangs
+options.deliveryMode = .opportunistic   // NG: callback fires twice → double resume crash
+```
+
+**Image data vs NSImage**: `requestImage(for:targetSize:contentMode:options:resultHandler:)` returns `NSImage` on macOS, which requires `AppKit`. Use `requestImageDataAndOrientation` instead — it returns raw `Data` with no UI framework dependency. Resize using `CGImageSourceCreateThumbnailAtIndex` (ImageIO) in a detached task.
+
 ## Prohibitions
 
-- Never import `SwiftUI` or `UIKit` — display belongs in `Presentation`
+- Never import `SwiftUI`, `UIKit`, or `AppKit` — display belongs in `Presentation`
 - Never import from `Repositories`, `UseCases`, or `Domain` — dependency flows upward only
 - Never define a protocol (`*Protocol`) outside of the `Protocols/` subdirectory
 - Never convert DTOs to domain entities here — that belongs in `Repositories`
