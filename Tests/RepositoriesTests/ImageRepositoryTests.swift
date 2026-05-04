@@ -25,6 +25,8 @@ final class MockImageDataSource: ImageDataSourceProtocol, @unchecked Sendable {
         if throwOnFetchImage { throw ImageRepoTestError.intentional }
         return fetchImageResult ?? ImageDTO(localIdentifier: localIdentifier, data: Data(), creationDate: nil)
     }
+
+    func fetchThumbnail(localIdentifier: String) async throws -> Data { Data() }
 }
 
 private enum ImageRepoTestError: Error {

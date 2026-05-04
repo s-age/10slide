@@ -26,6 +26,12 @@ final class MockFetchLibraryUseCase: FetchLibraryUseCaseProtocol, @unchecked Sen
     }
 }
 
+// MARK: - Mock: LoadThumbnailUseCase
+
+final class MockLoadThumbnailUseCase: LoadThumbnailUseCaseProtocol, @unchecked Sendable {
+    func execute(localIdentifier: String) async throws -> Data { Data() }
+}
+
 // MARK: - LibraryPickerViewModelTests
 
 @MainActor
@@ -36,7 +42,10 @@ final class LibraryPickerViewModelTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockFetchLibrary = MockFetchLibraryUseCase()
-        sut = LibraryPickerViewModel(fetchLibrary: mockFetchLibrary)
+        sut = LibraryPickerViewModel(
+            fetchLibrary: mockFetchLibrary,
+            loadThumbnail: MockLoadThumbnailUseCase()
+        )
     }
 
     override func tearDown() {

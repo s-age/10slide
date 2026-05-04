@@ -34,12 +34,12 @@ final class SlideshowPlayerViewModel {
 
     func play() {
         guard !slideshow.slides.isEmpty else { return }
+        guard let duration = slideshow.config.duration.seconds else { return }
         isPlaying = true
         timerTask?.cancel()
         timerTask = Task {
             while !Task.isCancelled, isPlaying {
-                guard let slide = currentSlide else { break }
-                try? await Task.sleep(for: .seconds(slide.duration))
+                try? await Task.sleep(for: .seconds(duration))
                 guard !Task.isCancelled, isPlaying else { break }
                 await next()
             }

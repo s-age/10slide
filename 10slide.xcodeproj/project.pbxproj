@@ -19,6 +19,7 @@
 		16457E4B63758C5DA543CF4D /* RepositoryContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01BA0AC7327737BF9AFAD6A1 /* RepositoryContainer.swift */; };
 		19FA17217F3AE79A85C8F24A /* CreateSlideshowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504E41FA1F52345A6A000234 /* CreateSlideshowViewModel.swift */; };
 		1C5B06DD1302FCF11E315EA1 /* SlideshowModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BE2A12E6B1C9AEBAB958E79 /* SlideshowModel.swift */; };
+		1D83338EB274A62D6FE39BE0 /* LibraryPickerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7918EC7E78E3FE444B84DC48 /* LibraryPickerViewModelTests.swift */; };
 		1ED0371325A7688170334093 /* FetchSlideshowUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7358253EEEE4EAE6006D6CDB /* FetchSlideshowUseCaseTests.swift */; };
 		206BD6AC689F1BF2158B8578 /* ConfigDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5571885CB3DA209019943179 /* ConfigDTO.swift */; };
 		254C71AD831DAA15BA1B9E37 /* FetchSlideshowUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C85A658D898F9D91338309A /* FetchSlideshowUseCaseProtocol.swift */; };
@@ -46,14 +47,17 @@
 		603B4AA1C2096AFB66B4CD66 /* SlideshowDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F519E01D778038E3B145B1E /* SlideshowDataSource.swift */; };
 		6217EBB28931B4E2921CC820 /* SlideshowPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CEC13504110990E0D7D6B53 /* SlideshowPlayerView.swift */; };
 		6309093A2784F4E585C50457 /* FetchLibraryUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6856659F546E6864AE8E4D4A /* FetchLibraryUseCase.swift */; };
+		6BC199A23B4AA93C041C237B /* LoadThumbnailUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91B05E765D740278425E05A1 /* LoadThumbnailUseCase.swift */; };
 		6F4965CB7779E65A5F17E56A /* ConfigDataSourceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE9F3F9052308B1E74D0FE9 /* ConfigDataSourceProtocol.swift */; };
 		6F5887D28239E7005873F7C6 /* SaveConfigUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A91C9298B32D401CEE213173 /* SaveConfigUseCaseProtocol.swift */; };
 		742FAC94109893947A1A82E9 /* LoadConfigUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2B4FF7CADFB2546684D76DD /* LoadConfigUseCaseTests.swift */; };
 		79A530AACE64667BAFD9E1FE /* ImageDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ACEA093A26B874A5604093B /* ImageDataSource.swift */; };
+		7BC19B1B46CAE55ACB818095 /* SlideshowPlayerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32D1F37F748E410984D6F3A9 /* SlideshowPlayerViewModelTests.swift */; };
 		7F0F493C5A12AAE8256AF729 /* ConfigRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10D96B93D5DC5796186F0B2 /* ConfigRepository.swift */; };
 		810D4DC4BE1531F953DF07FD /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA365F04B3E788479DF5D888 /* ContentView.swift */; };
 		8212E492BDE37EC28202197C /* SlideDataSourceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0796277AA9BF1FB6043F6E94 /* SlideDataSourceProtocol.swift */; };
 		84E606541C07A61F3F6059E1 /* ImageRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67AC098F8AC2229331E8BFC /* ImageRepository.swift */; };
+		902B164730A0891E2633B636 /* LoadThumbnailUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6CB302BE150652E7AF8776E /* LoadThumbnailUseCaseProtocol.swift */; };
 		95DFE7350047E99A78BCAA0A /* CreateSlideshowUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56F013020898155B47F4213 /* CreateSlideshowUseCase.swift */; };
 		96E61C2C8D1347AE5BCC2F51 /* TenSlideApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BEE58527F43ADC4CF43653 /* TenSlideApp.swift */; };
 		9E7B8A5E8DF2C38EB8455D95 /* ImageDataSourceProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ECDC3C1FBFBFC2D2B79052D /* ImageDataSourceProtocol.swift */; };
@@ -61,6 +65,7 @@
 		AA8F68C29CC1696292E536F6 /* InfrastructureContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249694D115F7F33068AD9B07 /* InfrastructureContainer.swift */; };
 		AEA4337D96713621704F9444 /* ImageRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04EB329773327FDEC9FC8783 /* ImageRepositoryTests.swift */; };
 		B7E71D4F4DD42DDA625FF0EA /* SlideshowRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0AF6B0607688132AECD348 /* SlideshowRepositoryTests.swift */; };
+		B8A0314D55C1FDE116066A46 /* CreateSlideshowViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 182847C393AF1EDBF717DCDD /* CreateSlideshowViewModelTests.swift */; };
 		BA38546D85797D96CD012307 /* CreateSlideshowUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 944D96FEBAED1B3797484861 /* CreateSlideshowUseCaseProtocol.swift */; };
 		BDD2F227DB7F29EE845098CF /* ConfigRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D55974E3B56E05856F8B15B /* ConfigRepositoryTests.swift */; };
 		CB1B35FD446836CD2009AE9E /* SlideshowRepositoryProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E36BA01119F923F2EC875F2 /* SlideshowRepositoryProtocol.swift */; };
@@ -70,11 +75,9 @@
 		E2E7D46D98F207C9FB074A42 /* ConfigStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51894761C0FD2794AD78E758 /* ConfigStore.swift */; };
 		E35F8D7CE4CD03380317898C /* FetchLibraryUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 314CFBD94D2493407D84D0DC /* FetchLibraryUseCaseTests.swift */; };
 		E7EFA63F394C44E8CB60D342 /* SlideshowDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B6B2155586832557D080939 /* SlideshowDataSourceTests.swift */; };
+		EAC20EB875221A24540128B3 /* SlideDuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1525008D8A928CEBBC8B3FAC /* SlideDuration.swift */; };
 		F5F0AF52787D5A962FE45D64 /* SlideshowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F7637CE9B8204701F952D4 /* SlideshowTests.swift */; };
 		FC36D50C2062454BC56A2D55 /* CreateSlideshowUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3021B321BAB9086465868A81 /* CreateSlideshowUseCaseTests.swift */; };
-		2151A16710F14F5DB5AB570C /* LibraryPickerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FDC840F7D344D97A83732D3 /* LibraryPickerViewModelTests.swift */; };
-		2F4AEEEC9D584A919E74F581 /* SlideshowPlayerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9023D5BE52C4EB0BA3E745C /* SlideshowPlayerViewModelTests.swift */; };
-		4FA9B2B712E845F8AE4ED52D /* CreateSlideshowViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF1A8B3DADDD4880BC304135 /* CreateSlideshowViewModelTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,6 +98,8 @@
 		08779EF14D2C376E7B47B0DD /* LoadConfigUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadConfigUseCase.swift; sourceTree = "<group>"; };
 		0B6B2155586832557D080939 /* SlideshowDataSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowDataSourceTests.swift; sourceTree = "<group>"; };
 		0F519E01D778038E3B145B1E /* SlideshowDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowDataSource.swift; sourceTree = "<group>"; };
+		1525008D8A928CEBBC8B3FAC /* SlideDuration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideDuration.swift; sourceTree = "<group>"; };
+		182847C393AF1EDBF717DCDD /* CreateSlideshowViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateSlideshowViewModelTests.swift; sourceTree = "<group>"; };
 		1CF7E20D69F66682C53D7501 /* Slide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Slide.swift; sourceTree = "<group>"; };
 		1ECDC3C1FBFBFC2D2B79052D /* ImageDataSourceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDataSourceProtocol.swift; sourceTree = "<group>"; };
 		249694D115F7F33068AD9B07 /* InfrastructureContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfrastructureContainer.swift; sourceTree = "<group>"; };
@@ -103,6 +108,7 @@
 		306A490BD685FFEE49485E2F /* SlideshowDataSourceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowDataSourceProtocol.swift; sourceTree = "<group>"; };
 		314CFBD94D2493407D84D0DC /* FetchLibraryUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchLibraryUseCaseTests.swift; sourceTree = "<group>"; };
 		32565F1B107399525BBAC2E6 /* 10slide.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = 10slide.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		32D1F37F748E410984D6F3A9 /* SlideshowPlayerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowPlayerViewModelTests.swift; sourceTree = "<group>"; };
 		362214CD7AD4D592D957C002 /* FetchSlideshowUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchSlideshowUseCase.swift; sourceTree = "<group>"; };
 		3BE2A12E6B1C9AEBAB958E79 /* SlideshowModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowModel.swift; sourceTree = "<group>"; };
 		4ACEA093A26B874A5604093B /* ImageDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDataSource.swift; sourceTree = "<group>"; };
@@ -124,10 +130,12 @@
 		6D55974E3B56E05856F8B15B /* ConfigRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigRepositoryTests.swift; sourceTree = "<group>"; };
 		6E0AF6B0607688132AECD348 /* SlideshowRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowRepositoryTests.swift; sourceTree = "<group>"; };
 		7358253EEEE4EAE6006D6CDB /* FetchSlideshowUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchSlideshowUseCaseTests.swift; sourceTree = "<group>"; };
+		7918EC7E78E3FE444B84DC48 /* LibraryPickerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryPickerViewModelTests.swift; sourceTree = "<group>"; };
 		7B1E376CEE59C8B916BCE625 /* SlideModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideModel.swift; sourceTree = "<group>"; };
 		804E7D88E8CBC6A26CDAB372 /* SlideshowPlayerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowPlayerViewModel.swift; sourceTree = "<group>"; };
 		838A8405251436B65A4CBFBD /* Container.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Container.swift; sourceTree = "<group>"; };
 		8E5EED4BC26855354CB0E9C3 /* SlideshowConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowConfig.swift; sourceTree = "<group>"; };
+		91B05E765D740278425E05A1 /* LoadThumbnailUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadThumbnailUseCase.swift; sourceTree = "<group>"; };
 		944D96FEBAED1B3797484861 /* CreateSlideshowUseCaseProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateSlideshowUseCaseProtocol.swift; sourceTree = "<group>"; };
 		A8D2E4295599AD8EC94631F8 /* FetchLibraryUseCaseProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchLibraryUseCaseProtocol.swift; sourceTree = "<group>"; };
 		A91C9298B32D401CEE213173 /* SaveConfigUseCaseProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveConfigUseCaseProtocol.swift; sourceTree = "<group>"; };
@@ -144,6 +152,7 @@
 		D873FDE6F790630A42F70B39 /* 10slideTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = 10slideTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D92E75FE6E16E943DF0F6C38 /* Slideshow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Slideshow.swift; sourceTree = "<group>"; };
 		E27B82615D8749D84E2B6F92 /* ConfigStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigStoreTests.swift; sourceTree = "<group>"; };
+		E6CB302BE150652E7AF8776E /* LoadThumbnailUseCaseProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadThumbnailUseCaseProtocol.swift; sourceTree = "<group>"; };
 		E7C985F90FF6F31977F1CC77 /* ImageRepositoryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageRepositoryProtocol.swift; sourceTree = "<group>"; };
 		E9429C2302B7048AD844F888 /* FilmstripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmstripView.swift; sourceTree = "<group>"; };
 		E9CB57A25B5590DD6978FA8A /* UseCaseContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UseCaseContainer.swift; sourceTree = "<group>"; };
@@ -154,9 +163,6 @@
 		F8BEE58527F43ADC4CF43653 /* TenSlideApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TenSlideApp.swift; sourceTree = "<group>"; };
 		FAAD7BD09DCEDB0F61EF5A3C /* ImageDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDTO.swift; sourceTree = "<group>"; };
 		FC4A92D858C119A0A9C90A4C /* ConfigRepositoryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigRepositoryProtocol.swift; sourceTree = "<group>"; };
-		0FDC840F7D344D97A83732D3 /* LibraryPickerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryPickerViewModelTests.swift; sourceTree = "<group>"; };
-		E9023D5BE52C4EB0BA3E745C /* SlideshowPlayerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowPlayerViewModelTests.swift; sourceTree = "<group>"; };
-		DF1A8B3DADDD4880BC304135 /* CreateSlideshowViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateSlideshowViewModelTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -171,6 +177,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0BD4FD1FAD2DE198A1AF1E77 /* PresentationTests */ = {
+			isa = PBXGroup;
+			children = (
+				182847C393AF1EDBF717DCDD /* CreateSlideshowViewModelTests.swift */,
+				7918EC7E78E3FE444B84DC48 /* LibraryPickerViewModelTests.swift */,
+				32D1F37F748E410984D6F3A9 /* SlideshowPlayerViewModelTests.swift */,
+			);
+			path = PresentationTests;
+			sourceTree = "<group>";
+		};
 		0E2037303AB389C26E2783B0 /* InfrastructureTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -318,6 +334,7 @@
 			isa = PBXGroup;
 			children = (
 				1CF7E20D69F66682C53D7501 /* Slide.swift */,
+				1525008D8A928CEBBC8B3FAC /* SlideDuration.swift */,
 				D92E75FE6E16E943DF0F6C38 /* Slideshow.swift */,
 				8E5EED4BC26855354CB0E9C3 /* SlideshowConfig.swift */,
 				67049E943242377AA5A86153 /* TransitionType.swift */,
@@ -332,16 +349,6 @@
 				3BE2A12E6B1C9AEBAB958E79 /* SlideshowModel.swift */,
 			);
 			path = DTO;
-			sourceTree = "<group>";
-		};
-		912335AF987C4117A48FF242 /* PresentationTests */ = {
-			isa = PBXGroup;
-			children = (
-				DF1A8B3DADDD4880BC304135 /* CreateSlideshowViewModelTests.swift */,
-				0FDC840F7D344D97A83732D3 /* LibraryPickerViewModelTests.swift */,
-				E9023D5BE52C4EB0BA3E745C /* SlideshowPlayerViewModelTests.swift */,
-			);
-			path = PresentationTests;
 			sourceTree = "<group>";
 		};
 		BB4E38FD12C729A86095B97E /* UseCasesTests */ = {
@@ -379,6 +386,7 @@
 				5C85A658D898F9D91338309A /* FetchSlideshowUseCaseProtocol.swift */,
 				51B54779E11DB6A2E9A9F9D8 /* LoadConfigUseCaseProtocol.swift */,
 				EDC76B337264B86A6F586C78 /* LoadSlideImageUseCaseProtocol.swift */,
+				E6CB302BE150652E7AF8776E /* LoadThumbnailUseCaseProtocol.swift */,
 				A91C9298B32D401CEE213173 /* SaveConfigUseCaseProtocol.swift */,
 			);
 			path = Protocols;
@@ -399,9 +407,9 @@
 				B0913E7732228A808F3F17C0 /* TenSlideTests.swift */,
 				7EF3A9BFEE9425429DB744DB /* DomainTests */,
 				0E2037303AB389C26E2783B0 /* InfrastructureTests */,
+				0BD4FD1FAD2DE198A1AF1E77 /* PresentationTests */,
 				F9DA7DD6B35CC22EE184BCF1 /* RepositoriesTests */,
 				BB4E38FD12C729A86095B97E /* UseCasesTests */,
-				912335AF987C4117A48FF242 /* PresentationTests */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -425,6 +433,7 @@
 				362214CD7AD4D592D957C002 /* FetchSlideshowUseCase.swift */,
 				08779EF14D2C376E7B47B0DD /* LoadConfigUseCase.swift */,
 				635336DE0D133C797085E4B9 /* LoadSlideImageUseCase.swift */,
+				91B05E765D740278425E05A1 /* LoadThumbnailUseCase.swift */,
 				EEE2DBC8813B22419F8A9D1E /* SaveConfigUseCase.swift */,
 				C72857CAF6B71BCF0A20D898 /* Protocols */,
 			);
@@ -561,17 +570,17 @@
 				BDD2F227DB7F29EE845098CF /* ConfigRepositoryTests.swift in Sources */,
 				0B0ED5C1E5928821C56E123F /* ConfigStoreTests.swift in Sources */,
 				FC36D50C2062454BC56A2D55 /* CreateSlideshowUseCaseTests.swift in Sources */,
+				B8A0314D55C1FDE116066A46 /* CreateSlideshowViewModelTests.swift in Sources */,
 				E35F8D7CE4CD03380317898C /* FetchLibraryUseCaseTests.swift in Sources */,
 				1ED0371325A7688170334093 /* FetchSlideshowUseCaseTests.swift in Sources */,
 				AEA4337D96713621704F9444 /* ImageRepositoryTests.swift in Sources */,
-				4FA9B2B712E845F8AE4ED52D /* CreateSlideshowViewModelTests.swift in Sources */,
-				2151A16710F14F5DB5AB570C /* LibraryPickerViewModelTests.swift in Sources */,
+				1D83338EB274A62D6FE39BE0 /* LibraryPickerViewModelTests.swift in Sources */,
 				742FAC94109893947A1A82E9 /* LoadConfigUseCaseTests.swift in Sources */,
-				2F4AEEEC9D584A919E74F581 /* SlideshowPlayerViewModelTests.swift in Sources */,
 				CD274777A18CC9B0974C8E3E /* LoadSlideImageUseCaseTests.swift in Sources */,
 				032DAA91CE7C92972A5339F5 /* SaveConfigUseCaseTests.swift in Sources */,
 				3FD65AE12AD243F3AAAD426C /* SlideshowConfigTests.swift in Sources */,
 				E7EFA63F394C44E8CB60D342 /* SlideshowDataSourceTests.swift in Sources */,
+				7BC19B1B46CAE55ACB818095 /* SlideshowPlayerViewModelTests.swift in Sources */,
 				B7E71D4F4DD42DDA625FF0EA /* SlideshowRepositoryTests.swift in Sources */,
 				F5F0AF52787D5A962FE45D64 /* SlideshowTests.swift in Sources */,
 				2B8699775931563AFD416A4F /* TenSlideTests.swift in Sources */,
@@ -610,6 +619,8 @@
 				2AA859788C3BEC52F69AEDA3 /* LoadConfigUseCaseProtocol.swift in Sources */,
 				03CE9E143094429E953E021B /* LoadSlideImageUseCase.swift in Sources */,
 				3EC89D500370AC5AAB20216E /* LoadSlideImageUseCaseProtocol.swift in Sources */,
+				6BC199A23B4AA93C041C237B /* LoadThumbnailUseCase.swift in Sources */,
+				902B164730A0891E2633B636 /* LoadThumbnailUseCaseProtocol.swift in Sources */,
 				3F8455328F3FA870727A7251 /* PresentationContainer.swift in Sources */,
 				16457E4B63758C5DA543CF4D /* RepositoryContainer.swift in Sources */,
 				57E7619D6A1292FDB646D82B /* SaveConfigUseCase.swift in Sources */,
@@ -617,6 +628,7 @@
 				13A1BA304DBB2D6FFC8AC5D2 /* Slide.swift in Sources */,
 				492C0740E3AFFE097F6E6A93 /* SlideDataSource.swift in Sources */,
 				8212E492BDE37EC28202197C /* SlideDataSourceProtocol.swift in Sources */,
+				EAC20EB875221A24540128B3 /* SlideDuration.swift in Sources */,
 				3D6E33DC1E1ABF43577647EE /* SlideModel.swift in Sources */,
 				CD1DA8DD6C5B86726F3C77D2 /* SlideRepository.swift in Sources */,
 				3262BF41F48BDE724A8E9C3A /* SlideRepositoryProtocol.swift in Sources */,
@@ -660,6 +672,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7VF2T8G76X;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Select photos for your slideshow";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -701,6 +714,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7VF2T8G76X;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Select photos for your slideshow";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

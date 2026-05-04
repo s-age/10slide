@@ -5,8 +5,8 @@ final class SlideshowConfigTests: XCTestCase {
 
     // MARK: - SlideshowConfig.default
 
-    func testDefault_defaultDurationIsFiveSeconds() {
-        XCTAssertEqual(SlideshowConfig.default.defaultDuration, 5.0)
+    func testDefault_durationIsFive() {
+        XCTAssertEqual(SlideshowConfig.default.duration, .five)
     }
 
     func testDefault_transitionIsFade() {
@@ -19,44 +19,44 @@ final class SlideshowConfigTests: XCTestCase {
 
     // MARK: - Custom initialisation
 
-    func testInit_storesDefaultDuration() {
-        let sut = SlideshowConfig(defaultDuration: 3.0, transition: .none, loop: false)
-        XCTAssertEqual(sut.defaultDuration, 3.0)
+    func testInit_storesDuration() {
+        let sut = SlideshowConfig(duration: .thirty, transition: .none, loop: false)
+        XCTAssertEqual(sut.duration, .thirty)
     }
 
     func testInit_storesTransition() {
-        let sut = SlideshowConfig(defaultDuration: 3.0, transition: .slide, loop: false)
+        let sut = SlideshowConfig(duration: .ten, transition: .slide, loop: false)
         XCTAssertEqual(sut.transition, .slide)
     }
 
     func testInit_storesLoop() {
-        let sut = SlideshowConfig(defaultDuration: 3.0, transition: .none, loop: true)
+        let sut = SlideshowConfig(duration: .ten, transition: .none, loop: true)
         XCTAssertTrue(sut.loop)
     }
 
     // MARK: - Equatable
 
     func testEquality_sameValues_areEqual() {
-        let lhs = SlideshowConfig(defaultDuration: 4.0, transition: .dissolve, loop: false)
-        let rhs = SlideshowConfig(defaultDuration: 4.0, transition: .dissolve, loop: false)
+        let lhs = SlideshowConfig(duration: .fifteen, transition: .dissolve, loop: false)
+        let rhs = SlideshowConfig(duration: .fifteen, transition: .dissolve, loop: false)
         XCTAssertEqual(lhs, rhs)
     }
 
     func testEquality_differentTransition_areNotEqual() {
-        let lhs = SlideshowConfig(defaultDuration: 4.0, transition: .fade, loop: true)
-        let rhs = SlideshowConfig(defaultDuration: 4.0, transition: .dissolve, loop: true)
+        let lhs = SlideshowConfig(duration: .five, transition: .fade, loop: true)
+        let rhs = SlideshowConfig(duration: .five, transition: .dissolve, loop: true)
         XCTAssertNotEqual(lhs, rhs)
     }
 
     func testEquality_differentDuration_areNotEqual() {
-        let lhs = SlideshowConfig(defaultDuration: 4.0, transition: .fade, loop: true)
-        let rhs = SlideshowConfig(defaultDuration: 6.0, transition: .fade, loop: true)
+        let lhs = SlideshowConfig(duration: .five, transition: .fade, loop: true)
+        let rhs = SlideshowConfig(duration: .thirty, transition: .fade, loop: true)
         XCTAssertNotEqual(lhs, rhs)
     }
 
     func testEquality_differentLoop_areNotEqual() {
-        let lhs = SlideshowConfig(defaultDuration: 4.0, transition: .fade, loop: true)
-        let rhs = SlideshowConfig(defaultDuration: 4.0, transition: .fade, loop: false)
+        let lhs = SlideshowConfig(duration: .five, transition: .fade, loop: true)
+        let rhs = SlideshowConfig(duration: .five, transition: .fade, loop: false)
         XCTAssertNotEqual(lhs, rhs)
     }
 }

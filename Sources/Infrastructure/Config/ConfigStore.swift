@@ -13,7 +13,7 @@ final class ConfigStore: ConfigDataSourceProtocol {
         return try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .utility).async {
                 guard FileManager.default.fileExists(atPath: fileURL.path) else {
-                    continuation.resume(returning: ConfigDTO(defaultDuration: 5.0, transition: "fade", loop: true))
+                    continuation.resume(returning: ConfigDTO(duration: "5", transition: "fade", loop: true))
                     return
                 }
                 do {

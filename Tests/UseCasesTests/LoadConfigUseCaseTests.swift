@@ -46,20 +46,20 @@ final class LoadConfigUseCaseTests: XCTestCase {
         XCTAssertEqual(mockConfigRepository.loadCallCount, 1)
     }
 
-    func testExecute_returnsConfigDefaultDuration() async throws {
-        mockConfigRepository.loadResult = SlideshowConfig(defaultDuration: 7.5, transition: .slide, loop: false)
+    func testExecute_returnsConfigDuration() async throws {
+        mockConfigRepository.loadResult = SlideshowConfig(duration: .thirty, transition: .slide, loop: false)
         let result = try await sut.execute()
-        XCTAssertEqual(result.defaultDuration, 7.5)
+        XCTAssertEqual(result.duration, .thirty)
     }
 
     func testExecute_returnsConfigTransition() async throws {
-        mockConfigRepository.loadResult = SlideshowConfig(defaultDuration: 5.0, transition: .dissolve, loop: true)
+        mockConfigRepository.loadResult = SlideshowConfig(duration: .five, transition: .dissolve, loop: true)
         let result = try await sut.execute()
         XCTAssertEqual(result.transition, .dissolve)
     }
 
     func testExecute_returnsConfigLoop() async throws {
-        mockConfigRepository.loadResult = SlideshowConfig(defaultDuration: 5.0, transition: .fade, loop: false)
+        mockConfigRepository.loadResult = SlideshowConfig(duration: .five, transition: .fade, loop: false)
         let result = try await sut.execute()
         XCTAssertFalse(result.loop)
     }

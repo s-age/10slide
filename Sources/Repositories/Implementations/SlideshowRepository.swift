@@ -27,7 +27,7 @@ final class SlideshowRepository: SlideshowRepositoryProtocol {
             id: slideshow.id,
             name: slideshow.name,
             createdAt: slideshow.createdAt,
-            defaultDuration: slideshow.config.defaultDuration,
+            durationRawValue: slideshow.config.duration.rawValue,
             transitionRawValue: slideshow.config.transition.rawValue,
             loop: slideshow.config.loop
         )
@@ -51,7 +51,7 @@ final class SlideshowRepository: SlideshowRepositoryProtocol {
 
     private func slideshow(from model: SlideshowModel) -> Slideshow {
         let config = SlideshowConfig(
-            defaultDuration: model.defaultDuration,
+            duration: SlideDuration(rawValue: model.durationRawValue) ?? .five,
             transition: TransitionType(rawValue: model.transitionRawValue) ?? .default,
             loop: model.loop
         )

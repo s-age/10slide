@@ -10,7 +10,7 @@ final class ConfigRepository: ConfigRepositoryProtocol {
     func load() async throws -> SlideshowConfig {
         let dto = try await configDataSource.load()
         return SlideshowConfig(
-            defaultDuration: dto.defaultDuration,
+            duration: SlideDuration(rawValue: dto.duration) ?? .five,
             transition: TransitionType(rawValue: dto.transition) ?? .default,
             loop: dto.loop
         )
@@ -18,7 +18,7 @@ final class ConfigRepository: ConfigRepositoryProtocol {
 
     func save(_ config: SlideshowConfig) async throws {
         let dto = ConfigDTO(
-            defaultDuration: config.defaultDuration,
+            duration: config.duration.rawValue,
             transition: config.transition.rawValue,
             loop: config.loop
         )

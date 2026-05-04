@@ -68,7 +68,7 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
             id: UUID(),
             name: "Test Slideshow",
             slides: slides,
-            config: SlideshowConfig(defaultDuration: 5.0, transition: .fade, loop: loop),
+            config: SlideshowConfig(duration: .five, transition: .fade, loop: loop),
             createdAt: Date()
         )
     }

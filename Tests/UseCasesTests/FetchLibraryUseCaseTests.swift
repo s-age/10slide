@@ -15,6 +15,7 @@ final class MockImageRepositoryForLibrary: ImageRepositoryProtocol, @unchecked S
     }
 
     func fetchImageData(localIdentifier: String) async throws -> Data { Data() }
+    func fetchThumbnailData(localIdentifier: String) async throws -> Data { Data() }
 }
 
 private enum FetchLibraryUseCaseTestError: Error, Equatable {

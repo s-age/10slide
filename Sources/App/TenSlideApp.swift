@@ -15,7 +15,11 @@ struct TenSlideApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(
+                libraryViewModel: container.presentation.makeLibraryPickerViewModel(),
+                createViewModel: container.presentation.makeCreateSlideshowViewModel(),
+                makeSlideshowPlayerViewModel: container.presentation.makeSlideshowPlayerViewModel
+            )
         }
         .modelContainer(container.infrastructure.modelContainer)
     }

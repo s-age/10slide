@@ -2,24 +2,19 @@ import Foundation
 
 final class CreateSlideshowUseCase: CreateSlideshowUseCaseProtocol {
     private let slideshowRepository: any SlideshowRepositoryProtocol
-    private let configRepository: any ConfigRepositoryProtocol
 
-    init(
-        slideshowRepository: any SlideshowRepositoryProtocol,
-        configRepository: any ConfigRepositoryProtocol
-    ) {
+    init(slideshowRepository: any SlideshowRepositoryProtocol) {
         self.slideshowRepository = slideshowRepository
-        self.configRepository = configRepository
     }
 
-    func execute(name: String, localIdentifiers: [String]) async throws -> Slideshow {
-        let config = try await configRepository.load()
+    func execute(name: String, localIdentifiers: [String], config: SlideshowConfig) async throws -> Slideshow {
+        let slideDuration = config.duration.seconds ?? 0
         let slides = localIdentifiers.enumerated().map { index, id in
             Slide(
                 id: UUID(),
                 localIdentifier: id,
                 order: index,
-                duration: config.defaultDuration,
+                duration: slideDuration,
                 title: nil
             )
         }

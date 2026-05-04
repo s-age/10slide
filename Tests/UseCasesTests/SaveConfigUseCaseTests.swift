@@ -46,20 +46,20 @@ final class SaveConfigUseCaseTests: XCTestCase {
         XCTAssertEqual(mockConfigRepository.saveCallCount, 1)
     }
 
-    func testExecute_forwardsConfigDefaultDuration() async throws {
-        let config = SlideshowConfig(defaultDuration: 9.0, transition: .fade, loop: true)
+    func testExecute_forwardsConfigDuration() async throws {
+        let config = SlideshowConfig(duration: .sixty, transition: .fade, loop: true)
         try await sut.execute(config)
-        XCTAssertEqual(mockConfigRepository.savedConfig?.defaultDuration, 9.0)
+        XCTAssertEqual(mockConfigRepository.savedConfig?.duration, .sixty)
     }
 
     func testExecute_forwardsConfigTransition() async throws {
-        let config = SlideshowConfig(defaultDuration: 5.0, transition: .slide, loop: true)
+        let config = SlideshowConfig(duration: .five, transition: .slide, loop: true)
         try await sut.execute(config)
         XCTAssertEqual(mockConfigRepository.savedConfig?.transition, .slide)
     }
 
     func testExecute_forwardsConfigLoop() async throws {
-        let config = SlideshowConfig(defaultDuration: 5.0, transition: .fade, loop: false)
+        let config = SlideshowConfig(duration: .five, transition: .fade, loop: false)
         try await sut.execute(config)
         XCTAssertEqual(mockConfigRepository.savedConfig?.loop, false)
     }

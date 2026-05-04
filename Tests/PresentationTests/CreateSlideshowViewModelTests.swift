@@ -16,12 +16,14 @@ final class MockCreateSlideshowUseCase: CreateSlideshowUseCaseProtocol, @uncheck
     var executeCallCount = 0
     var lastReceivedName: String?
     var lastReceivedIdentifiers: [String]?
+    var lastReceivedConfig: SlideshowConfig?
     var throwOnExecute = false
 
-    func execute(name: String, localIdentifiers: [String]) async throws -> Slideshow {
+    func execute(name: String, localIdentifiers: [String], config: SlideshowConfig) async throws -> Slideshow {
         executeCallCount += 1
         lastReceivedName = name
         lastReceivedIdentifiers = localIdentifiers
+        lastReceivedConfig = config
         if throwOnExecute { throw CreateSlideshowViewModelTestError.intentional }
         return executeResult
     }
@@ -70,6 +72,18 @@ final class CreateSlideshowViewModelTests: XCTestCase {
         sut.selectedIdentifiers = []
         _ = await sut.createSlideshow()
         XCTAssertTrue(mockCreateSlideshow.lastReceivedIdentifiers?.isEmpty == true)
+    }
+
+    func testCreateSlideshow_passesSelectedDurationInConfig() async {
+        sut.selectedDuration = .thirty
+        _ = await sut.createSlideshow()
+        XCTAssertEqual(mockCreateSlideshow.lastReceivedConfig?.duration, .thirty)
+    }
+
+    func testCreateSlideshow_passesSelectedTransitionInConfig() async {
+        sut.selectedTransition = .slide
+        _ = await sut.createSlideshow()
+        XCTAssertEqual(mockCreateSlideshow.lastReceivedConfig?.transition, .slide)
     }
 
     func testCreateSlideshow_returnsSlideshowFromUseCase() async {

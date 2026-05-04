@@ -15,4 +15,8 @@ final class ImageRepository: ImageRepositoryProtocol {
         let dto = try await imageDataSource.fetchImage(localIdentifier: localIdentifier)
         return dto.data
     }
+
+    func fetchThumbnailData(localIdentifier: String) async throws -> Data {
+        try await imageDataSource.fetchThumbnail(localIdentifier: localIdentifier)
+    }
 }

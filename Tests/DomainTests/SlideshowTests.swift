@@ -76,7 +76,7 @@ final class SlideshowTests: XCTestCase {
     }
 
     func testInit_storesConfig() {
-        let customConfig = SlideshowConfig(defaultDuration: 10.0, transition: .slide, loop: false)
+        let customConfig = SlideshowConfig(duration: .ten, transition: .slide, loop: false)
         let sut = Slideshow(
             id: fixedID,
             name: "My Show",
@@ -108,11 +108,11 @@ final class SlideshowTests: XCTestCase {
             config: .default,
             createdAt: fixedDate
         )
-        XCTAssertEqual(sut.config.defaultDuration, 5.0)
+        XCTAssertEqual(sut.config.duration, .five)
     }
 
     func testConfig_customTransition_isStoredOnConfig() {
-        let customConfig = SlideshowConfig(defaultDuration: 3.0, transition: .dissolve, loop: true)
+        let customConfig = SlideshowConfig(duration: .five, transition: .dissolve, loop: true)
         let sut = Slideshow(
             id: fixedID,
             name: "My Show",
@@ -124,7 +124,7 @@ final class SlideshowTests: XCTestCase {
     }
 
     func testConfig_loopDisabled_isStoredOnConfig() {
-        let customConfig = SlideshowConfig(defaultDuration: 3.0, transition: .fade, loop: false)
+        let customConfig = SlideshowConfig(duration: .five, transition: .fade, loop: false)
         let sut = Slideshow(
             id: fixedID,
             name: "My Show",

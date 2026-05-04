@@ -11,6 +11,8 @@ final class MockImageRepositoryForImage: ImageRepositoryProtocol, @unchecked Sen
 
     func fetchAllIdentifiers() async throws -> [String] { [] }
 
+    func fetchThumbnailData(localIdentifier: String) async throws -> Data { Data() }
+
     func fetchImageData(localIdentifier: String) async throws -> Data {
         fetchImageDataCallCount += 1
         fetchedLocalIdentifier = localIdentifier

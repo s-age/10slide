@@ -51,11 +51,11 @@ final class SlideshowDataSourceTests: XCTestCase {
         XCTAssertEqual(fetched?.name, "My Slideshow")
     }
 
-    func testSaveThenFetch_returnsSavedDefaultDuration() async throws {
-        let model = SlideshowModel(id: UUID(), name: "X", defaultDuration: 12.0)
+    func testSaveThenFetch_returnsSavedDurationRawValue() async throws {
+        let model = SlideshowModel(id: UUID(), name: "X", durationRawValue: "30")
         try await sut.save(model)
         let fetched = try await sut.fetch(id: model.id)
-        XCTAssertEqual(fetched?.defaultDuration, 12.0)
+        XCTAssertEqual(fetched?.durationRawValue, "30")
     }
 
     func testSaveThenFetch_returnsSavedTransitionRawValue() async throws {

@@ -35,6 +35,7 @@ struct SlideshowPlayerView: View {
         }
         .task {
             await viewModel.loadCurrentImage()
+            viewModel.play()
         }
     }
 

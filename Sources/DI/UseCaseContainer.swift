@@ -3,13 +3,13 @@ final class UseCaseContainer {
     let fetchSlideshow: any FetchSlideshowUseCaseProtocol
     let fetchLibrary: any FetchLibraryUseCaseProtocol
     let loadSlideImage: any LoadSlideImageUseCaseProtocol
+    let loadThumbnail: any LoadThumbnailUseCaseProtocol
     let loadConfig: any LoadConfigUseCaseProtocol
     let saveConfig: any SaveConfigUseCaseProtocol
 
     init(repositories: RepositoryContainer) {
         createSlideshow = CreateSlideshowUseCase(
-            slideshowRepository: repositories.slideshowRepository,
-            configRepository: repositories.configRepository
+            slideshowRepository: repositories.slideshowRepository
         )
         fetchSlideshow = FetchSlideshowUseCase(
             slideshowRepository: repositories.slideshowRepository
@@ -18,6 +18,9 @@ final class UseCaseContainer {
             imageRepository: repositories.imageRepository
         )
         loadSlideImage = LoadSlideImageUseCase(
+            imageRepository: repositories.imageRepository
+        )
+        loadThumbnail = LoadThumbnailUseCase(
             imageRepository: repositories.imageRepository
         )
         loadConfig = LoadConfigUseCase(

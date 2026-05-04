@@ -114,12 +114,12 @@ final class SlideshowRepositoryTests: XCTestCase {
         XCTAssertEqual(result[0].name, "My Show")
     }
 
-    func testFetchAll_mapsDefaultDuration() async throws {
+    func testFetchAll_mapsDurationRawValue() async throws {
         mockSlideshowDataSource.fetchAllResult = [
-            SlideshowModel(id: UUID(), name: "X", defaultDuration: 12.0)
+            SlideshowModel(id: UUID(), name: "X", durationRawValue: "30")
         ]
         let result = try await sut.fetchAll()
-        XCTAssertEqual(result[0].config.defaultDuration, 12.0)
+        XCTAssertEqual(result[0].config.duration, .thirty)
     }
 
     func testFetchAll_mapsTransitionRawValueToEnum() async throws {
@@ -196,10 +196,10 @@ final class SlideshowRepositoryTests: XCTestCase {
         XCTAssertEqual(result?.id, id)
     }
 
-    func testFetch_mapsDefaultDuration() async throws {
-        mockSlideshowDataSource.fetchResult = SlideshowModel(id: UUID(), name: "X", defaultDuration: 9.5)
+    func testFetch_mapsDurationRawValue() async throws {
+        mockSlideshowDataSource.fetchResult = SlideshowModel(id: UUID(), name: "X", durationRawValue: "60")
         let result = try await sut.fetch(id: UUID())
-        XCTAssertEqual(result?.config.defaultDuration, 9.5)
+        XCTAssertEqual(result?.config.duration, .sixty)
     }
 
     func testFetch_mapsTransitionRawValue() async throws {
@@ -249,17 +249,17 @@ final class SlideshowRepositoryTests: XCTestCase {
         XCTAssertEqual(mockSlideshowDataSource.savedModel?.name, "Encoded Show")
     }
 
-    func testSave_encodesDefaultDuration() async throws {
+    func testSave_encodesDurationAsRawValue() async throws {
         let slideshow = makeSlideshow(
-            config: SlideshowConfig(defaultDuration: 11.0, transition: .fade, loop: true)
+            config: SlideshowConfig(duration: .fifteen, transition: .fade, loop: true)
         )
         try await sut.save(slideshow)
-        XCTAssertEqual(mockSlideshowDataSource.savedModel?.defaultDuration, 11.0)
+        XCTAssertEqual(mockSlideshowDataSource.savedModel?.durationRawValue, "15")
     }
 
     func testSave_encodesTransitionAsRawValue() async throws {
         let slideshow = makeSlideshow(
-            config: SlideshowConfig(defaultDuration: 5.0, transition: .dissolve, loop: true)
+            config: SlideshowConfig(duration: .five, transition: .dissolve, loop: true)
         )
         try await sut.save(slideshow)
         XCTAssertEqual(mockSlideshowDataSource.savedModel?.transitionRawValue, "dissolve")
@@ -267,7 +267,7 @@ final class SlideshowRepositoryTests: XCTestCase {
 
     func testSave_encodesLoopFalse() async throws {
         let slideshow = makeSlideshow(
-            config: SlideshowConfig(defaultDuration: 5.0, transition: .fade, loop: false)
+            config: SlideshowConfig(duration: .five, transition: .fade, loop: false)
         )
         try await sut.save(slideshow)
         XCTAssertEqual(mockSlideshowDataSource.savedModel?.loop, false)
@@ -275,7 +275,7 @@ final class SlideshowRepositoryTests: XCTestCase {
 
     func testSave_encodesLoopTrue() async throws {
         let slideshow = makeSlideshow(
-            config: SlideshowConfig(defaultDuration: 5.0, transition: .fade, loop: true)
+            config: SlideshowConfig(duration: .five, transition: .fade, loop: true)
         )
         try await sut.save(slideshow)
         XCTAssertEqual(mockSlideshowDataSource.savedModel?.loop, true)
@@ -487,7 +487,7 @@ final class SlideshowRepositoryTests: XCTestCase {
         id: UUID = UUID(),
         name: String = "Test Slideshow",
         slides: [Slide] = [],
-        config: SlideshowConfig = SlideshowConfig(defaultDuration: 5.0, transition: .fade, loop: true)
+        config: SlideshowConfig = SlideshowConfig(duration: .five, transition: .fade, loop: true)
     ) -> Slideshow {
         Slideshow(id: id, name: name, slides: slides, config: config, createdAt: Date())
     }

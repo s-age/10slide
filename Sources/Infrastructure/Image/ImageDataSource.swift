@@ -9,7 +9,7 @@ enum ImageDataSourceError: Error {
 
 final class ImageDataSource: ImageDataSourceProtocol {
     func fetchAllIdentifiers() async throws -> [String] {
-        let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        let status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
         guard status == .authorized || status == .limited else {
             throw ImageDataSourceError.notAuthorized
         }
@@ -44,6 +44,32 @@ final class ImageDataSource: ImageDataSourceProtocol {
                         data: data,
                         creationDate: creationDate
                     ))
+                } else {
+                    continuation.resume(throwing: ImageDataSourceError.dataUnavailable)
+                }
+            }
+        }
+    }
+
+    func fetchThumbnail(localIdentifier: String) async throws -> Data {
+        let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
+        guard let asset = fetchResult.firstObject else {
+            throw ImageDataSourceError.assetNotFound
+        }
+        let options = PHImageRequestOptions()
+        options.deliveryMode = .opportunistic
+        options.isNetworkAccessAllowed = true
+        return try await withCheckedThrowingContinuation { continuation in
+            PHImageManager.default().requestImage(
+                for: asset,
+                targetSize: CGSize(width: 200, height: 200),
+                contentMode: .aspectFill,
+                options: options
+            ) { image, info in
+                let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+                if isDegraded { return }
+                if let image, let data = image.tiffRepresentation {
+                    continuation.resume(returning: data)
                 } else {
                     continuation.resume(throwing: ImageDataSourceError.dataUnavailable)
                 }

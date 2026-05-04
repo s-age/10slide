@@ -23,20 +23,6 @@ final class MockSlideshowRepositoryForCreate: SlideshowRepositoryProtocol, @unch
     func delete(id: UUID) async throws {}
 }
 
-final class MockConfigRepositoryForCreate: ConfigRepositoryProtocol, @unchecked Sendable {
-    var loadResult: SlideshowConfig = .default
-    var loadCallCount = 0
-    var throwOnLoad = false
-
-    func load() async throws -> SlideshowConfig {
-        loadCallCount += 1
-        if throwOnLoad { throw CreateSlideshowUseCaseTestError.intentional }
-        return loadResult
-    }
-
-    func save(_ config: SlideshowConfig) async throws {}
-}
-
 private enum CreateSlideshowUseCaseTestError: Error, Equatable {
     case intentional
 }
@@ -46,115 +32,101 @@ private enum CreateSlideshowUseCaseTestError: Error, Equatable {
 final class CreateSlideshowUseCaseTests: XCTestCase {
     private var sut: CreateSlideshowUseCase!
     private var mockSlideshowRepository: MockSlideshowRepositoryForCreate!
-    private var mockConfigRepository: MockConfigRepositoryForCreate!
 
     override func setUp() {
         super.setUp()
         mockSlideshowRepository = MockSlideshowRepositoryForCreate()
-        mockConfigRepository = MockConfigRepositoryForCreate()
-        sut = CreateSlideshowUseCase(
-            slideshowRepository: mockSlideshowRepository,
-            configRepository: mockConfigRepository
-        )
+        sut = CreateSlideshowUseCase(slideshowRepository: mockSlideshowRepository)
     }
 
     override func tearDown() {
         sut = nil
         mockSlideshowRepository = nil
-        mockConfigRepository = nil
         super.tearDown()
     }
 
-    // MARK: - execute(name:localIdentifiers:)
+    private let defaultConfig = SlideshowConfig(duration: .five, transition: .fade, loop: true)
 
-    func testExecute_callsConfigRepositoryLoadOnce() async throws {
-        _ = try await sut.execute(name: "Show", localIdentifiers: ["a"])
-        XCTAssertEqual(mockConfigRepository.loadCallCount, 1)
-    }
+    // MARK: - execute(name:localIdentifiers:config:)
 
     func testExecute_callsSlideshowRepositorySaveOnce() async throws {
-        _ = try await sut.execute(name: "Show", localIdentifiers: ["a"])
+        _ = try await sut.execute(name: "Show", localIdentifiers: ["a"], config: defaultConfig)
         XCTAssertEqual(mockSlideshowRepository.saveCallCount, 1)
     }
 
-    func testExecute_buildsSlide_withConfigDefaultDuration() async throws {
-        mockConfigRepository.loadResult = SlideshowConfig(defaultDuration: 8.0, transition: .fade, loop: true)
-        let result = try await sut.execute(name: "Show", localIdentifiers: ["id1"])
-        XCTAssertEqual(result.slides[0].duration, 8.0)
+    func testExecute_buildsSlide_withConfigDurationSeconds() async throws {
+        let config = SlideshowConfig(duration: .ten, transition: .fade, loop: true)
+        let result = try await sut.execute(name: "Show", localIdentifiers: ["id1"], config: config)
+        XCTAssertEqual(result.slides[0].duration, 10.0)
+    }
+
+    func testExecute_buildsSlide_manualDurationIsZero() async throws {
+        let config = SlideshowConfig(duration: .manual, transition: .fade, loop: true)
+        let result = try await sut.execute(name: "Show", localIdentifiers: ["id1"], config: config)
+        XCTAssertEqual(result.slides[0].duration, 0.0)
     }
 
     func testExecute_buildsCorrectSlideCount() async throws {
-        let result = try await sut.execute(name: "Show", localIdentifiers: ["a", "b", "c"])
+        let result = try await sut.execute(name: "Show", localIdentifiers: ["a", "b", "c"], config: defaultConfig)
         XCTAssertEqual(result.slides.count, 3)
     }
 
     func testExecute_buildsSlide_withCorrectLocalIdentifier() async throws {
-        let result = try await sut.execute(name: "Show", localIdentifiers: ["photo-42"])
+        let result = try await sut.execute(name: "Show", localIdentifiers: ["photo-42"], config: defaultConfig)
         XCTAssertEqual(result.slides[0].localIdentifier, "photo-42")
     }
 
     func testExecute_buildsSlide_firstIndexIsOrderZero() async throws {
-        let result = try await sut.execute(name: "Show", localIdentifiers: ["a", "b"])
+        let result = try await sut.execute(name: "Show", localIdentifiers: ["a", "b"], config: defaultConfig)
         XCTAssertEqual(result.slides[0].order, 0)
     }
 
     func testExecute_buildsSlide_secondIndexIsOrderOne() async throws {
-        let result = try await sut.execute(name: "Show", localIdentifiers: ["a", "b"])
+        let result = try await sut.execute(name: "Show", localIdentifiers: ["a", "b"], config: defaultConfig)
         XCTAssertEqual(result.slides[1].order, 1)
     }
 
     func testExecute_buildsSlide_withNilTitle() async throws {
-        let result = try await sut.execute(name: "Show", localIdentifiers: ["a"])
+        let result = try await sut.execute(name: "Show", localIdentifiers: ["a"], config: defaultConfig)
         XCTAssertNil(result.slides[0].title)
     }
 
     func testExecute_returnsSlideshowWithMatchingName() async throws {
-        let result = try await sut.execute(name: "My Vacation", localIdentifiers: ["a"])
+        let result = try await sut.execute(name: "My Vacation", localIdentifiers: ["a"], config: defaultConfig)
         XCTAssertEqual(result.name, "My Vacation")
     }
 
     func testExecute_returnsSlideshowWithMatchingConfig() async throws {
-        let config = SlideshowConfig(defaultDuration: 3.0, transition: .dissolve, loop: false)
-        mockConfigRepository.loadResult = config
-        let result = try await sut.execute(name: "Show", localIdentifiers: ["a"])
+        let config = SlideshowConfig(duration: .thirty, transition: .dissolve, loop: false)
+        let result = try await sut.execute(name: "Show", localIdentifiers: ["a"], config: config)
         XCTAssertEqual(result.config, config)
     }
 
     func testExecute_whenIdentifiersEmpty_returnsEmptySlides() async throws {
-        let result = try await sut.execute(name: "Show", localIdentifiers: [])
+        let result = try await sut.execute(name: "Show", localIdentifiers: [], config: defaultConfig)
         XCTAssertTrue(result.slides.isEmpty)
     }
 
     func testExecute_saveCalledWithMatchingName() async throws {
-        _ = try await sut.execute(name: "Saved Show", localIdentifiers: ["a"])
+        _ = try await sut.execute(name: "Saved Show", localIdentifiers: ["a"], config: defaultConfig)
         XCTAssertEqual(mockSlideshowRepository.savedSlideshow?.name, "Saved Show")
     }
 
     func testExecute_saveCalledWithCorrectSlideCount() async throws {
-        _ = try await sut.execute(name: "Show", localIdentifiers: ["x", "y"])
+        _ = try await sut.execute(name: "Show", localIdentifiers: ["x", "y"], config: defaultConfig)
         XCTAssertEqual(mockSlideshowRepository.savedSlideshow?.slides.count, 2)
     }
 
     func testExecute_saveCalledWithMatchingSlideDuration() async throws {
-        mockConfigRepository.loadResult = SlideshowConfig(defaultDuration: 12.0, transition: .fade, loop: true)
-        _ = try await sut.execute(name: "Show", localIdentifiers: ["z"])
-        XCTAssertEqual(mockSlideshowRepository.savedSlideshow?.slides[0].duration, 12.0)
-    }
-
-    func testExecute_whenConfigRepositoryThrows_propagatesError() async {
-        mockConfigRepository.throwOnLoad = true
-        do {
-            _ = try await sut.execute(name: "Show", localIdentifiers: ["a"])
-            XCTFail("Expected execute() to throw")
-        } catch {
-            XCTAssertEqual(error as? CreateSlideshowUseCaseTestError, .intentional)
-        }
+        let config = SlideshowConfig(duration: .sixty, transition: .fade, loop: true)
+        _ = try await sut.execute(name: "Show", localIdentifiers: ["z"], config: config)
+        XCTAssertEqual(mockSlideshowRepository.savedSlideshow?.slides[0].duration, 60.0)
     }
 
     func testExecute_whenSlideshowRepositoryThrows_propagatesError() async {
         mockSlideshowRepository.throwOnSave = true
         do {
-            _ = try await sut.execute(name: "Show", localIdentifiers: ["a"])
+            _ = try await sut.execute(name: "Show", localIdentifiers: ["a"], config: defaultConfig)
             XCTFail("Expected execute() to throw")
         } catch {
             XCTAssertEqual(error as? CreateSlideshowUseCaseTestError, .intentional)

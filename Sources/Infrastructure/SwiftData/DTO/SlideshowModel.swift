@@ -6,7 +6,7 @@ final class SlideshowModel {
     @Attribute(.unique) var id: UUID
     var name: String
     var createdAt: Date
-    var defaultDuration: TimeInterval
+    var durationRawValue: String
     var transitionRawValue: String
     var loop: Bool
     @Relationship(deleteRule: .cascade, inverse: \SlideModel.slideshow) var slides: [SlideModel]
@@ -15,14 +15,14 @@ final class SlideshowModel {
         id: UUID = UUID(),
         name: String,
         createdAt: Date = Date(),
-        defaultDuration: TimeInterval = 5.0,
+        durationRawValue: String = "5",
         transitionRawValue: String = "fade",
         loop: Bool = true
     ) {
         self.id = id
         self.name = name
         self.createdAt = createdAt
-        self.defaultDuration = defaultDuration
+        self.durationRawValue = durationRawValue
         self.transitionRawValue = transitionRawValue
         self.loop = loop
         self.slides = []
