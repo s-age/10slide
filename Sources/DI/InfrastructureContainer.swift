@@ -12,7 +12,7 @@ final class InfrastructureContainer {
 
     init() throws {
         modelContainer = try ModelContainer(for: SlideModel.self, SlideshowModel.self)
-        imageDataSource = ImageDataSource()
+        imageDataSource = FileSystemImageDataSource()
         slideDataSource = SlideDataSource(modelContainer: modelContainer)
         slideshowDataSource = SlideshowDataSource(modelContainer: modelContainer)
         guard let appSupport = FileManager.default.urls(
