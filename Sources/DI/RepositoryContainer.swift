@@ -6,8 +6,7 @@ final class RepositoryContainer {
 
     init(infrastructure: InfrastructureContainer) {
         slideRepository = SlideRepository(
-            slideDataSource: infrastructure.slideDataSource,
-            imageDataSource: infrastructure.imageDataSource
+            slideDataSource: infrastructure.slideDataSource
         )
         slideshowRepository = SlideshowRepository(
             slideshowDataSource: infrastructure.slideshowDataSource

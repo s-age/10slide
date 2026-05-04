@@ -71,11 +71,8 @@ final class RepositoryContainer {
     let slideRepository: any SlideRepositoryProtocol
 
     init(infrastructure: InfrastructureContainer) {
-        let slideDataSource = infrastructure.slideDataSource
-        let imageDataSource = infrastructure.imageDataSource
         slideRepository = SlideRepository(
-            slideDataSource: slideDataSource,
-            imageDataSource: imageDataSource
+            slideDataSource: infrastructure.slideDataSource
         )
         // infrastructure reference is NOT stored
     }

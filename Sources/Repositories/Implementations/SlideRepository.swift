@@ -2,11 +2,9 @@ import Foundation
 
 final class SlideRepository: SlideRepositoryProtocol {
     private let slideDataSource: any SlideDataSourceProtocol
-    private let imageDataSource: any ImageDataSourceProtocol
 
-    init(slideDataSource: any SlideDataSourceProtocol, imageDataSource: any ImageDataSourceProtocol) {
+    init(slideDataSource: any SlideDataSourceProtocol) {
         self.slideDataSource = slideDataSource
-        self.imageDataSource = imageDataSource
     }
 
     func fetchAll() async throws -> [Slide] {
