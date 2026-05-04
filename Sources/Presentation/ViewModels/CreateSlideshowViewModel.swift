@@ -4,7 +4,7 @@ import Observation
 @Observable
 @MainActor
 final class CreateSlideshowViewModel {
-    private(set) var selectedIdentifiers: Set<String> = []
+    private(set) var selectedIdentifiers: [String] = []
     var slideshowName: String = ""
     var selectedDuration: SlideDuration = .five
     var selectedTransition: TransitionType = .fade
@@ -12,9 +12,11 @@ final class CreateSlideshowViewModel {
     private(set) var errorMessage: String?
 
     private let createSlideshowUseCase: any CreateSlideshowUseCaseProtocol
+    private let addDroppedFilesUseCase: any AddDroppedFilesUseCaseProtocol
 
-    init(createSlideshow: any CreateSlideshowUseCaseProtocol) {
+    init(createSlideshow: any CreateSlideshowUseCaseProtocol, addDroppedFiles: any AddDroppedFilesUseCaseProtocol) {
         self.createSlideshowUseCase = createSlideshow
+        self.addDroppedFilesUseCase = addDroppedFiles
     }
 
     var hasUnsavedWork: Bool {
@@ -23,7 +25,7 @@ final class CreateSlideshowViewModel {
 
     func loadSlideshow(_ slideshow: Slideshow) {
         slideshowName = slideshow.name
-        selectedIdentifiers = Set(slideshow.slides.map(\.localIdentifier))
+        selectedIdentifiers = slideshow.slides.map(\.localIdentifier)
     }
 
     func reset() {
@@ -31,12 +33,13 @@ final class CreateSlideshowViewModel {
         selectedIdentifiers = []
     }
 
-    func toggleSelection(_ identifier: String) {
-        if selectedIdentifiers.contains(identifier) {
-            selectedIdentifiers.remove(identifier)
-        } else {
-            selectedIdentifiers.insert(identifier)
-        }
+    func addFiles(_ urls: [URL]) {
+        let newPaths = addDroppedFilesUseCase.execute(urls: urls, existingIdentifiers: selectedIdentifiers)
+        selectedIdentifiers.append(contentsOf: newPaths)
+    }
+
+    func removeFile(_ identifier: String) {
+        selectedIdentifiers.removeAll { $0 == identifier }
     }
 
     func createSlideshow() async -> Slideshow? {
@@ -51,7 +54,7 @@ final class CreateSlideshowViewModel {
         do {
             return try await createSlideshowUseCase.execute(
                 name: slideshowName,
-                localIdentifiers: Array(selectedIdentifiers),
+                localIdentifiers: selectedIdentifiers,
                 config: config
             )
         } catch {

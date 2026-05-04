@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var libraryViewModel: LibraryViewModel
     @State private var thumbnailViewModel: ThumbnailViewModel
     @State private var createViewModel: CreateSlideshowViewModel
     @State private var selectedSlideshow: Slideshow?
@@ -10,13 +9,11 @@ struct ContentView: View {
     private let makeSlideshowLibraryViewModel: @MainActor () -> SlideshowLibraryViewModel
 
     init(
-        libraryViewModel: LibraryViewModel,
         thumbnailViewModel: ThumbnailViewModel,
         createViewModel: CreateSlideshowViewModel,
         makeSlideshowPlayerViewModel: @escaping @MainActor (Slideshow) -> SlideshowPlayerViewModel,
         makeSlideshowLibraryViewModel: @escaping @MainActor () -> SlideshowLibraryViewModel
     ) {
-        self._libraryViewModel = State(initialValue: libraryViewModel)
         self._thumbnailViewModel = State(initialValue: thumbnailViewModel)
         self._createViewModel = State(initialValue: createViewModel)
         self.makeSlideshowPlayerViewModel = makeSlideshowPlayerViewModel
@@ -32,7 +29,6 @@ struct ContentView: View {
             )
         } else {
             HomeView(
-                libraryViewModel: libraryViewModel,
                 thumbnailViewModel: thumbnailViewModel,
                 createViewModel: createViewModel,
                 slideshowLibraryViewModel: makeSlideshowLibraryViewModel(),

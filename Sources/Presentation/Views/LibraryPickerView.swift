@@ -1,58 +1,50 @@
 import SwiftUI
 
 struct LibraryPickerView: View {
-    @State private var libraryViewModel: LibraryViewModel
     @State private var thumbnailViewModel: ThumbnailViewModel
     @State private var createViewModel: CreateSlideshowViewModel
     var onSlideshowCreated: (Slideshow) -> Void
 
     init(
-        libraryViewModel: LibraryViewModel,
         thumbnailViewModel: ThumbnailViewModel,
         createViewModel: CreateSlideshowViewModel,
         onSlideshowCreated: @escaping (Slideshow) -> Void
     ) {
-        self._libraryViewModel = State(initialValue: libraryViewModel)
         self._thumbnailViewModel = State(initialValue: thumbnailViewModel)
         self._createViewModel = State(initialValue: createViewModel)
         self.onSlideshowCreated = onSlideshowCreated
     }
 
-    @State private var isShowingFolderPicker = false
-    @State private var decodedImages: [String: NSImage] = [:]
+    @State private var isShowingFilePicker = false
 
     private let columns = [GridItem(.adaptive(minimum: 100), spacing: 8)]
 
     var body: some View {
         VStack(spacing: 0) {
-            directoryBar
-            libraryStatusBanner
-
-            ScrollView {
-                LazyVGrid(columns: columns, spacing: 8) {
-                    ForEach(libraryViewModel.identifiers, id: \.self) { identifier in
-                        PhotoCell(
-                            image: decodedImages[identifier],
-                            isSelected: createViewModel.selectedIdentifiers.contains(identifier)
-                        )
-                        .onTapGesture {
-                            toggleSelection(identifier)
-                        }
-                        .task(id: identifier) {
-                            await thumbnailViewModel.loadThumbnail(identifier: identifier)
-                            if let data = thumbnailViewModel.thumbnails[identifier] {
-                                decodedImages[identifier] = await Task.detached(priority: .userInitiated) {
-                                    NSImage(data: data)
-                                }.value
+            ZStack {
+                if createViewModel.selectedIdentifiers.isEmpty {
+                    dropPlaceholder
+                } else {
+                    ScrollView {
+                        LazyVGrid(columns: columns, spacing: 8) {
+                            ForEach(createViewModel.selectedIdentifiers, id: \.self) { identifier in
+                                PhotoCell(
+                                    image: thumbnailViewModel.images[identifier],
+                                    onRemove: { createViewModel.removeFile(identifier) }
+                                )
+                                .task(id: identifier) {
+                                    await thumbnailViewModel.loadThumbnail(identifier: identifier)
+                                }
                             }
                         }
+                        .padding()
                     }
                 }
-                .padding()
-                .dropDestination(for: URL.self) { urls, _ in
-                    libraryViewModel.addDroppedFiles(urls)
-                    return !urls.isEmpty
-                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .dropDestination(for: URL.self) { urls, _ in
+                createViewModel.addFiles(urls)
+                return !urls.isEmpty
             }
 
             if let error = createViewModel.errorMessage {
@@ -62,47 +54,34 @@ struct LibraryPickerView: View {
             }
 
             Divider()
-
             bottomBar
         }
-        .task { await libraryViewModel.loadLibrary() }
         .fileImporter(
-            isPresented: $isShowingFolderPicker,
-            allowedContentTypes: [.folder]
+            isPresented: $isShowingFilePicker,
+            allowedContentTypes: [.image],
+            allowsMultipleSelection: true
         ) { result in
-            guard let url = try? result.get() else { return }
-            Task { await libraryViewModel.setDirectory(url) }
+            guard let urls = try? result.get() else { return }
+            createViewModel.addFiles(urls)
         }
     }
 
-    private var directoryBar: some View {
-        HStack {
-            Label(libraryViewModel.currentDirectoryName, systemImage: "folder")
-                .font(.subheadline)
-            Spacer()
-            Button("Select Folder…") {
-                isShowingFolderPicker = true
-            }
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 6)
-        .background(.bar)
-    }
-
-    @ViewBuilder
-    private var libraryStatusBanner: some View {
-        if libraryViewModel.isLoading {
-            ProgressView("Loading library…")
-                .padding()
-        } else if let error = libraryViewModel.errorMessage {
-            Text(error)
-                .foregroundStyle(.red)
-                .padding()
+    private var dropPlaceholder: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "photo.on.rectangle.angled")
+                .font(.system(size: 48))
+                .foregroundStyle(.secondary)
+            Text("Drop images here or use Browse")
+                .foregroundStyle(.secondary)
         }
     }
 
     private var bottomBar: some View {
         HStack(spacing: 12) {
+            Button("Browse…") {
+                isShowingFilePicker = true
+            }
+
             TextField("Slideshow name", text: $createViewModel.slideshowName)
                 .textFieldStyle(.roundedBorder)
 
@@ -121,17 +100,13 @@ struct LibraryPickerView: View {
         }
         .padding()
     }
-
-    private func toggleSelection(_ identifier: String) {
-        createViewModel.toggleSelection(identifier)
-    }
 }
 
 // MARK: - PhotoCell
 
 private struct PhotoCell: View {
     let image: NSImage?
-    let isSelected: Bool
+    let onRemove: () -> Void
 
     var body: some View {
         ZStack {
@@ -145,19 +120,13 @@ private struct PhotoCell: View {
         }
         .frame(height: 100)
         .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .strokeBorder(
-                    isSelected ? Color.accentColor : Color.clear,
-                    lineWidth: 3
-                )
-        )
         .overlay(alignment: .topTrailing) {
-            if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.white, Color.accentColor)
+            Button(action: onRemove) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.white, Color.secondary)
                     .padding(6)
             }
+            .buttonStyle(.plain)
         }
     }
 }

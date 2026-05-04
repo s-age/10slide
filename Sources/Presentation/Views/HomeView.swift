@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct HomeView: View {
-    @State private var libraryViewModel: LibraryViewModel
     @State private var thumbnailViewModel: ThumbnailViewModel
     @State private var createViewModel: CreateSlideshowViewModel
     @State private var slideshowLibraryViewModel: SlideshowLibraryViewModel
@@ -10,13 +9,11 @@ struct HomeView: View {
     let onSlideshowSelected: (Slideshow) -> Void
 
     init(
-        libraryViewModel: LibraryViewModel,
         thumbnailViewModel: ThumbnailViewModel,
         createViewModel: CreateSlideshowViewModel,
         slideshowLibraryViewModel: SlideshowLibraryViewModel,
         onSlideshowSelected: @escaping (Slideshow) -> Void
     ) {
-        self._libraryViewModel = State(initialValue: libraryViewModel)
         self._thumbnailViewModel = State(initialValue: thumbnailViewModel)
         self._createViewModel = State(initialValue: createViewModel)
         self._slideshowLibraryViewModel = State(initialValue: slideshowLibraryViewModel)
@@ -38,7 +35,6 @@ struct HomeView: View {
                 )
 
                 LibraryPickerView(
-                    libraryViewModel: libraryViewModel,
                     thumbnailViewModel: thumbnailViewModel,
                     createViewModel: createViewModel,
                     onSlideshowCreated: { slideshow in
@@ -75,6 +71,5 @@ struct HomeView: View {
 
     private func applyEdit(_ slideshow: Slideshow) {
         createViewModel.loadSlideshow(slideshow)
-        Task { await libraryViewModel.loadLibrary() }
     }
 }
