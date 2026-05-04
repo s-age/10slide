@@ -61,6 +61,23 @@ final class RepositoryContainer {
 }
 ```
 
+## Sendable conformance
+
+A `final class` container whose stored properties are all `let` and all protocol existentials that themselves declare `: Sendable` satisfies `Sendable` without `@unchecked`. Declare it explicitly so that method references from the container can be passed as `@Sendable` closures.
+
+```swift
+// Good — all stored properties are let Sendable protocol existentials
+final class PresentationContainer: Sendable {
+    private let fetchSlideshows: any FetchSlideshowsUseCaseProtocol  // protocol is Sendable
+    // ...
+}
+
+// Bad — @unchecked hides the real problem; fix the protocol or property instead
+final class PresentationContainer: @unchecked Sendable { ... }  // NG
+```
+
+Not all containers qualify: `InfrastructureContainer` holds `ModelContainer` (not `Sendable`), so it cannot declare `Sendable`. Only add it when the stored types genuinely satisfy the constraint.
+
 ## Protocol extraction pattern
 
 Sub-containers receive an upstream container in `init()` but must **extract protocol-typed properties immediately** and discard the container reference. This prevents cross-layer coupling and hidden dependencies.
@@ -95,3 +112,4 @@ final class RepositoryContainer {
 - Never initialize dependencies lazily inside container properties — eagerly initialize in `init()`
 - Never make a container `@Observable` or `ObservableObject` — inject individual use cases or ViewModels instead
 - Never store an upstream container as a property — extract protocol values at init and discard
+- Never use `@unchecked Sendable` on a container — make stored types genuinely `Sendable` or leave the conformance off
