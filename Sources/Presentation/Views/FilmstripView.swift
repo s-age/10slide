@@ -5,6 +5,7 @@ struct FilmstripView: View {
     let currentIndex: Int
     let duration: SlideDuration
     let transition: TransitionType
+    let thumbnailViewModel: ThumbnailViewModel
     let onSelect: (Int) -> Void
     let onDurationChange: (SlideDuration) -> Void
     let onTransitionChange: (TransitionType) -> Void
@@ -77,8 +78,17 @@ struct FilmstripView: View {
 
     @ViewBuilder
     private func thumbnailCell(index: Int) -> some View {
+        let id = slides[index].localIdentifier
         RoundedRectangle(cornerRadius: 4)
             .fill(Color.gray.opacity(0.4))
+            .overlay {
+                if let nsImage = thumbnailViewModel.images[id] {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .scaledToFill()
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
+            }
             .frame(width: 60, height: 60)
             .overlay(
                 RoundedRectangle(cornerRadius: 4)
@@ -87,6 +97,9 @@ struct FilmstripView: View {
                         lineWidth: 2
                     )
             )
+            .task(id: id) {
+                await thumbnailViewModel.loadThumbnail(identifier: id)
+            }
             .onTapGesture {
                 onSelect(index)
             }

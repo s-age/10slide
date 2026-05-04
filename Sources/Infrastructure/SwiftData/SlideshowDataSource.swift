@@ -24,7 +24,8 @@ actor SlideshowDataSource: SlideshowDataSourceProtocol {
             transitionRawValue: dto.transitionRawValue,
             loop: dto.loop
         )
-        model.slides = dto.slides.map { slide in
+        modelContext.insert(model)
+        let slideModels = dto.slides.map { slide in
             SlideModel(
                 id: slide.id,
                 localIdentifier: slide.localIdentifier,
@@ -33,7 +34,8 @@ actor SlideshowDataSource: SlideshowDataSourceProtocol {
                 title: slide.title
             )
         }
-        modelContext.insert(model)
+        slideModels.forEach { modelContext.insert($0) }
+        model.slides = slideModels
         try modelContext.save()
     }
 

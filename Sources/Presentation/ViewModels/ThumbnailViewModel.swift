@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 
@@ -5,6 +6,7 @@ import Observation
 @MainActor
 final class ThumbnailViewModel {
     private(set) var thumbnails: [String: Data] = [:]
+    private(set) var images: [String: NSImage] = [:]
 
     private let loadThumbnailUseCase: any LoadThumbnailUseCaseProtocol
 
@@ -14,8 +16,10 @@ final class ThumbnailViewModel {
 
     func loadThumbnail(identifier: String) async {
         guard thumbnails[identifier] == nil else { return }
-        if let data = try? await loadThumbnailUseCase.execute(localIdentifier: identifier) {
-            thumbnails[identifier] = data
-        }
+        guard let data = try? await loadThumbnailUseCase.execute(localIdentifier: identifier) else { return }
+        thumbnails[identifier] = data
+        images[identifier] = await Task.detached(priority: .userInitiated) {
+            NSImage(data: data)
+        }.value
     }
 }

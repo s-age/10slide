@@ -2,11 +2,13 @@ import SwiftUI
 
 struct SlideshowPlayerView: View {
     @State private var viewModel: SlideshowPlayerViewModel
+    @State private var thumbnailViewModel: ThumbnailViewModel
     @State private var decodedImage: NSImage?
     let onBack: () -> Void
 
-    init(viewModel: SlideshowPlayerViewModel, onBack: @escaping () -> Void) {
+    init(viewModel: SlideshowPlayerViewModel, thumbnailViewModel: ThumbnailViewModel, onBack: @escaping () -> Void) {
         self._viewModel = State(initialValue: viewModel)
+        self._thumbnailViewModel = State(initialValue: thumbnailViewModel)
         self.onBack = onBack
     }
 
@@ -26,6 +28,7 @@ struct SlideshowPlayerView: View {
                     currentIndex: viewModel.currentIndex,
                     duration: viewModel.slideshow.config.duration,
                     transition: viewModel.slideshow.config.transition,
+                    thumbnailViewModel: thumbnailViewModel,
                     onSelect: { index in Task { await viewModel.jumpTo(index: index) } },
                     onDurationChange: { viewModel.updateDuration($0) },
                     onTransitionChange: { viewModel.updateTransition($0) },

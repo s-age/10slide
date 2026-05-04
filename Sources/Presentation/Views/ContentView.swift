@@ -27,6 +27,7 @@ struct ContentView: View {
         if let slideshow = selectedSlideshow {
             SlideshowPlayerView(
                 viewModel: makeSlideshowPlayerViewModel(slideshow),
+                thumbnailViewModel: thumbnailViewModel,
                 onBack: { selectedSlideshow = nil }
             )
         } else {
