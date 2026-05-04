@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct HomeView: View {
-    @State private var thumbnailViewModel: ThumbnailViewModel
-    @State private var createViewModel: CreateSlideshowViewModel
-    @State private var slideshowLibraryViewModel: SlideshowLibraryViewModel
+    private let thumbnailViewModel: ThumbnailViewModel
+    private let createViewModel: CreateSlideshowViewModel
+    private let slideshowLibraryViewModel: SlideshowLibraryViewModel
     @State private var pendingEditSlideshow: Slideshow?
     @State private var pendingNewSlideshow = false
     @State private var showDiscardWorkDialog = false
@@ -15,9 +15,9 @@ struct HomeView: View {
         slideshowLibraryViewModel: SlideshowLibraryViewModel,
         onSlideshowSelected: @escaping (Slideshow) -> Void
     ) {
-        self._thumbnailViewModel = State(initialValue: thumbnailViewModel)
-        self._createViewModel = State(initialValue: createViewModel)
-        self._slideshowLibraryViewModel = State(initialValue: slideshowLibraryViewModel)
+        self.thumbnailViewModel = thumbnailViewModel
+        self.createViewModel = createViewModel
+        self.slideshowLibraryViewModel = slideshowLibraryViewModel
         self.onSlideshowSelected = onSlideshowSelected
     }
 

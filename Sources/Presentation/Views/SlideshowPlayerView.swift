@@ -1,13 +1,13 @@
 import SwiftUI
 
 struct SlideshowPlayerView: View {
-    @State private var viewModel: SlideshowPlayerViewModel
-    @State private var thumbnailViewModel: ThumbnailViewModel
+    let viewModel: SlideshowPlayerViewModel
+    let thumbnailViewModel: ThumbnailViewModel
     let onBack: () -> Void
 
     init(viewModel: SlideshowPlayerViewModel, thumbnailViewModel: ThumbnailViewModel, onBack: @escaping () -> Void) {
-        self._viewModel = State(initialValue: viewModel)
-        self._thumbnailViewModel = State(initialValue: thumbnailViewModel)
+        self.viewModel = viewModel
+        self.thumbnailViewModel = thumbnailViewModel
         self.onBack = onBack
     }
 

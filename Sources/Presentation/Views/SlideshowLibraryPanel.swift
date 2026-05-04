@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SlideshowLibraryPanel: View {
-    @State private var viewModel: SlideshowLibraryViewModel
+    let viewModel: SlideshowLibraryViewModel
     @State private var slideshowPendingDelete: Slideshow?
     let onSelect: (Slideshow) -> Void
     let onEdit: (Slideshow) -> Void
@@ -13,7 +13,7 @@ struct SlideshowLibraryPanel: View {
         onEdit: @escaping (Slideshow) -> Void,
         onCreate: @escaping () -> Void
     ) {
-        self._viewModel = State(initialValue: viewModel)
+        self.viewModel = viewModel
         self.onSelect = onSelect
         self.onEdit = onEdit
         self.onCreate = onCreate

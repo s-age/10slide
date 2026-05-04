@@ -23,7 +23,7 @@ Prefer the `.task` view modifier over `Task {}` inside `onAppear` or `init`. The
 ```swift
 // Good — .task is tied to view lifecycle and auto-cancelled
 struct SlideshowListView: View {
-    @State private var viewModel: SlideshowListViewModel
+    let viewModel: SlideshowListViewModel   // injected from DI; no @State needed
 
     var body: some View {
         List(viewModel.slideshows) { slideshow in
@@ -87,6 +87,52 @@ final class SlideshowListViewModel {
 }
 ```
 
+## ViewModel storage: @State vs let vs @Bindable
+
+`@State` means the **View owns and creates** the ViewModel. For ViewModels injected via `init`, use `let` or `@Bindable`.
+
+| Situation | Correct storage |
+|-----------|----------------|
+| View creates the VM itself | `@State private var vm = MyVM(...)` |
+| VM injected; no `$` binding needed | `let vm: MyVM` |
+| VM injected; `$` binding needed (e.g. `TextField`) | `@Bindable var vm: MyVM` |
+
+`@Observable` tracks property access automatically in `body` — `@State` is **not** required for observation to work.
+
+```swift
+// Good — injected VM, read-only access
+struct SlideshowLibraryPanel: View {
+    let viewModel: SlideshowLibraryViewModel
+
+    init(viewModel: SlideshowLibraryViewModel) {
+        self.viewModel = viewModel              // direct assignment
+    }
+}
+
+// Good — injected VM, Binding needed
+struct LibraryPickerView: View {
+    @Bindable var createViewModel: CreateSlideshowViewModel
+
+    init(createViewModel: CreateSlideshowViewModel) {
+        self.createViewModel = createViewModel  // direct assignment
+    }
+
+    var body: some View {
+        TextField("Name", text: $createViewModel.slideshowName)
+    }
+}
+
+// Bad — State(initialValue:) for an injected VM
+// Parent re-renders with a new instance → child silently keeps the old one
+struct BadView: View {
+    @State private var viewModel: MyViewModel
+
+    init(viewModel: MyViewModel) {
+        self._viewModel = State(initialValue: viewModel)  // NG
+    }
+}
+```
+
 ## @Observable vs ObservableObject
 
 Prefer `@Observable` (Swift 5.9+). Use `ObservableObject` only when the deployment target requires it.
@@ -120,3 +166,4 @@ final class ImageLoadingViewModel {
 - Never hold more than one primary use case's output in a single ViewModel — split ViewModels instead
 - Never put display formatting logic in a use case — formatting belongs here
 - Never call a repository protocol method directly from a ViewModel
+- Never use `State(initialValue:)` for an externally injected ViewModel — use `let` or `@Bindable var`

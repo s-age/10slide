@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var thumbnailViewModel: ThumbnailViewModel
-    @State private var createViewModel: CreateSlideshowViewModel
+    private let thumbnailViewModel: ThumbnailViewModel
+    private let createViewModel: CreateSlideshowViewModel
     @State private var selectedSlideshow: Slideshow?
 
     private let makeSlideshowPlayerViewModel: @MainActor (Slideshow) -> SlideshowPlayerViewModel
@@ -14,8 +14,8 @@ struct ContentView: View {
         makeSlideshowPlayerViewModel: @escaping @MainActor (Slideshow) -> SlideshowPlayerViewModel,
         makeSlideshowLibraryViewModel: @escaping @MainActor () -> SlideshowLibraryViewModel
     ) {
-        self._thumbnailViewModel = State(initialValue: thumbnailViewModel)
-        self._createViewModel = State(initialValue: createViewModel)
+        self.thumbnailViewModel = thumbnailViewModel
+        self.createViewModel = createViewModel
         self.makeSlideshowPlayerViewModel = makeSlideshowPlayerViewModel
         self.makeSlideshowLibraryViewModel = makeSlideshowLibraryViewModel
     }
