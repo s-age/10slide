@@ -68,6 +68,10 @@
 		AA8F68C29CC1696292E536F6 /* InfrastructureContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249694D115F7F33068AD9B07 /* InfrastructureContainer.swift */; };
 		AEA4337D96713621704F9444 /* ImageRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04EB329773327FDEC9FC8783 /* ImageRepositoryTests.swift */; };
 		AEE85A12D74A0227FECBE480 /* UpdateSlideshowConfigUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = F229830DBCF2DDD3E0A9046E /* UpdateSlideshowConfigUseCaseProtocol.swift */; };
+		084013ECE9C240088B2F6ECF /* SetDirectoryUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AD06394617344AA83284FD6 /* SetDirectoryUseCase.swift */; };
+		58D270182173493EB942FEF7 /* AddDroppedFilesUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 397C6F39018D4DBBBB6C3CD6 /* AddDroppedFilesUseCase.swift */; };
+		F9C6DFFEFC254737938C1510 /* SetDirectoryUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE6D725590AA4395B94EB292 /* SetDirectoryUseCaseProtocol.swift */; };
+		152F88CDE54D4FA2849AA3BA /* AddDroppedFilesUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC7E99EF3500416F971FBA4D /* AddDroppedFilesUseCaseProtocol.swift */; };
 		B7E71D4F4DD42DDA625FF0EA /* SlideshowRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0AF6B0607688132AECD348 /* SlideshowRepositoryTests.swift */; };
 		B8A0314D55C1FDE116066A46 /* CreateSlideshowViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 182847C393AF1EDBF717DCDD /* CreateSlideshowViewModelTests.swift */; };
 		BA38546D85797D96CD012307 /* CreateSlideshowUseCaseProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 944D96FEBAED1B3797484861 /* CreateSlideshowUseCaseProtocol.swift */; };
@@ -169,6 +173,10 @@
 		EEE2DBC8813B22419F8A9D1E /* SaveConfigUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveConfigUseCase.swift; sourceTree = "<group>"; };
 		F0CBD43FDF1CD7C7494C3F9F /* SlideshowRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowRepository.swift; sourceTree = "<group>"; };
 		F229830DBCF2DDD3E0A9046E /* UpdateSlideshowConfigUseCaseProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateSlideshowConfigUseCaseProtocol.swift; sourceTree = "<group>"; };
+		4AD06394617344AA83284FD6 /* SetDirectoryUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetDirectoryUseCase.swift; sourceTree = "<group>"; };
+		397C6F39018D4DBBBB6C3CD6 /* AddDroppedFilesUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDroppedFilesUseCase.swift; sourceTree = "<group>"; };
+		BE6D725590AA4395B94EB292 /* SetDirectoryUseCaseProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetDirectoryUseCaseProtocol.swift; sourceTree = "<group>"; };
+		EC7E99EF3500416F971FBA4D /* AddDroppedFilesUseCaseProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDroppedFilesUseCaseProtocol.swift; sourceTree = "<group>"; };
 		F2F7637CE9B8204701F952D4 /* SlideshowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowTests.swift; sourceTree = "<group>"; };
 		F8BEE58527F43ADC4CF43653 /* TenSlideApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TenSlideApp.swift; sourceTree = "<group>"; };
 		FAAD7BD09DCEDB0F61EF5A3C /* ImageDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDTO.swift; sourceTree = "<group>"; };
@@ -402,6 +410,8 @@
 				E6CB302BE150652E7AF8776E /* LoadThumbnailUseCaseProtocol.swift */,
 				A91C9298B32D401CEE213173 /* SaveConfigUseCaseProtocol.swift */,
 				F229830DBCF2DDD3E0A9046E /* UpdateSlideshowConfigUseCaseProtocol.swift */,
+				BE6D725590AA4395B94EB292 /* SetDirectoryUseCaseProtocol.swift */,
+				EC7E99EF3500416F971FBA4D /* AddDroppedFilesUseCaseProtocol.swift */,
 			);
 			path = Protocols;
 			sourceTree = "<group>";
@@ -450,6 +460,8 @@
 				91B05E765D740278425E05A1 /* LoadThumbnailUseCase.swift */,
 				EEE2DBC8813B22419F8A9D1E /* SaveConfigUseCase.swift */,
 				1E8F9AD02189A87ECCC96480 /* UpdateSlideshowConfigUseCase.swift */,
+				4AD06394617344AA83284FD6 /* SetDirectoryUseCase.swift */,
+				397C6F39018D4DBBBB6C3CD6 /* AddDroppedFilesUseCase.swift */,
 				C72857CAF6B71BCF0A20D898 /* Protocols */,
 			);
 			path = UseCases;
@@ -663,6 +675,10 @@
 				3A0E15A9D59D0EC248FB0749 /* TransitionType.swift in Sources */,
 				A599D3B442C874CBF19E458F /* UpdateSlideshowConfigUseCase.swift in Sources */,
 				AEE85A12D74A0227FECBE480 /* UpdateSlideshowConfigUseCaseProtocol.swift in Sources */,
+				084013ECE9C240088B2F6ECF /* SetDirectoryUseCase.swift in Sources */,
+				58D270182173493EB942FEF7 /* AddDroppedFilesUseCase.swift in Sources */,
+				F9C6DFFEFC254737938C1510 /* SetDirectoryUseCaseProtocol.swift in Sources */,
+				152F88CDE54D4FA2849AA3BA /* AddDroppedFilesUseCaseProtocol.swift in Sources */,
 				2A462736B505212969F5F434 /* UseCaseContainer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

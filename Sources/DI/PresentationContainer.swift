@@ -4,6 +4,8 @@ final class PresentationContainer {
     private let loadSlideImage: any LoadSlideImageUseCaseProtocol
     private let loadThumbnail: any LoadThumbnailUseCaseProtocol
     private let updateSlideshowConfig: any UpdateSlideshowConfigUseCaseProtocol
+    private let setDirectory: any SetDirectoryUseCaseProtocol
+    private let addDroppedFiles: any AddDroppedFilesUseCaseProtocol
 
     init(useCases: UseCaseContainer) {
         fetchLibrary = useCases.fetchLibrary
@@ -11,11 +13,18 @@ final class PresentationContainer {
         loadSlideImage = useCases.loadSlideImage
         loadThumbnail = useCases.loadThumbnail
         updateSlideshowConfig = useCases.updateSlideshowConfig
+        setDirectory = useCases.setDirectory
+        addDroppedFiles = useCases.addDroppedFiles
     }
 
     @MainActor
     func makeLibraryPickerViewModel() -> LibraryPickerViewModel {
-        LibraryPickerViewModel(fetchLibrary: fetchLibrary, loadThumbnail: loadThumbnail)
+        LibraryPickerViewModel(
+            fetchLibrary: fetchLibrary,
+            loadThumbnail: loadThumbnail,
+            setDirectory: setDirectory,
+            addDroppedFiles: addDroppedFiles
+        )
     }
 
     @MainActor

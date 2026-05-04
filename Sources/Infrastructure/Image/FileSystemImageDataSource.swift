@@ -9,6 +9,8 @@ enum FileSystemImageDataSourceError: Error {
 final class FileSystemImageDataSource: ImageDataSourceProtocol {
     internal static let supportedExtensions: Set<String> = ["jpg", "jpeg", "png", "heic", "webp", "gif", "tiff"]
 
+    var supportedExtensions: Set<String> { Self.supportedExtensions }
+
     private let _currentDirectory: Mutex<URL>
 
     var currentDirectory: URL {

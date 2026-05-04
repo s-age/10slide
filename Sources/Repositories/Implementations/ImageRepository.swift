@@ -19,4 +19,12 @@ final class ImageRepository: ImageRepositoryProtocol {
     func fetchThumbnailData(localIdentifier: String) async throws -> Data {
         try await imageDataSource.fetchThumbnail(localIdentifier: localIdentifier)
     }
+
+    func setDirectory(_ url: URL) async {
+        imageDataSource.setDirectory(url)
+    }
+
+    var supportedExtensions: Set<String> {
+        imageDataSource.supportedExtensions
+    }
 }

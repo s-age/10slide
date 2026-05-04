@@ -1,0 +1,321 @@
+tasks:
+  - type: script
+    command: rm -f .claude/tmp/phase3-file-import-infrastructure-reviewer
+      .claude/tmp/phase3-file-import-di-reviewer
+      .claude/tmp/phase3-file-import-presentation-reviewer
+    done: true
+  - type: pipeline
+    name: phase3-file-import-infrastructure
+    tasks:
+      - type: agent
+        name: phase3-file-import-infrastructure-implementer
+        task: >
+          target_file_path:
+          Sources/Infrastructure/Image/FileSystemImageDataSource.swift
+
+
+          Create Sources/Infrastructure/Image/FileSystemImageDataSource.swift
+          (new file).
+
+
+          This class implements ImageDataSourceProtocol to read images from the
+          local file system instead of Photos.
+
+
+          Before implementing, read:
+
+          - Sources/Infrastructure/Image/ImageDataSource.swift (to understand
+          ImageDataSourceProtocol and ImageDTO)
+
+          - Sources/Domain/Entities/ (to confirm ImageDTO fields)
+
+
+          Requirements:
+
+
+          final class FileSystemImageDataSource: ImageDataSourceProtocol
+
+
+          Properties:
+
+          - internal static let supportedExtensions: Set<String> = ["jpg",
+          "jpeg", "png", "heic", "webp", "gif", "tiff"]
+
+          - private(set) var currentDirectory: URL
+
+
+          Initializer:
+
+          - init(directory: URL = FileManager.default.urls(for:
+          .desktopDirectory, in: .userDomainMask)[0])
+            sets currentDirectory = directory
+
+          Methods:
+
+          - func setDirectory(_ url: URL) — sets currentDirectory = url
+
+
+          - func fetchAllIdentifiers() async throws -> [String]
+            Uses FileManager.default.contentsOfDirectory(at: currentDirectory, includingPropertiesForKeys: [.isRegularFileKey, .creationDateKey], options: [.skipsHiddenFiles])
+            Filters by supportedExtensions (case-insensitive on pathExtension)
+            Maps each URL to .path
+            Returns sorted array
+
+          - func fetchImage(localIdentifier: String) async throws -> ImageDTO
+            let url = URL(fileURLWithPath: localIdentifier)
+            let data = try Data(contentsOf: url)
+            let attributes = try? FileManager.default.attributesOfItem(atPath: localIdentifier)
+            let creationDate = attributes?[.creationDate] as? Date
+            return ImageDTO(localIdentifier: localIdentifier, data: data, creationDate: creationDate)
+
+          - func fetchThumbnail(localIdentifier: String) async throws -> Data
+            guard let image = NSImage(contentsOf: URL(fileURLWithPath: localIdentifier)) else { throw FileSystemImageDataSourceError.unreadable }
+            let size = CGSize(width: 200, height: 200)
+            let thumbnail = image.resized(to: size)
+            guard let cgImage = thumbnail.cgImage(forProposedRect: nil, context: nil, hints: nil),
+                  let data = NSBitmapImageRep(cgImage: cgImage).representation(using: .jpeg, properties: [.compressionFactor: 0.8])
+            else { throw FileSystemImageDataSourceError.unreadable }
+            return data
+
+          Additions at file scope:
+
+          - enum FileSystemImageDataSourceError: Error { case unreadable }
+
+          - private extension NSImage {
+                func resized(to targetSize: CGSize) -> NSImage {
+                    let scale = min(targetSize.width / size.width, targetSize.height / size.height)
+                    let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+                    let result = NSImage(size: newSize)
+                    result.lockFocus()
+                    draw(in: NSRect(origin: .zero, size: newSize))
+                    result.unlockFocus()
+                    return result
+                }
+            }
+
+          Imports: AppKit, Foundation
+
+          Do NOT modify ImageDataSourceProtocol.
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Write
+          - Edit
+          - Bash
+        done: true
+      - type: agent
+        name: phase3-file-import-infrastructure-reviewer
+        task: >
+          target_file_path:
+          Sources/Infrastructure/Image/FileSystemImageDataSource.swift
+
+          ng_output_path: .claude/tmp/phase3-file-import-infrastructure-reviewer
+        skill: review-arch
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Bash
+        rejected:
+          to: phase3-file-import-infrastructure-implementer
+          max_retries: 3
+        done: true
+      - type: script
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
+        rejected:
+          to: phase3-file-import-infrastructure-implementer
+          max_retries: 3
+        done: true
+    done: true
+  - type: agent
+    name: phase3-file-import-infrastructure-implementer
+    task: >
+      Implementation complete and build passes. Commit the changes with an
+      appropriate conventional commit message (e.g. feat(infrastructure): add
+      FileSystemImageDataSource).
+    model: haiku
+    allowed_tools:
+      - Read
+      - Bash
+    done: true
+  - type: pipeline
+    name: phase3-file-import-di
+    tasks:
+      - type: agent
+        name: phase3-file-import-di-implementer
+        task: >
+          target_file_paths:
+            - Sources/DI/InfrastructureContainer.swift
+            - Sources/DI/PresentationContainer.swift
+
+          Switch the image data source in the DI containers from the
+          Photos-based ImageDataSource to the new FileSystemImageDataSource.
+
+
+          Read both files before editing.
+
+
+          InfrastructureContainer.swift:
+
+          - Change the imageDataSource stored property from its current type
+          (protocol or Photos-based concrete type) to FileSystemImageDataSource
+          (concrete type).
+
+          - In init(), construct it as: imageDataSource =
+          FileSystemImageDataSource()  (defaults to ~/Desktop)
+
+          - Leave all other properties and initializers unchanged.
+
+
+          PresentationContainer.swift:
+
+          - In makeLibraryPickerViewModel(), pass infrastructure.imageDataSource
+          as the imageDataSource argument to LibraryPickerViewModel.
+
+          - The type is now FileSystemImageDataSource (concrete), which the
+          updated ViewModel initializer will accept.
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Write
+          - Edit
+          - Bash
+        done: true
+      - type: agent
+        name: phase3-file-import-di-reviewer
+        task: |
+          target_file_paths:
+            - Sources/DI/InfrastructureContainer.swift
+            - Sources/DI/PresentationContainer.swift
+          ng_output_path: .claude/tmp/phase3-file-import-di-reviewer
+        skill: review-arch
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Bash
+        rejected:
+          to: phase3-file-import-di-implementer
+          max_retries: 3
+        done: true
+      - type: script
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
+        rejected:
+          to: phase3-file-import-di-implementer
+          max_retries: 3
+        done: true
+    done: true
+  - type: agent
+    name: phase3-file-import-di-implementer
+    task: >
+      Implementation complete and build passes. Commit the changes with an
+      appropriate conventional commit message (e.g. feat(di): wire
+      FileSystemImageDataSource in InfrastructureContainer).
+    model: haiku
+    allowed_tools:
+      - Read
+      - Bash
+    done: true
+  - type: pipeline
+    name: phase3-file-import-presentation
+    tasks:
+      - type: agent
+        name: phase3-file-import-presentation-implementer
+        task: >
+          target_file_paths:
+            - Sources/Presentation/ViewModels/LibraryPickerViewModel.swift
+            - Sources/Presentation/Views/LibraryPickerView.swift
+
+          Add directory selection via NSOpenPanel and drag-and-drop support to
+          LibraryPickerViewModel and LibraryPickerView.
+
+
+          Read both files before editing.
+
+
+          LibraryPickerViewModel.swift:
+
+          - Change the stored imageDataSource property from the protocol type to
+          FileSystemImageDataSource (concrete type). Update the initializer
+          parameter to match.
+
+          - Add: private(set) var currentDirectoryName: String = "Desktop"
+
+          - Add func selectDirectory() async:
+              let panel = NSOpenPanel()
+              panel.canChooseDirectories = true
+              panel.canChooseFiles = false
+              panel.allowsMultipleSelection = false
+              guard await panel.beginSheetModal(for: NSApp.mainWindow!) == .OK,
+                    let url = panel.url else { return }
+              imageDataSource.setDirectory(url)
+              currentDirectoryName = url.lastPathComponent
+              await loadLibrary()
+          - Add func addDroppedFiles(_ urls: [URL]):
+              Filter urls by FileSystemImageDataSource.supportedExtensions (case-insensitive on pathExtension)
+              Map to .path
+              Deduplicate against existing identifiers (use a Set)
+              Append new paths to identifiers
+          - Import AppKit if not already present (needed for NSOpenPanel).
+
+
+          LibraryPickerView.swift:
+
+          - Add a private computed property directoryBar: some View:
+              HStack {
+                  Label(libraryViewModel.currentDirectoryName, systemImage: "folder")
+                      .font(.subheadline)
+                  Spacer()
+                  Button("Select Folder…") {
+                      Task { await libraryViewModel.selectDirectory() }
+                  }
+              }
+              .padding(.horizontal)
+              .padding(.vertical, 6)
+              .background(.bar)
+          - Insert directoryBar at the top of the main content stack (above
+          libraryStatusBanner or the topmost existing element).
+
+          - Add .dropDestination(for: URL.self) to the LazyVGrid:
+              .dropDestination(for: URL.self) { urls, _ in
+                  libraryViewModel.addDroppedFiles(urls)
+                  return !urls.isEmpty
+              }
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Write
+          - Edit
+          - Bash
+        done: true
+      - type: agent
+        name: phase3-file-import-presentation-reviewer
+        task: |
+          target_file_paths:
+            - Sources/Presentation/ViewModels/LibraryPickerViewModel.swift
+            - Sources/Presentation/Views/LibraryPickerView.swift
+          ng_output_path: .claude/tmp/phase3-file-import-presentation-reviewer
+        skill: review-arch
+        model: sonnet
+        allowed_tools:
+          - Read
+          - Bash
+        rejected:
+          to: phase3-file-import-presentation-implementer
+          max_retries: 3
+        done: true
+      - type: script
+        command: xcodebuild -scheme 10slide -destination 'platform=macOS' build
+        rejected:
+          to: phase3-file-import-presentation-implementer
+          max_retries: 3
+        done: true
+    done: true
+  - type: agent
+    name: phase3-file-import-presentation-implementer
+    task: >
+      Implementation complete and build passes. Commit the changes with an
+      appropriate conventional commit message (e.g. feat(presentation): add
+      directory selection and drag-and-drop to LibraryPickerView).
+    model: haiku
+    allowed_tools:
+      - Read
+      - Bash

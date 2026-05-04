@@ -7,6 +7,8 @@ final class UseCaseContainer {
     let loadConfig: any LoadConfigUseCaseProtocol
     let saveConfig: any SaveConfigUseCaseProtocol
     let updateSlideshowConfig: any UpdateSlideshowConfigUseCaseProtocol
+    let setDirectory: any SetDirectoryUseCaseProtocol
+    let addDroppedFiles: any AddDroppedFilesUseCaseProtocol
 
     init(repositories: RepositoryContainer) {
         createSlideshow = CreateSlideshowUseCase(
@@ -31,5 +33,7 @@ final class UseCaseContainer {
             configRepository: repositories.configRepository
         )
         updateSlideshowConfig = UpdateSlideshowConfigUseCase()
+        setDirectory = SetDirectoryUseCase(imageRepository: repositories.imageRepository)
+        addDroppedFiles = AddDroppedFilesUseCase(imageRepository: repositories.imageRepository)
     }
 }

@@ -15,10 +15,13 @@ struct LibraryPickerView: View {
         self.onSlideshowCreated = onSlideshowCreated
     }
 
+    @State private var isShowingFolderPicker = false
+
     private let columns = [GridItem(.adaptive(minimum: 100), spacing: 8)]
 
     var body: some View {
         VStack(spacing: 0) {
+            directoryBar
             libraryStatusBanner
 
             ScrollView {
@@ -37,6 +40,10 @@ struct LibraryPickerView: View {
                     }
                 }
                 .padding()
+                .dropDestination(for: URL.self) { urls, _ in
+                    libraryViewModel.addDroppedFiles(urls)
+                    return !urls.isEmpty
+                }
             }
 
             if let error = createViewModel.errorMessage {
@@ -50,6 +57,27 @@ struct LibraryPickerView: View {
             bottomBar
         }
         .task { await libraryViewModel.loadLibrary() }
+        .fileImporter(
+            isPresented: $isShowingFolderPicker,
+            allowedContentTypes: [.folder]
+        ) { result in
+            guard let url = try? result.get() else { return }
+            Task { await libraryViewModel.setDirectory(url) }
+        }
+    }
+
+    private var directoryBar: some View {
+        HStack {
+            Label(libraryViewModel.currentDirectoryName, systemImage: "folder")
+                .font(.subheadline)
+            Spacer()
+            Button("Select Folder…") {
+                isShowingFolderPicker = true
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 6)
+        .background(.bar)
     }
 
     @ViewBuilder
