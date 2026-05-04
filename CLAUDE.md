@@ -49,6 +49,5 @@ swiftlint lint --config .swiftlint.yml
 
 - `Sources/DI/Container.swift` — Root container; boots all sub-containers in dependency order
 - `Sources/App/TenSlideApp.swift` — `@main`; initializes `Container`, passes `modelContainer` to the SwiftUI environment
-- `project.yml` — XcodeGen spec; run `xcodegen generate` after structural changes
 - `.swiftlint.yml` — SwiftLint config including custom layer-dependency enforcement rules
 - `.claude/rules/*.md` — Auto-injected layer rules (path-triggered)
