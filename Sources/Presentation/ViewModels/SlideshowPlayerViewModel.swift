@@ -19,6 +19,7 @@ final class SlideshowPlayerViewModel {
     private let filmstripHideDuration: Duration
     private var timerTask: Task<Void, Never>?
     private var hideFilmstripTask: Task<Void, Never>?
+    private var overlayHoverCount: Int = 0
 
     init(
         slideshow: SlideshowResponse,
@@ -96,6 +97,7 @@ final class SlideshowPlayerViewModel {
         if let prevIndex = try? previousSlide.execute(request) {
             currentIndex = prevIndex
             await loadCurrentImage()
+            showFilmstripOverlay()
         }
     }
 
@@ -103,6 +105,7 @@ final class SlideshowPlayerViewModel {
         guard index >= 0, index < slideshow.slides.count else { return }
         currentIndex = index
         await loadCurrentImage()
+        showFilmstripOverlay()
     }
 
     func loadCurrentImage() async {
@@ -162,6 +165,24 @@ final class SlideshowPlayerViewModel {
         showFilmstripOverlay()
     }
 
+    func userDidNext() async {
+        await next()
+        showFilmstripOverlay()
+    }
+
+    func overlayHoverBegan() {
+        overlayHoverCount += 1
+        showFilmstrip = true
+        hideFilmstripTask?.cancel()
+        hideFilmstripTask = nil
+    }
+
+    func overlayHoverEnded() {
+        overlayHoverCount = max(0, overlayHoverCount - 1)
+        guard overlayHoverCount == 0, isPlaying else { return }
+        scheduleHideFilmstrip()
+    }
+
     func dismissError() {
         errorMessage = nil
     }
@@ -170,7 +191,11 @@ final class SlideshowPlayerViewModel {
         showFilmstrip = true
         hideFilmstripTask?.cancel()
         hideFilmstripTask = nil
-        guard isPlaying else { return }
+        guard isPlaying, overlayHoverCount == 0 else { return }
+        scheduleHideFilmstrip()
+    }
+
+    private func scheduleHideFilmstrip() {
         hideFilmstripTask = Task {
             try? await Task.sleep(for: filmstripHideDuration)
             guard !Task.isCancelled else { return }

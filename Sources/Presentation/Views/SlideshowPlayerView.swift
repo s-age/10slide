@@ -36,9 +36,12 @@ struct SlideshowPlayerView: View {
                     onPlayPause: {
                         if viewModel.isPlaying { viewModel.pause() } else { viewModel.play() }
                     },
-                    onNext: { Task { await viewModel.next() } }
+                    onNext: { Task { await viewModel.userDidNext() } }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
+                .onHover { hovering in
+                    if hovering { viewModel.overlayHoverBegan() } else { viewModel.overlayHoverEnded() }
+                }
             }
 
             if viewModel.showFilmstrip {
@@ -51,6 +54,9 @@ struct SlideshowPlayerView: View {
                         .padding(16)
                 }
                 .buttonStyle(.plain)
+                .onHover { hovering in
+                    if hovering { viewModel.overlayHoverBegan() } else { viewModel.overlayHoverEnded() }
+                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                 .transition(.opacity)
             }
@@ -67,11 +73,30 @@ struct SlideshowPlayerView: View {
             return .handled
         }
         .onKeyPress(.rightArrow) {
-            Task { await viewModel.next() }
+            Task { await viewModel.userDidNext() }
             return .handled
         }
         .onTapGesture {
             viewModel.userDidInteract()
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 20)
+                .onEnded { value in
+                    let dx = value.translation.width
+                    let dy = value.translation.height
+                    if abs(dx) > abs(dy) {
+                        if dx < -50 {
+                            Task { await viewModel.userDidNext() }
+                        } else if dx > 50 {
+                            Task { await viewModel.previous() }
+                        }
+                    } else {
+                        viewModel.userDidInteract()
+                    }
+                }
+        )
+        .onHover { hovering in
+            if hovering { viewModel.userDidInteract() }
         }
         .task {
             await viewModel.loadCurrentImage()
