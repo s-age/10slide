@@ -19,6 +19,7 @@ struct TenSlideApp: App {
                 thumbnailViewModel: container.presentation.makeThumbnailViewModel(),
                 createViewModel: container.presentation.makeCreateSlideshowViewModel(),
                 makeSlideshowPlayerViewModel: container.presentation.makeSlideshowPlayerViewModel,
+                makeSpritePlayerViewModel: container.presentation.makeSpritePlayerViewModel,
                 makeSlideshowLibraryViewModel: container.presentation.makeSlideshowLibraryViewModel
             )
         }
