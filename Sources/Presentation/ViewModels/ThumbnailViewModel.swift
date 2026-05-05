@@ -5,20 +5,18 @@ import Observation
 @Observable
 @MainActor
 final class ThumbnailViewModel {
-    private(set) var thumbnails: [String: Data] = [:]
     private(set) var images: [String: NSImage] = [:]
 
-    private let loadThumbnailUseCase: any LoadThumbnailUseCaseProtocol
+    private let loadThumbnail: LoadThumbnailUseCaseProtocol
 
-    init(loadThumbnail: any LoadThumbnailUseCaseProtocol) {
-        self.loadThumbnailUseCase = loadThumbnail
+    init(loadThumbnail: LoadThumbnailUseCaseProtocol) {
+        self.loadThumbnail = loadThumbnail
     }
 
-    func loadThumbnail(identifier: String) async {
-        guard thumbnails[identifier] == nil else { return }
+    func load(identifier: String) async {
+        guard images[identifier] == nil else { return }
         let request = LoadThumbnailRequest(localIdentifier: identifier)
-        guard let data = try? await loadThumbnailUseCase.execute(request) else { return }
-        thumbnails[identifier] = data
+        guard let data = try? await loadThumbnail.execute(request) else { return }
         images[identifier] = await Task.detached(priority: .userInitiated) {
             NSImage(data: data)
         }.value

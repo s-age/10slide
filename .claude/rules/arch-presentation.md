@@ -6,7 +6,7 @@ paths:
 When creating, editing, or reviewing any file in `Sources/Presentation/`:
 
 - **Layer responsibility**: SwiftUI views own display. ViewModels connect use cases to views. `Presentation` is the only layer that may import `SwiftUI` or `UIKit`.
-- **Import allowlist**: `SwiftUI`, `AppKit`, `Foundation`, `UseCases/Protocols`, `UseCases/Requests`, `UseCases/Responses` — never `Domain`, `Repositories`, `Infrastructure`, `SwiftData`, `Photos`.
+- **Import allowlist**: `SwiftUI`, `AppKit`, `Foundation`, `UseCases/Protocols`, `UseCases/Requests`, `UseCases/Responses`, `Errors` — never `Domain`, `Repositories`, `Infrastructure`, `SwiftData`, `Photos`.
 
 ## Directory layout
 
@@ -58,13 +58,14 @@ A ViewModel is a **lifecycle adapter**, not a logic container. Keep business log
 
 ```swift
 // Good — ViewModel is a thin bridge; uses Response types only
+// UseCase typealiases embed `any` — do not add `any` prefix
 @Observable
 final class SlideshowListViewModel {
     private(set) var slideshows: [SlideshowResponse] = []
     private(set) var isLoading = false
-    private let fetchSlideshows: any FetchSlideshowsUseCaseProtocol
+    private let fetchSlideshows: FetchSlideshowsUseCaseProtocol
 
-    init(fetchSlideshows: any FetchSlideshowsUseCaseProtocol) {
+    init(fetchSlideshows: FetchSlideshowsUseCaseProtocol) {
         self.fetchSlideshows = fetchSlideshows
     }
 

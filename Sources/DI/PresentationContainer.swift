@@ -1,13 +1,14 @@
 final class PresentationContainer: Sendable {
-    private let createSlideshow: any CreateSlideshowUseCaseProtocol
-    private let loadSlideImage: any LoadSlideImageUseCaseProtocol
-    private let loadThumbnail: any LoadThumbnailUseCaseProtocol
-    private let updateSlideshowConfig: any UpdateSlideshowConfigUseCaseProtocol
-    private let advanceSlide: any AdvanceSlideUseCaseProtocol
-    private let addDroppedFiles: any AddDroppedFilesUseCaseProtocol
-    private let fetchSlideshows: any FetchSlideshowsUseCaseProtocol
-    private let deleteSlideshow: any DeleteSlideshowUseCaseProtocol
-    private let updateSlideshow: any UpdateSlideshowUseCaseProtocol
+    private let createSlideshow: CreateSlideshowUseCaseProtocol
+    private let loadSlideImage: LoadSlideImageUseCaseProtocol
+    private let loadThumbnail: LoadThumbnailUseCaseProtocol
+    private let updateSlideshowConfig: UpdateSlideshowConfigUseCaseProtocol
+    private let advanceSlide: AdvanceSlideUseCaseProtocol
+    private let previousSlide: PreviousSlideUseCaseProtocol
+    private let addDroppedFiles: AddDroppedFilesUseCaseProtocol
+    private let fetchSlideshows: FetchSlideshowsUseCaseProtocol
+    private let deleteSlideshow: DeleteSlideshowUseCaseProtocol
+    private let updateSlideshow: UpdateSlideshowUseCaseProtocol
 
     init(useCases: UseCaseContainer) {
         createSlideshow = useCases.createSlideshow
@@ -15,6 +16,7 @@ final class PresentationContainer: Sendable {
         loadThumbnail = useCases.loadThumbnail
         updateSlideshowConfig = useCases.updateSlideshowConfig
         advanceSlide = useCases.advanceSlide
+        previousSlide = useCases.previousSlide
         addDroppedFiles = useCases.addDroppedFiles
         fetchSlideshows = useCases.fetchSlideshows
         deleteSlideshow = useCases.deleteSlideshow
@@ -41,7 +43,8 @@ final class PresentationContainer: Sendable {
             slideshow: slideshow,
             loadSlideImage: loadSlideImage,
             updateSlideshowConfig: updateSlideshowConfig,
-            advanceSlide: advanceSlide
+            advanceSlide: advanceSlide,
+            previousSlide: previousSlide
         )
     }
 

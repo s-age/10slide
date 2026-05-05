@@ -9,7 +9,7 @@ private enum SlideshowLibraryViewModelTestError: Error {
 
 // MARK: - Mock: FetchSlideshowsUseCase
 
-final class MockFetchSlideshowsUseCase: FetchSlideshowsUseCaseProtocol, @unchecked Sendable {
+final class MockFetchSlideshowsUseCase: AsyncUseCase, @unchecked Sendable {
     var executeResult: [SlideshowResponse] = []
     var executeCallCount = 0
     var throwOnExecute = false
@@ -27,7 +27,7 @@ final class MockFetchSlideshowsUseCase: FetchSlideshowsUseCaseProtocol, @uncheck
 
 // MARK: - Mock: DeleteSlideshowUseCase
 
-final class MockDeleteSlideshowUseCaseForLibrary: DeleteSlideshowUseCaseProtocol, @unchecked Sendable {
+final class MockDeleteSlideshowUseCaseForLibrary: AsyncUseCase, @unchecked Sendable {
     var executeCallCount = 0
     var throwOnExecute = false
 
@@ -119,25 +119,25 @@ final class SlideshowLibraryViewModelTests: XCTestCase {
         XCTAssertFalse(sut.isLoading)
     }
 
-    // MARK: - deleteSlideshow(id:)
+    // MARK: - delete(id:)
 
-    func testDeleteSlideshow_callsDeleteUseCaseOnce() async {
+    func testDelete_callsDeleteUseCaseOnce() async {
         let id = UUID()
         mockFetchSlideshows.executeResult = [
             SlideshowResponse(id: id, name: "Show", slides: [], config: .default, createdAt: Date())
         ]
         await sut.loadLibrary()
-        await sut.deleteSlideshow(id: id)
+        await sut.delete(id: id)
         XCTAssertEqual(mockDeleteSlideshow.executeCallCount, 1)
     }
 
-    func testDeleteSlideshow_removesFromLocalList() async {
+    func testDelete_removesFromLocalList() async {
         let id = UUID()
         mockFetchSlideshows.executeResult = [
             SlideshowResponse(id: id, name: "Show", slides: [], config: .default, createdAt: Date())
         ]
         await sut.loadLibrary()
-        await sut.deleteSlideshow(id: id)
+        await sut.delete(id: id)
         XCTAssertTrue(sut.slideshows.isEmpty)
     }
 }

@@ -1,3 +1,1 @@
-protocol AddDroppedFilesUseCaseProtocol: Sendable {
-    func execute(_ request: AddDroppedFilesRequest) throws -> [String]
-}
+typealias AddDroppedFilesUseCaseProtocol = any SyncUseCase<AddDroppedFilesRequest, [String]>

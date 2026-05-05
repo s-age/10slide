@@ -12,18 +12,18 @@ final class CreateSlideshowViewModel {
     private(set) var errorMessage: String?
     private(set) var editingSlideshow: SlideshowResponse?
 
-    private let createSlideshowUseCase: any CreateSlideshowUseCaseProtocol
-    private let updateSlideshowUseCase: any UpdateSlideshowUseCaseProtocol
-    private let addDroppedFilesUseCase: any AddDroppedFilesUseCaseProtocol
+    private let createSlideshow: CreateSlideshowUseCaseProtocol
+    private let updateSlideshow: UpdateSlideshowUseCaseProtocol
+    private let addDroppedFiles: AddDroppedFilesUseCaseProtocol
 
     init(
-        createSlideshow: any CreateSlideshowUseCaseProtocol,
-        updateSlideshow: any UpdateSlideshowUseCaseProtocol,
-        addDroppedFiles: any AddDroppedFilesUseCaseProtocol
+        createSlideshow: CreateSlideshowUseCaseProtocol,
+        updateSlideshow: UpdateSlideshowUseCaseProtocol,
+        addDroppedFiles: AddDroppedFilesUseCaseProtocol
     ) {
-        self.createSlideshowUseCase = createSlideshow
-        self.updateSlideshowUseCase = updateSlideshow
-        self.addDroppedFilesUseCase = addDroppedFiles
+        self.createSlideshow = createSlideshow
+        self.updateSlideshow = updateSlideshow
+        self.addDroppedFiles = addDroppedFiles
     }
 
     var isEditing: Bool { editingSlideshow != nil }
@@ -49,12 +49,17 @@ final class CreateSlideshowViewModel {
             urls: urls,
             existingIdentifiers: selectedIdentifiers
         )
-        guard let newPaths = try? addDroppedFilesUseCase.execute(request) else { return }
+        // validate() is empty; file-path filtering is best-effort — no user-actionable error
+        guard let newPaths = try? addDroppedFiles.execute(request) else { return }
         selectedIdentifiers.append(contentsOf: newPaths)
     }
 
     func removeFile(_ identifier: String) {
         selectedIdentifiers.removeAll { $0 == identifier }
+    }
+
+    func dismissError() {
+        errorMessage = nil
     }
 
     func saveSlideshow() async -> SlideshowResponse? {
@@ -68,7 +73,7 @@ final class CreateSlideshowViewModel {
                     name: slideshowName,
                     localIdentifiers: selectedIdentifiers
                 )
-                return try await updateSlideshowUseCase.execute(request)
+                return try await updateSlideshow.execute(request)
             } else {
                 let request = CreateSlideshowRequest(
                     name: slideshowName,
@@ -77,7 +82,7 @@ final class CreateSlideshowViewModel {
                     transition: selectedTransition,
                     loop: true
                 )
-                return try await createSlideshowUseCase.execute(request)
+                return try await createSlideshow.execute(request)
             }
         } catch {
             errorMessage = error.localizedDescription

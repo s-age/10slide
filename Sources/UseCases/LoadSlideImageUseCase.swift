@@ -1,6 +1,6 @@
 import Foundation
 
-final class LoadSlideImageUseCase: LoadSlideImageUseCaseProtocol, Sendable {
+final class LoadSlideImageUseCase: AsyncUseCase, Sendable {
     private let domainService: any ImageDomainServiceProtocol
 
     init(domainService: any ImageDomainServiceProtocol) {
@@ -8,7 +8,6 @@ final class LoadSlideImageUseCase: LoadSlideImageUseCaseProtocol, Sendable {
     }
 
     func execute(_ request: LoadSlideImageRequest) async throws -> Data {
-        try request.validate()
         return try await domainService.fetchImageData(localIdentifier: request.localIdentifier)
     }
 }

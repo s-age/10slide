@@ -112,3 +112,10 @@ custom_rules:
     regex: "^import (SwiftUI|UIKit)"
     message: "Domain Services must not import UI frameworks."
     severity: error
+
+  errors_only_foundation:
+    included: "Sources/Errors/.*\\.swift"
+    name: "Errors layer imports only Foundation"
+    regex: "^import (?!Foundation([\\. ]|$)).*"
+    message: "Errors is a leaf-node layer; may import Foundation only."
+    severity: error

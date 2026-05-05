@@ -18,7 +18,7 @@ The lowest layer — the only place that may directly use persistence (SwiftData
 
 | May import | Must NOT import |
 |-----------|----------------|
-| `Foundation`, `SwiftData`, `Photos`, `CoreLocation`, `Network`, `ImageIO`, `CoreGraphics`, … | `SwiftUI`, `UIKit`, `AppKit` |
+| `Foundation`, `SwiftData`, `Photos`, `CoreLocation`, `Network`, `ImageIO`, `CoreGraphics`, …, `Errors` | `SwiftUI`, `UIKit`, `AppKit` |
 | `Protocols/` (intra-layer) | `Repositories`, `UseCases`, `Domain` layer types |
 
 > **Exception**: `TenSlideApp.swift` in `App/` may import `SwiftData` solely to pass `ModelContainer` to the SwiftUI environment.

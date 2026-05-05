@@ -1,3 +1,1 @@
-protocol LoadConfigUseCaseProtocol: Sendable {
-    func execute(_ request: LoadConfigRequest) async throws -> SlideshowConfigResponse
-}
+typealias LoadConfigUseCaseProtocol = any AsyncUseCase<LoadConfigRequest, SlideshowConfigResponse>

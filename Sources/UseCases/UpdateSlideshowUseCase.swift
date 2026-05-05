@@ -1,6 +1,6 @@
 import Foundation
 
-final class UpdateSlideshowUseCase: UpdateSlideshowUseCaseProtocol, Sendable {
+final class UpdateSlideshowUseCase: AsyncUseCase, Sendable {
     private let domainService: any SlideshowDomainServiceProtocol
 
     init(domainService: any SlideshowDomainServiceProtocol) {
@@ -8,7 +8,6 @@ final class UpdateSlideshowUseCase: UpdateSlideshowUseCaseProtocol, Sendable {
     }
 
     func execute(_ request: UpdateSlideshowRequest) async throws -> SlideshowResponse {
-        try request.validate()
         let slideshow = try await domainService.update(
             id: request.id,
             name: request.name,

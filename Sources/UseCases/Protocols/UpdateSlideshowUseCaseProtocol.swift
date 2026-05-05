@@ -1,3 +1,1 @@
-protocol UpdateSlideshowUseCaseProtocol: Sendable {
-    func execute(_ request: UpdateSlideshowRequest) async throws -> SlideshowResponse
-}
+typealias UpdateSlideshowUseCaseProtocol = any AsyncUseCase<UpdateSlideshowRequest, SlideshowResponse>

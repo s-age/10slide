@@ -5,7 +5,7 @@ paths:
 
 Before writing or reviewing **any** file under `Sources/`, answer all three:
 
-1. **Which layer owns this change?** — `Presentation` / `UseCases` / `Domain/Services` / `Domain/Entities` / `Repositories` / `Infrastructure` / `DI`
+1. **Which layer owns this change?** — `Presentation` / `UseCases` / `Domain/Services` / `Domain/Entities` / `Repositories` / `Infrastructure` / `Errors` / `DI`
 2. **What may this layer import?** — check the allowlist in each layer's rule file
 3. **Does this introduce a forbidden import?** — SwiftLint custom rules in `.swiftlint.yml` enforce these; verify before writing
 
@@ -19,6 +19,7 @@ Do not write code if you cannot answer all three.
 | **Domain** | Executes business logic and dispatches Repository calls. May also contain pure-logic services with no Repository dependency. | **Yes — sole owner** |
 | **Repository** | Communicates with external systems via Infrastructure. Limited to DTO↔Entity conversion — no decision-making. | No |
 | **Infrastructure** | Low-level I/O with external systems (DB, filesystem, network, etc.). | No |
+| **Errors** | Pure error enums (`LocalizedError`). No dependencies beyond `Foundation`. Accessible from all layers. | No |
 
 Rule of thumb: if a decision depends on domain knowledge ("why"), it belongs in Domain. If it depends on technical means ("how"), it belongs in Repository/Infrastructure.
 
@@ -29,18 +30,22 @@ Presentation ──→ UseCases ──→ Domain/Services ──→ Repositories
                 (Request/       ↑
                  Response)  Domain/Entities
                               (shared)
+                            Errors (shared — accessible from all layers)
 ```
 
 Each layer communicates only with its immediate neighbor. No layer may skip.
 
+`Errors` is the exception: it is a leaf-node layer (depends only on `Foundation`) and may be referenced from any layer.
+
 | From | May reference |
 |------|--------------|
-| Presentation | `UseCases/Protocols`, `UseCases/Requests`, `UseCases/Responses` |
-| UseCases | `Domain/Services/Protocols`, `Domain/Entities`, `UseCases/Requests`, `UseCases/Responses` |
-| Domain/Services | `Domain/Entities`, `Repositories/Protocols` |
+| Presentation | `UseCases/Protocols`, `UseCases/Requests`, `UseCases/Responses`, `Errors` |
+| UseCases | `Domain/Services/Protocols`, `Domain/Entities`, `UseCases/Requests`, `UseCases/Responses`, `Errors` |
+| Domain/Services | `Domain/Entities`, `Repositories/Protocols`, `Errors` |
 | Domain/Entities | `Foundation` only |
-| Repositories | `Infrastructure/Protocols`, `Domain/Entities` |
-| Infrastructure | `Foundation`, platform frameworks |
+| Repositories | `Infrastructure/Protocols`, `Domain/Entities`, `Errors` |
+| Infrastructure | `Foundation`, platform frameworks, `Errors` |
+| Errors | `Foundation` only |
 
 ## Hard prohibitions (enforced by SwiftLint)
 
@@ -49,6 +54,7 @@ Each layer communicates only with its immediate neighbor. No layer may skip.
 - `UseCases` → `SwiftData`, `Photos`, `SwiftUI`, `UIKit`, `Repositories/Protocols`
 - `Presentation` → `Domain/Entities`, `Domain/Services`, `Repositories`, `Infrastructure`
 - `Repositories` → `SwiftUI`, `UIKit`
+- `Errors` → everything except `Foundation`
 - Any layer (except `Infrastructure`) → direct framework I/O
 
 ## Swift 6 concurrency

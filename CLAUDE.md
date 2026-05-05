@@ -14,6 +14,7 @@ Strict one-way layered architecture with per-layer DI containers.
 Presentation → UseCases → Domain/Services → Repositories → Infrastructure
                (Request/       ↑
                 Response)  Domain/Entities
+                           Errors (shared leaf — all layers may reference)
 ```
 
 Each layer communicates only with its immediate neighbor via protocol boundaries. No layer may skip.
@@ -26,14 +27,15 @@ When creating, editing, or reviewing files under `Sources/`: the `arch` rule and
 |-----------|------|
 | `Sources/App/` | Entry point — `@main`, boots root `Container` |
 | `Sources/DI/` | DI containers — one per layer, wired in `Container.swift` |
-| `Sources/Domain/Entities/` | Pure structs — no framework imports |
-| `Sources/Domain/Services/` | Orchestrators — call Repository protocols, own business logic |
-| `Sources/Infrastructure/` | Raw I/O — SwiftData, Photos, network |
-| `Sources/Repositories/` | DTO ↔ entity conversion; protocol implementations |
-| `Sources/UseCases/` | Request validation, Domain Service delegation, Entity→Response mapping |
-| `Sources/UseCases/Requests/` | Input DTOs with `validate()` — consumed by Presentation |
-| `Sources/UseCases/Responses/` | Output DTOs — the only domain-concept types Presentation sees |
 | `Sources/Presentation/` | SwiftUI views and ViewModels (uses Response types only) |
+| `Sources/UseCases/` | Request validation, Domain Service delegation, Entity→Response mapping |
+| ` ├ Requests/` | Input DTOs with `validate()` — consumed by Presentation |
+| ` └ Responses/` | Output DTOs — the only domain-concept types Presentation sees |
+| `Sources/Domain/Services/` | Orchestrators — call Repository protocols, own business logic |
+| `Sources/Domain/Entities/` | Pure structs — no framework imports |
+| `Sources/Repositories/` | DTO ↔ entity conversion; protocol implementations |
+| `Sources/Infrastructure/` | Raw I/O — SwiftData, Photos, network |
+| `Sources/Errors/` | **Shared leaf** — pure error enums (`LocalizedError`), accessible from all layers |
 
 ## Development
 

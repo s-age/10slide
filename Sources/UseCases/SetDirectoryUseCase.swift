@@ -1,6 +1,6 @@
 import Foundation
 
-final class SetDirectoryUseCase: SetDirectoryUseCaseProtocol, Sendable {
+final class SetDirectoryUseCase: AsyncUseCase, Sendable {
     private let domainService: any ImageDomainServiceProtocol
 
     init(domainService: any ImageDomainServiceProtocol) {
@@ -8,7 +8,6 @@ final class SetDirectoryUseCase: SetDirectoryUseCaseProtocol, Sendable {
     }
 
     func execute(_ request: SetDirectoryRequest) async throws {
-        try request.validate()
         await domainService.setDirectory(request.url)
     }
 }

@@ -18,7 +18,7 @@ Repositories/
 
 | May import | Must NOT import |
 |-----------|----------------|
-| `Foundation`, `SwiftData`, `Domain/Entities` | `SwiftUI`, `UIKit` |
+| `Foundation`, `SwiftData`, `Domain/Entities`, `Errors` | `SwiftUI`, `UIKit` |
 | `Infrastructure/Protocols/` (`SwiftDataStoreProtocol`, etc.) | `Infrastructure` concrete classes directly |
 | `Protocols/` (intra-layer) | `UseCases` — dependency flows upward only |
 

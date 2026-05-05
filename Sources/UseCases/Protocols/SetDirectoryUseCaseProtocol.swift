@@ -1,3 +1,1 @@
-protocol SetDirectoryUseCaseProtocol: Sendable {
-    func execute(_ request: SetDirectoryRequest) async throws
-}
+typealias SetDirectoryUseCaseProtocol = any AsyncUseCase<SetDirectoryRequest, Void>

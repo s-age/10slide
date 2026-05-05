@@ -1,3 +1,1 @@
-protocol SaveConfigUseCaseProtocol: Sendable {
-    func execute(_ request: SaveConfigRequest) async throws
-}
+typealias SaveConfigUseCaseProtocol = any AsyncUseCase<SaveConfigRequest, Void>
