@@ -16,6 +16,7 @@ struct LibraryPickerView: View {
     }
 
     @State private var isShowingFilePicker = false
+    @State private var dropTargetIdentifier: String?
     @AppStorage("thumbnailSize") private var thumbnailSize: Double = 100
 
     private var columns: [GridItem] {
@@ -33,10 +34,22 @@ struct LibraryPickerView: View {
                             ForEach(createViewModel.selectedIdentifiers, id: \.self) { identifier in
                                 PhotoCell(
                                     image: thumbnailViewModel.images[identifier],
+                                    isDropTarget: dropTargetIdentifier == identifier,
                                     onRemove: { createViewModel.removeFile(identifier) }
                                 )
                                 .task(id: identifier) {
                                     await thumbnailViewModel.load(identifier: identifier)
+                                }
+                                .draggable(identifier)
+                                .dropDestination(for: String.self) { items, _ in
+                                    guard let dragged = items.first,
+                                          let from = createViewModel.selectedIdentifiers.firstIndex(of: dragged),
+                                          let to = createViewModel.selectedIdentifiers.firstIndex(of: identifier),
+                                          from != to else { return false }
+                                    createViewModel.move(fromIndex: from, toIndex: to)
+                                    return true
+                                } isTargeted: { targeted in
+                                    dropTargetIdentifier = targeted ? identifier : nil
                                 }
                             }
                         }
@@ -116,6 +129,7 @@ struct LibraryPickerView: View {
 
 private struct PhotoCell: View {
     let image: NSImage?
+    let isDropTarget: Bool
     let onRemove: () -> Void
 
     var body: some View {
@@ -130,6 +144,10 @@ private struct PhotoCell: View {
         .frame(maxWidth: .infinity)
         .aspectRatio(1, contentMode: .fit)
         .clipShape(RoundedRectangle(cornerRadius: 6))
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .strokeBorder(isDropTarget ? Color.accentColor : Color.clear, lineWidth: 3)
+        )
         .overlay(alignment: .topTrailing) {
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
