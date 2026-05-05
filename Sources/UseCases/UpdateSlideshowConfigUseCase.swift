@@ -12,7 +12,7 @@ final class UpdateSlideshowConfigUseCase: UpdateSlideshowConfigUseCaseProtocol, 
     func execute(_ request: UpdateSlideshowConfigRequest) async throws -> SlideshowResponse {
         try request.validate()
         guard let slideshow = try await domainService.fetch(id: request.slideshowID) else {
-            throw DomainError.slideshowNotFound(request.slideshowID)
+            throw UseCaseError.slideshowNotFound(request.slideshowID)
         }
         let newConfig = SlideshowConfig(
             duration: request.duration.toDomain,

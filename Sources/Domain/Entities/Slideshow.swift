@@ -7,7 +7,7 @@ struct Slideshow: Identifiable, Equatable, Sendable {
     var config: SlideshowConfig
     var createdAt: Date
 
-static func create(name: String, localIdentifiers: [String], config: SlideshowConfig) -> Slideshow {
+    static func create(name: String, localIdentifiers: [String], config: SlideshowConfig) -> Slideshow {
         Slideshow(
             id: UUID(),
             name: name,

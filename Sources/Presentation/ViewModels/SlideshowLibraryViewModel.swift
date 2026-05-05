@@ -21,6 +21,7 @@ final class SlideshowLibraryViewModel {
 
     func loadLibrary() async {
         isLoading = true
+        errorMessage = nil
         defer { isLoading = false }
         do {
             slideshows = try await fetchSlideshowsUseCase.execute(FetchSlideshowsRequest())
