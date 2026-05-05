@@ -44,6 +44,12 @@ struct SlideshowPlayerView: View {
                 }
             }
 
+            if let hint = viewModel.fullscreenHint {
+                fullscreenHintOverlay(hint)
+                    .transition(.opacity)
+                    .allowsHitTesting(false)
+            }
+
             if viewModel.showFilmstrip {
                 Button {
                     onBack()
@@ -63,6 +69,7 @@ struct SlideshowPlayerView: View {
         }
         .animation(.easeInOut(duration: 0.5), value: viewModel.currentIndex)
         .animation(.easeInOut(duration: 0.3), value: viewModel.showFilmstrip)
+        .animation(.easeInOut(duration: 0.5), value: viewModel.fullscreenHint)
         .focusable()
         .onKeyPress(.space) {
             if viewModel.isPlaying { viewModel.pause() } else { viewModel.play() }
@@ -98,10 +105,33 @@ struct SlideshowPlayerView: View {
         .onHover { hovering in
             if hovering { viewModel.userDidInteract() }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEnterFullScreenNotification)) { _ in
+            viewModel.windowDidEnterFullScreen()
+        }
         .task {
             await viewModel.loadCurrentImage()
             viewModel.play()
         }
+    }
+
+    @ViewBuilder
+    private func fullscreenHintOverlay(_ hint: SlideshowPlayerViewModel.FullscreenHintType) -> some View {
+        let label: String = switch hint {
+        case .enter: "Full Screen: Fn+F"
+        case .exit: "Exit Full Screen: Esc"
+        }
+        let icon: String = switch hint {
+        case .enter: "arrow.up.left.and.arrow.down.right"
+        case .exit: "escape"
+        }
+        Label(label, systemImage: icon)
+            .font(.callout)
+            .foregroundStyle(.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 10))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .padding(.top, 16)
     }
 
     @ViewBuilder

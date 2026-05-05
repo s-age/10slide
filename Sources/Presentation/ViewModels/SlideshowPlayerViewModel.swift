@@ -9,7 +9,13 @@ final class SlideshowPlayerViewModel {
     private(set) var currentIndex: Int = 0
     private(set) var currentNSImage: NSImage?
     private(set) var isPlaying: Bool = false
+    enum FullscreenHintType: Equatable {
+        case enter
+        case exit
+    }
+
     private(set) var showFilmstrip: Bool = true
+    private(set) var fullscreenHint: FullscreenHintType? = nil
     private(set) var errorMessage: String?
 
     private let loadSlideImage: LoadSlideImageUseCaseProtocol
@@ -19,7 +25,9 @@ final class SlideshowPlayerViewModel {
     private let filmstripHideDuration: Duration
     private var timerTask: Task<Void, Never>?
     private var hideFilmstripTask: Task<Void, Never>?
+    private var hideHintTask: Task<Void, Never>?
     private var overlayHoverCount: Int = 0
+    private var enterHintShown: Bool = false
 
     init(
         slideshow: SlideshowResponse,
@@ -59,6 +67,10 @@ final class SlideshowPlayerViewModel {
                 guard !Task.isCancelled, isPlaying else { break }
                 await next()
             }
+        }
+        if !enterHintShown {
+            enterHintShown = true
+            showHint(.enter)
         }
         showFilmstripOverlay()
     }
@@ -193,6 +205,20 @@ final class SlideshowPlayerViewModel {
         hideFilmstripTask = nil
         guard isPlaying, overlayHoverCount == 0 else { return }
         scheduleHideFilmstrip()
+    }
+
+    func windowDidEnterFullScreen() {
+        showHint(.exit)
+    }
+
+    private func showHint(_ type: FullscreenHintType) {
+        hideHintTask?.cancel()
+        fullscreenHint = type
+        hideHintTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            fullscreenHint = nil
+        }
     }
 
     private func scheduleHideFilmstrip() {
