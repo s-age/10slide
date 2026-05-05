@@ -5,25 +5,49 @@ paths:
 
 Before writing or reviewing **any** file under `Sources/`, answer all three:
 
-1. **Which layer owns this change?** — `Presentation` / `UseCases` / `Repositories` / `Infrastructure` / `Domain/Entities` / `DI`
+1. **Which layer owns this change?** — `Presentation` / `UseCases` / `Domain/Services` / `Domain/Entities` / `Repositories` / `Infrastructure` / `DI`
 2. **What may this layer import?** — check the allowlist in each layer's rule file
 3. **Does this introduce a forbidden import?** — SwiftLint custom rules in `.swiftlint.yml` enforce these; verify before writing
 
 Do not write code if you cannot answer all three.
 
-## Import flow
+## Layer responsibilities
+
+| Layer | Responsibility | Owns business logic? |
+|-------|---------------|---------------------|
+| **UseCase** | Accepts a Request, orchestrates Domain layer, returns a Response. No logic of its own. | No |
+| **Domain** | Executes business logic and dispatches Repository calls. May also contain pure-logic services with no Repository dependency. | **Yes — sole owner** |
+| **Repository** | Communicates with external systems via Infrastructure. Limited to DTO↔Entity conversion — no decision-making. | No |
+| **Infrastructure** | Low-level I/O with external systems (DB, filesystem, network, etc.). | No |
+
+Rule of thumb: if a decision depends on domain knowledge ("why"), it belongs in Domain. If it depends on technical means ("how"), it belongs in Repository/Infrastructure.
+
+## Import flow (strict one-way layered)
 
 ```
-Presentation ──→ UseCases ──→ Repositories ──→ Infrastructure
-                     ↑               ↑
-              Domain/Entities   (protocols only — no concrete classes)
-                  (shared)
+Presentation ──→ UseCases ──→ Domain/Services ──→ Repositories ──→ Infrastructure
+                (Request/       ↑
+                 Response)  Domain/Entities
+                              (shared)
 ```
+
+Each layer communicates only with its immediate neighbor. No layer may skip.
+
+| From | May reference |
+|------|--------------|
+| Presentation | `UseCases/Protocols`, `UseCases/Requests`, `UseCases/Responses` |
+| UseCases | `Domain/Services/Protocols`, `Domain/Entities`, `UseCases/Requests`, `UseCases/Responses` |
+| Domain/Services | `Domain/Entities`, `Repositories/Protocols` |
+| Domain/Entities | `Foundation` only |
+| Repositories | `Infrastructure/Protocols`, `Domain/Entities` |
+| Infrastructure | `Foundation`, platform frameworks |
 
 ## Hard prohibitions (enforced by SwiftLint)
 
-- `Domain` → `SwiftData`, `Photos`, `SwiftUI`, `UIKit`
-- `UseCases` → `SwiftData`, `Photos`, `SwiftUI`, `UIKit`
+- `Domain/Entities` → `SwiftData`, `Photos`, `SwiftUI`, `UIKit`
+- `Domain/Services` → `SwiftData`, `Photos`, `SwiftUI`, `UIKit`
+- `UseCases` → `SwiftData`, `Photos`, `SwiftUI`, `UIKit`, `Repositories/Protocols`
+- `Presentation` → `Domain/Entities`, `Domain/Services`, `Repositories`, `Infrastructure`
 - `Repositories` → `SwiftUI`, `UIKit`
 - Any layer (except `Infrastructure`) → direct framework I/O
 

@@ -2,15 +2,15 @@ import SwiftUI
 
 struct SlideshowLibraryPanel: View {
     let viewModel: SlideshowLibraryViewModel
-    @State private var slideshowPendingDelete: Slideshow?
-    let onSelect: (Slideshow) -> Void
-    let onEdit: (Slideshow) -> Void
+    @State private var slideshowPendingDelete: SlideshowResponse?
+    let onSelect: (SlideshowResponse) -> Void
+    let onEdit: (SlideshowResponse) -> Void
     let onCreate: () -> Void
 
     init(
         viewModel: SlideshowLibraryViewModel,
-        onSelect: @escaping (Slideshow) -> Void,
-        onEdit: @escaping (Slideshow) -> Void,
+        onSelect: @escaping (SlideshowResponse) -> Void,
+        onEdit: @escaping (SlideshowResponse) -> Void,
         onCreate: @escaping () -> Void
     ) {
         self.viewModel = viewModel

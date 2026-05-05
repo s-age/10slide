@@ -4,7 +4,7 @@ import XCTest
 // MARK: - Mock
 
 final class MockConfigDataSource: ConfigDataSourceProtocol, @unchecked Sendable {
-    var loadResult: ConfigDTO = ConfigDTO(duration: "5", transition: "fade", loop: true)
+    var loadResult: ConfigDTO?
     var loadCallCount = 0
     var loadError: Error?
 
@@ -12,7 +12,7 @@ final class MockConfigDataSource: ConfigDataSourceProtocol, @unchecked Sendable 
     var savedDTO: ConfigDTO?
     var saveError: Error?
 
-    func load() async throws -> ConfigDTO {
+    func load() async throws -> ConfigDTO? {
         loadCallCount += 1
         if let error = loadError { throw error }
         return loadResult
@@ -48,6 +48,12 @@ final class ConfigRepositoryTests: XCTestCase {
     func testLoad_callsDataSourceOnce() async throws {
         _ = try await sut.load()
         XCTAssertEqual(mockDataSource.loadCallCount, 1)
+    }
+
+    func testLoad_whenDataSourceReturnsNil_returnsDefaultConfig() async throws {
+        mockDataSource.loadResult = nil
+        let config = try await sut.load()
+        XCTAssertEqual(config, .default)
     }
 
     func testLoad_mapsKnownDuration_thirty() async throws {

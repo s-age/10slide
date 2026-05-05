@@ -3,7 +3,7 @@ import XCTest
 
 // MARK: - Mock
 
-final class MockConfigRepositoryForLoad: ConfigRepositoryProtocol, @unchecked Sendable {
+final class MockConfigDomainServiceForLoad: ConfigDomainServiceProtocol, @unchecked Sendable {
     var loadResult: SlideshowConfig = .default
     var loadCallCount = 0
     var throwOnLoad = false
@@ -25,49 +25,49 @@ private enum LoadConfigUseCaseTestError: Error, Equatable {
 
 final class LoadConfigUseCaseTests: XCTestCase {
     private var sut: LoadConfigUseCase!
-    private var mockConfigRepository: MockConfigRepositoryForLoad!
+    private var mockDomainService: MockConfigDomainServiceForLoad!
 
     override func setUp() {
         super.setUp()
-        mockConfigRepository = MockConfigRepositoryForLoad()
-        sut = LoadConfigUseCase(configRepository: mockConfigRepository)
+        mockDomainService = MockConfigDomainServiceForLoad()
+        sut = LoadConfigUseCase(domainService: mockDomainService)
     }
 
     override func tearDown() {
         sut = nil
-        mockConfigRepository = nil
+        mockDomainService = nil
         super.tearDown()
     }
 
-    // MARK: - execute()
+    // MARK: - execute(_:)
 
-    func testExecute_callsConfigRepositoryLoadOnce() async throws {
-        _ = try await sut.execute()
-        XCTAssertEqual(mockConfigRepository.loadCallCount, 1)
+    func testExecute_callsDomainServiceLoadOnce() async throws {
+        _ = try await sut.execute(LoadConfigRequest())
+        XCTAssertEqual(mockDomainService.loadCallCount, 1)
     }
 
     func testExecute_returnsConfigDuration() async throws {
-        mockConfigRepository.loadResult = SlideshowConfig(duration: .thirty, transition: .slide, loop: false)
-        let result = try await sut.execute()
+        mockDomainService.loadResult = SlideshowConfig(duration: .thirty, transition: .slide, loop: false)
+        let result = try await sut.execute(LoadConfigRequest())
         XCTAssertEqual(result.duration, .thirty)
     }
 
     func testExecute_returnsConfigTransition() async throws {
-        mockConfigRepository.loadResult = SlideshowConfig(duration: .five, transition: .dissolve, loop: true)
-        let result = try await sut.execute()
+        mockDomainService.loadResult = SlideshowConfig(duration: .five, transition: .dissolve, loop: true)
+        let result = try await sut.execute(LoadConfigRequest())
         XCTAssertEqual(result.transition, .dissolve)
     }
 
     func testExecute_returnsConfigLoop() async throws {
-        mockConfigRepository.loadResult = SlideshowConfig(duration: .five, transition: .fade, loop: false)
-        let result = try await sut.execute()
+        mockDomainService.loadResult = SlideshowConfig(duration: .five, transition: .fade, loop: false)
+        let result = try await sut.execute(LoadConfigRequest())
         XCTAssertFalse(result.loop)
     }
 
-    func testExecute_whenRepositoryThrows_propagatesError() async {
-        mockConfigRepository.throwOnLoad = true
+    func testExecute_whenDomainServiceThrows_propagatesError() async {
+        mockDomainService.throwOnLoad = true
         do {
-            _ = try await sut.execute()
+            _ = try await sut.execute(LoadConfigRequest())
             XCTFail("Expected execute() to throw")
         } catch {
             XCTAssertEqual(error as? LoadConfigUseCaseTestError, .intentional)

@@ -1,5 +1,3 @@
-import Foundation
-
 protocol SetDirectoryUseCaseProtocol: Sendable {
-    func execute(url: URL) async
+    func execute(_ request: SetDirectoryRequest) async throws
 }

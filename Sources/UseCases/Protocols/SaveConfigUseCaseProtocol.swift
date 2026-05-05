@@ -1,3 +1,3 @@
 protocol SaveConfigUseCaseProtocol: Sendable {
-    func execute(_ config: SlideshowConfig) async throws
+    func execute(_ request: SaveConfigRequest) async throws
 }

@@ -1,3 +1,3 @@
 protocol LoadConfigUseCaseProtocol: Sendable {
-    func execute() async throws -> SlideshowConfig
+    func execute(_ request: LoadConfigRequest) async throws -> SlideshowConfigResponse
 }

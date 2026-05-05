@@ -1,18 +1,17 @@
 import Foundation
 
 final class AddDroppedFilesUseCase: AddDroppedFilesUseCaseProtocol, Sendable {
-    private let imageRepository: any ImageRepositoryProtocol
+    private let domainService: any ImageDomainServiceProtocol
 
-    init(imageRepository: any ImageRepositoryProtocol) {
-        self.imageRepository = imageRepository
+    init(domainService: any ImageDomainServiceProtocol) {
+        self.domainService = domainService
     }
 
-    func execute(urls: [URL], existingIdentifiers: [String]) -> [String] {
-        let supported = imageRepository.supportedExtensions
-        let existing = Set(existingIdentifiers)
-        return urls
-            .filter { supported.contains($0.pathExtension.lowercased()) }
-            .map { $0.path }
-            .filter { !existing.contains($0) }
+    func execute(_ request: AddDroppedFilesRequest) throws -> [String] {
+        try request.validate()
+        return domainService.filterDroppedFiles(
+            urls: request.urls,
+            existingIdentifiers: request.existingIdentifiers
+        )
     }
 }

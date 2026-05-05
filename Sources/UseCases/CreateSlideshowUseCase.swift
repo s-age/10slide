@@ -1,15 +1,24 @@
 import Foundation
 
 final class CreateSlideshowUseCase: CreateSlideshowUseCaseProtocol, Sendable {
-    private let slideshowRepository: any SlideshowRepositoryProtocol
+    private let domainService: any SlideshowDomainServiceProtocol
 
-    init(slideshowRepository: any SlideshowRepositoryProtocol) {
-        self.slideshowRepository = slideshowRepository
+    init(domainService: any SlideshowDomainServiceProtocol) {
+        self.domainService = domainService
     }
 
-    func execute(name: String, localIdentifiers: [String], config: SlideshowConfig) async throws -> Slideshow {
-        let slideshow = Slideshow.create(name: name, localIdentifiers: localIdentifiers, config: config)
-        try await slideshowRepository.save(slideshow)
-        return slideshow
+    func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse {
+        try request.validate()
+        let config = SlideshowConfig(
+            duration: request.duration.toDomain,
+            transition: request.transition.toDomain,
+            loop: request.loop
+        )
+        let slideshow = try await domainService.create(
+            name: request.name,
+            localIdentifiers: request.localIdentifiers,
+            config: config
+        )
+        return SlideshowResponse(from: slideshow)
     }
 }

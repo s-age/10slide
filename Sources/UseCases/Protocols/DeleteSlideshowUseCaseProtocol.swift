@@ -1,5 +1,3 @@
-import Foundation
-
 protocol DeleteSlideshowUseCaseProtocol: Sendable {
-    func execute(id: UUID) async throws
+    func execute(_ request: DeleteSlideshowRequest) async throws
 }

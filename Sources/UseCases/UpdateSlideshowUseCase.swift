@@ -1,15 +1,19 @@
 import Foundation
 
 final class UpdateSlideshowUseCase: UpdateSlideshowUseCaseProtocol, Sendable {
-    private let slideshowRepository: any SlideshowRepositoryProtocol
+    private let domainService: any SlideshowDomainServiceProtocol
 
-    init(slideshowRepository: any SlideshowRepositoryProtocol) {
-        self.slideshowRepository = slideshowRepository
+    init(domainService: any SlideshowDomainServiceProtocol) {
+        self.domainService = domainService
     }
 
-    func execute(slideshow: Slideshow, name: String, localIdentifiers: [String]) async throws -> Slideshow {
-        let updated = slideshow.updating(name: name, localIdentifiers: localIdentifiers)
-        try await slideshowRepository.save(updated)
-        return updated
+    func execute(_ request: UpdateSlideshowRequest) async throws -> SlideshowResponse {
+        try request.validate()
+        let slideshow = try await domainService.update(
+            id: request.id,
+            name: request.name,
+            localIdentifiers: request.localIdentifiers
+        )
+        return SlideshowResponse(from: slideshow)
     }
 }

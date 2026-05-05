@@ -13,6 +13,8 @@ final class MockImageDataSource: ImageDataSourceProtocol, @unchecked Sendable {
     var fetchedLocalIdentifier: String?
     var throwOnFetchImage = false
 
+    var supportedExtensions: Set<String> = ["jpg", "png"]
+
     func fetchAllIdentifiers() async throws -> [String] {
         fetchAllIdentifiersCallCount += 1
         if throwOnFetchAllIdentifiers { throw ImageRepoTestError.intentional }
@@ -27,6 +29,8 @@ final class MockImageDataSource: ImageDataSourceProtocol, @unchecked Sendable {
     }
 
     func fetchThumbnail(localIdentifier: String) async throws -> Data { Data() }
+
+    func setDirectory(_ url: URL) {}
 }
 
 private enum ImageRepoTestError: Error {

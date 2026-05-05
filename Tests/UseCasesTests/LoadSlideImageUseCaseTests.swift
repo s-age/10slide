@@ -3,7 +3,7 @@ import XCTest
 
 // MARK: - Mock
 
-final class MockImageRepositoryForImage: ImageRepositoryProtocol, @unchecked Sendable {
+final class MockImageDomainServiceForImage: ImageDomainServiceProtocol, @unchecked Sendable {
     var fetchImageDataResult: Data = Data()
     var fetchImageDataCallCount = 0
     var fetchedLocalIdentifier: String?
@@ -19,6 +19,10 @@ final class MockImageRepositoryForImage: ImageRepositoryProtocol, @unchecked Sen
         if throwOnFetchImageData { throw LoadSlideImageUseCaseTestError.intentional }
         return fetchImageDataResult
     }
+
+    func setDirectory(_ url: URL) async {}
+
+    func filterDroppedFiles(urls: [URL], existingIdentifiers: [String]) -> [String] { [] }
 }
 
 private enum LoadSlideImageUseCaseTestError: Error, Equatable {
@@ -29,44 +33,48 @@ private enum LoadSlideImageUseCaseTestError: Error, Equatable {
 
 final class LoadSlideImageUseCaseTests: XCTestCase {
     private var sut: LoadSlideImageUseCase!
-    private var mockImageRepository: MockImageRepositoryForImage!
+    private var mockDomainService: MockImageDomainServiceForImage!
 
     override func setUp() {
         super.setUp()
-        mockImageRepository = MockImageRepositoryForImage()
-        sut = LoadSlideImageUseCase(imageRepository: mockImageRepository)
+        mockDomainService = MockImageDomainServiceForImage()
+        sut = LoadSlideImageUseCase(domainService: mockDomainService)
     }
 
     override func tearDown() {
         sut = nil
-        mockImageRepository = nil
+        mockDomainService = nil
         super.tearDown()
     }
 
-    // MARK: - execute(localIdentifier:)
+    // MARK: - execute(_:)
 
     func testExecute_callsFetchImageDataOnce() async throws {
-        _ = try await sut.execute(localIdentifier: "some-id")
-        XCTAssertEqual(mockImageRepository.fetchImageDataCallCount, 1)
+        let request = LoadSlideImageRequest(localIdentifier: "some-id")
+        _ = try await sut.execute(request)
+        XCTAssertEqual(mockDomainService.fetchImageDataCallCount, 1)
     }
 
-    func testExecute_forwardsLocalIdentifierToRepository() async throws {
-        _ = try await sut.execute(localIdentifier: "photo-99")
-        XCTAssertEqual(mockImageRepository.fetchedLocalIdentifier, "photo-99")
+    func testExecute_forwardsLocalIdentifierToDomainService() async throws {
+        let request = LoadSlideImageRequest(localIdentifier: "photo-99")
+        _ = try await sut.execute(request)
+        XCTAssertEqual(mockDomainService.fetchedLocalIdentifier, "photo-99")
     }
 
-    func testExecute_returnsDataFromRepository() async throws {
+    func testExecute_returnsDataFromDomainService() async throws {
         let expected = Data([0x01, 0x02, 0x03])
-        mockImageRepository.fetchImageDataResult = expected
-        let result = try await sut.execute(localIdentifier: "any-id")
+        mockDomainService.fetchImageDataResult = expected
+        let request = LoadSlideImageRequest(localIdentifier: "any-id")
+        let result = try await sut.execute(request)
         XCTAssertEqual(result, expected)
     }
 
-    func testExecute_whenRepositoryThrows_propagatesError() async {
-        mockImageRepository.throwOnFetchImageData = true
+    func testExecute_whenDomainServiceThrows_propagatesError() async {
+        mockDomainService.throwOnFetchImageData = true
+        let request = LoadSlideImageRequest(localIdentifier: "any-id")
         do {
-            _ = try await sut.execute(localIdentifier: "any-id")
-            XCTFail("Expected execute(localIdentifier:) to throw")
+            _ = try await sut.execute(request)
+            XCTFail("Expected execute() to throw")
         } catch {
             XCTAssertEqual(error as? LoadSlideImageUseCaseTestError, .intentional)
         }

@@ -1,13 +1,15 @@
 import Foundation
 
 final class LoadConfigUseCase: LoadConfigUseCaseProtocol, Sendable {
-    private let configRepository: any ConfigRepositoryProtocol
+    private let domainService: any ConfigDomainServiceProtocol
 
-    init(configRepository: any ConfigRepositoryProtocol) {
-        self.configRepository = configRepository
+    init(domainService: any ConfigDomainServiceProtocol) {
+        self.domainService = domainService
     }
 
-    func execute() async throws -> SlideshowConfig {
-        try await configRepository.load()
+    func execute(_ request: LoadConfigRequest) async throws -> SlideshowConfigResponse {
+        try request.validate()
+        let config = try await domainService.load()
+        return SlideshowConfigResponse(from: config)
     }
 }

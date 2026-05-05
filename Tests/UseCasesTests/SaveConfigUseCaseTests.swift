@@ -3,7 +3,7 @@ import XCTest
 
 // MARK: - Mock
 
-final class MockConfigRepositoryForSave: ConfigRepositoryProtocol, @unchecked Sendable {
+final class MockConfigDomainServiceForSave: ConfigDomainServiceProtocol, @unchecked Sendable {
     var saveCallCount = 0
     var savedConfig: SlideshowConfig?
     var throwOnSave = false
@@ -25,50 +25,52 @@ private enum SaveConfigUseCaseTestError: Error, Equatable {
 
 final class SaveConfigUseCaseTests: XCTestCase {
     private var sut: SaveConfigUseCase!
-    private var mockConfigRepository: MockConfigRepositoryForSave!
+    private var mockDomainService: MockConfigDomainServiceForSave!
 
     override func setUp() {
         super.setUp()
-        mockConfigRepository = MockConfigRepositoryForSave()
-        sut = SaveConfigUseCase(configRepository: mockConfigRepository)
+        mockDomainService = MockConfigDomainServiceForSave()
+        sut = SaveConfigUseCase(domainService: mockDomainService)
     }
 
     override func tearDown() {
         sut = nil
-        mockConfigRepository = nil
+        mockDomainService = nil
         super.tearDown()
     }
 
     // MARK: - execute(_:)
 
-    func testExecute_callsConfigRepositorySaveOnce() async throws {
-        try await sut.execute(.default)
-        XCTAssertEqual(mockConfigRepository.saveCallCount, 1)
+    func testExecute_callsDomainServiceSaveOnce() async throws {
+        let request = SaveConfigRequest(duration: .five, transition: .fade, loop: true)
+        try await sut.execute(request)
+        XCTAssertEqual(mockDomainService.saveCallCount, 1)
     }
 
-    func testExecute_forwardsConfigDuration() async throws {
-        let config = SlideshowConfig(duration: .sixty, transition: .fade, loop: true)
-        try await sut.execute(config)
-        XCTAssertEqual(mockConfigRepository.savedConfig?.duration, .sixty)
+    func testExecute_forwardsDuration() async throws {
+        let request = SaveConfigRequest(duration: .sixty, transition: .fade, loop: true)
+        try await sut.execute(request)
+        XCTAssertEqual(mockDomainService.savedConfig?.duration, .sixty)
     }
 
-    func testExecute_forwardsConfigTransition() async throws {
-        let config = SlideshowConfig(duration: .five, transition: .slide, loop: true)
-        try await sut.execute(config)
-        XCTAssertEqual(mockConfigRepository.savedConfig?.transition, .slide)
+    func testExecute_forwardsTransition() async throws {
+        let request = SaveConfigRequest(duration: .five, transition: .slide, loop: true)
+        try await sut.execute(request)
+        XCTAssertEqual(mockDomainService.savedConfig?.transition, .slide)
     }
 
-    func testExecute_forwardsConfigLoop() async throws {
-        let config = SlideshowConfig(duration: .five, transition: .fade, loop: false)
-        try await sut.execute(config)
-        XCTAssertEqual(mockConfigRepository.savedConfig?.loop, false)
+    func testExecute_forwardsLoop() async throws {
+        let request = SaveConfigRequest(duration: .five, transition: .fade, loop: false)
+        try await sut.execute(request)
+        XCTAssertEqual(mockDomainService.savedConfig?.loop, false)
     }
 
-    func testExecute_whenRepositoryThrows_propagatesError() async {
-        mockConfigRepository.throwOnSave = true
+    func testExecute_whenDomainServiceThrows_propagatesError() async {
+        mockDomainService.throwOnSave = true
+        let request = SaveConfigRequest(duration: .five, transition: .fade, loop: true)
         do {
-            try await sut.execute(.default)
-            XCTFail("Expected execute(_:) to throw")
+            try await sut.execute(request)
+            XCTFail("Expected execute() to throw")
         } catch {
             XCTAssertEqual(error as? SaveConfigUseCaseTestError, .intentional)
         }

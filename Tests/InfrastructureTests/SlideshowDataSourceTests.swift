@@ -2,8 +2,8 @@ import XCTest
 import SwiftData
 @testable import TenSlide
 
-final class SlideshowDataSourceTests: XCTestCase {
-    private var sut: SlideshowDataSource!
+final class SwiftDataStoreTests: XCTestCase {
+    private var sut: SwiftDataStore!
     private var container: ModelContainer!
 
     override func setUp() async throws {
@@ -11,7 +11,7 @@ final class SlideshowDataSourceTests: XCTestCase {
         let schema = Schema([SlideshowModel.self, SlideModel.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         container = try ModelContainer(for: schema, configurations: [config])
-        sut = SlideshowDataSource(modelContainer: container)
+        sut = SwiftDataStore(modelContainer: container)
     }
 
     override func tearDown() async throws {
@@ -20,101 +20,113 @@ final class SlideshowDataSourceTests: XCTestCase {
         try await super.tearDown()
     }
 
-    // MARK: - fetchAll
+    // MARK: - fetch
 
-    func testFetchAll_onFreshContainer_returnsEmptyArray() async throws {
-        let results = try await sut.fetchAll()
+    func testFetch_onFreshContainer_returnsEmptyArray() async throws {
+        let results = try await sut.fetch(FetchDescriptor<SlideshowModel>()) { $0.name }
         XCTAssertTrue(results.isEmpty)
     }
 
-    // MARK: - save → fetch(id:)
+    // MARK: - write -> fetch
 
-    func testSaveThenFetch_returnsNonNilModel() async throws {
-        let dto = SlideshowDTO(id: UUID(), name: "Test Show")
-        try await sut.save(dto)
-        let fetched = try await sut.fetch(id: dto.id)
-        XCTAssertNotNil(fetched)
+    func testWriteThenFetch_returnsNonEmptyArray() async throws {
+        try await sut.write { context in
+            let model = SlideshowModel(name: "Test Show")
+            context.insert(model)
+            try context.save()
+        }
+        let results = try await sut.fetch(FetchDescriptor<SlideshowModel>()) { $0.name }
+        XCTAssertEqual(results.count, 1)
     }
 
-    func testSaveThenFetch_returnsSavedID() async throws {
+    func testWriteThenFetch_returnsSavedName() async throws {
+        try await sut.write { context in
+            let model = SlideshowModel(name: "My Slideshow")
+            context.insert(model)
+            try context.save()
+        }
+        let results = try await sut.fetch(FetchDescriptor<SlideshowModel>()) { $0.name }
+        XCTAssertEqual(results[0], "My Slideshow")
+    }
+
+    func testWriteThenFetch_returnsSavedID() async throws {
         let id = UUID()
-        let dto = SlideshowDTO(id: id, name: "ID Test")
-        try await sut.save(dto)
-        let fetched = try await sut.fetch(id: id)
-        XCTAssertEqual(fetched?.id, id)
+        try await sut.write { context in
+            let model = SlideshowModel(id: id, name: "ID Test")
+            context.insert(model)
+            try context.save()
+        }
+        let results = try await sut.fetch(FetchDescriptor<SlideshowModel>()) { $0.id }
+        XCTAssertEqual(results[0], id)
     }
 
-    func testSaveThenFetch_returnsSavedName() async throws {
-        let dto = SlideshowDTO(id: UUID(), name: "My Slideshow")
-        try await sut.save(dto)
-        let fetched = try await sut.fetch(id: dto.id)
-        XCTAssertEqual(fetched?.name, "My Slideshow")
+    func testWriteThenFetch_returnsSavedDurationRawValue() async throws {
+        try await sut.write { context in
+            let model = SlideshowModel(name: "X", durationRawValue: "30")
+            context.insert(model)
+            try context.save()
+        }
+        let results = try await sut.fetch(FetchDescriptor<SlideshowModel>()) { $0.durationRawValue }
+        XCTAssertEqual(results[0], "30")
     }
 
-    func testSaveThenFetch_returnsSavedDurationRawValue() async throws {
-        let dto = SlideshowDTO(id: UUID(), name: "X", durationRawValue: "30")
-        try await sut.save(dto)
-        let fetched = try await sut.fetch(id: dto.id)
-        XCTAssertEqual(fetched?.durationRawValue, "30")
+    func testWriteThenFetch_returnsSavedTransitionRawValue() async throws {
+        try await sut.write { context in
+            let model = SlideshowModel(name: "X", transitionRawValue: "dissolve")
+            context.insert(model)
+            try context.save()
+        }
+        let results = try await sut.fetch(FetchDescriptor<SlideshowModel>()) { $0.transitionRawValue }
+        XCTAssertEqual(results[0], "dissolve")
     }
 
-    func testSaveThenFetch_returnsSavedTransitionRawValue() async throws {
-        let dto = SlideshowDTO(id: UUID(), name: "X", transitionRawValue: "crossDissolve")
-        try await sut.save(dto)
-        let fetched = try await sut.fetch(id: dto.id)
-        XCTAssertEqual(fetched?.transitionRawValue, "crossDissolve")
+    func testWriteThenFetch_returnsSavedLoop() async throws {
+        try await sut.write { context in
+            let model = SlideshowModel(name: "X", loop: false)
+            context.insert(model)
+            try context.save()
+        }
+        let results = try await sut.fetch(FetchDescriptor<SlideshowModel>()) { $0.loop }
+        XCTAssertEqual(results[0], false)
     }
 
-    func testSaveThenFetch_returnsSavedLoop() async throws {
-        let dto = SlideshowDTO(id: UUID(), name: "X", loop: false)
-        try await sut.save(dto)
-        let fetched = try await sut.fetch(id: dto.id)
-        XCTAssertEqual(fetched?.loop, false)
-    }
+    // MARK: - fetch with predicate
 
-    // MARK: - save → fetchAll
-
-    func testSaveThenFetchAll_includesSavedModel() async throws {
-        let dto = SlideshowDTO(id: UUID(), name: "Included")
-        try await sut.save(dto)
-        let all = try await sut.fetchAll()
-        XCTAssertEqual(all.count, 1)
-    }
-
-    // MARK: - fetch(id:) miss
-
-    func testFetch_whenIDNotFound_returnsNil() async throws {
-        let fetched = try await sut.fetch(id: UUID())
-        XCTAssertNil(fetched)
+    func testFetch_withPredicate_returnsMatchingModel() async throws {
+        let id = UUID()
+        try await sut.write { context in
+            context.insert(SlideshowModel(id: id, name: "Target"))
+            context.insert(SlideshowModel(name: "Other"))
+            try context.save()
+        }
+        let descriptor = FetchDescriptor<SlideshowModel>(predicate: #Predicate { $0.id == id })
+        let results = try await sut.fetch(descriptor) { $0.name }
+        XCTAssertEqual(results, ["Target"])
     }
 
     // MARK: - delete
 
-    func testDelete_makesModelUnfetchableByID() async throws {
-        let dto = SlideshowDTO(id: UUID(), name: "To Delete")
-        try await sut.save(dto)
-        try await sut.delete(id: dto.id)
-        let fetched = try await sut.fetch(id: dto.id)
-        XCTAssertNil(fetched)
-    }
-
-    func testDelete_reducesCountByOne() async throws {
-        let first = SlideshowDTO(id: UUID(), name: "First")
-        let second = SlideshowDTO(id: UUID(), name: "Second")
-        try await sut.save(first)
-        try await sut.save(second)
-        try await sut.delete(id: first.id)
-        let all = try await sut.fetchAll()
-        XCTAssertEqual(all.count, 1)
+    func testDelete_removesMatchingModel() async throws {
+        let id = UUID()
+        try await sut.write { context in
+            context.insert(SlideshowModel(id: id, name: "To Delete"))
+            try context.save()
+        }
+        try await sut.delete(SlideshowModel.self, where: #Predicate { $0.id == id })
+        let results = try await sut.fetch(FetchDescriptor<SlideshowModel>()) { $0.name }
+        XCTAssertTrue(results.isEmpty)
     }
 
     func testDelete_doesNotRemoveOtherModels() async throws {
-        let keep = SlideshowDTO(id: UUID(), name: "Keep")
-        let remove = SlideshowDTO(id: UUID(), name: "Remove")
-        try await sut.save(keep)
-        try await sut.save(remove)
-        try await sut.delete(id: remove.id)
-        let fetched = try await sut.fetch(id: keep.id)
-        XCTAssertEqual(fetched?.id, keep.id)
+        let keepID = UUID()
+        let removeID = UUID()
+        try await sut.write { context in
+            context.insert(SlideshowModel(id: keepID, name: "Keep"))
+            context.insert(SlideshowModel(id: removeID, name: "Remove"))
+            try context.save()
+        }
+        try await sut.delete(SlideshowModel.self, where: #Predicate { $0.id == removeID })
+        let results = try await sut.fetch(FetchDescriptor<SlideshowModel>()) { $0.id }
+        XCTAssertEqual(results, [keepID])
     }
 }

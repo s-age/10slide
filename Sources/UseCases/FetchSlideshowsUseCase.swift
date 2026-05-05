@@ -1,11 +1,13 @@
 final class FetchSlideshowsUseCase: FetchSlideshowsUseCaseProtocol, Sendable {
-    private let slideshowRepository: any SlideshowRepositoryProtocol
+    private let domainService: any SlideshowDomainServiceProtocol
 
-    init(slideshowRepository: any SlideshowRepositoryProtocol) {
-        self.slideshowRepository = slideshowRepository
+    init(domainService: any SlideshowDomainServiceProtocol) {
+        self.domainService = domainService
     }
 
-    func execute() async throws -> [Slideshow] {
-        try await slideshowRepository.fetchAll()
+    func execute(_ request: FetchSlideshowsRequest) async throws -> [SlideshowResponse] {
+        try request.validate()
+        let slideshows = try await domainService.fetchAll()
+        return slideshows.map { SlideshowResponse(from: $0) }
     }
 }

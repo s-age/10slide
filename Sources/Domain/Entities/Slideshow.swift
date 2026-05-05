@@ -7,19 +7,7 @@ struct Slideshow: Identifiable, Equatable, Sendable {
     var config: SlideshowConfig
     var createdAt: Date
 
-    func nextSlideIndex(from currentIndex: Int) -> Int? {
-        guard !slides.isEmpty else { return nil }
-        if currentIndex < slides.count - 1 { return currentIndex + 1 }
-        return config.loop ? 0 : nil
-    }
-
-    func previousSlideIndex(from currentIndex: Int) -> Int? {
-        guard !slides.isEmpty else { return nil }
-        if currentIndex > 0 { return currentIndex - 1 }
-        return config.loop ? slides.count - 1 : nil
-    }
-
-    static func create(name: String, localIdentifiers: [String], config: SlideshowConfig) -> Slideshow {
+static func create(name: String, localIdentifiers: [String], config: SlideshowConfig) -> Slideshow {
         Slideshow(
             id: UUID(),
             name: name,

@@ -1,4 +1,4 @@
 protocol AdvanceSlideUseCaseProtocol: Sendable {
-    func execute(slideshow: Slideshow, currentIndex: Int) -> Int?
-    func executePrevious(slideshow: Slideshow, currentIndex: Int) -> Int?
+    func execute(_ request: AdvanceSlideRequest) throws -> Int?
+    func executePrevious(_ request: PreviousSlideRequest) throws -> Int?
 }

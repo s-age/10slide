@@ -1,13 +1,15 @@
 import Foundation
 
 final class FetchSlideshowUseCase: FetchSlideshowUseCaseProtocol, Sendable {
-    private let slideshowRepository: any SlideshowRepositoryProtocol
+    private let domainService: any SlideshowDomainServiceProtocol
 
-    init(slideshowRepository: any SlideshowRepositoryProtocol) {
-        self.slideshowRepository = slideshowRepository
+    init(domainService: any SlideshowDomainServiceProtocol) {
+        self.domainService = domainService
     }
 
-    func execute(id: UUID) async throws -> Slideshow? {
-        try await slideshowRepository.fetch(id: id)
+    func execute(_ request: FetchSlideshowRequest) async throws -> SlideshowResponse? {
+        try request.validate()
+        guard let slideshow = try await domainService.fetch(id: request.id) else { return nil }
+        return SlideshowResponse(from: slideshow)
     }
 }
