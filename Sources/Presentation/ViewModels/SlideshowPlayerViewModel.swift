@@ -21,6 +21,8 @@ final class SlideshowPlayerViewModel {
         case exit
     }
 
+    let isSpriteMode: Bool
+
     private(set) var showFilmstrip: Bool = true
     private(set) var fullscreenHint: FullscreenHintType? = nil
     private(set) var errorMessage: String?
@@ -42,7 +44,9 @@ final class SlideshowPlayerViewModel {
         updateSlideshowConfig: UpdateSlideshowConfigUseCaseProtocol,
         advanceSlide: AdvanceSlideUseCaseProtocol,
         previousSlide: PreviousSlideUseCaseProtocol,
-        filmstripHideDuration: Duration = .seconds(3)
+        filmstripHideDuration: Duration = .seconds(3),
+        initialIndex: Int = 0,
+        isSpriteMode: Bool = false
     ) {
         self.slideshow = slideshow
         self.loadSlideImage = loadSlideImage
@@ -50,6 +54,8 @@ final class SlideshowPlayerViewModel {
         self.advanceSlide = advanceSlide
         self.previousSlide = previousSlide
         self.filmstripHideDuration = filmstripHideDuration
+        self.currentIndex = initialIndex
+        self.isSpriteMode = isSpriteMode
     }
 
     private var currentSlide: SlideResponse? {
@@ -94,7 +100,7 @@ final class SlideshowPlayerViewModel {
                 await next()
             }
         }
-        if !enterHintShown {
+        if !enterHintShown, !isSpriteMode {
             enterHintShown = true
             showHint(.enter)
         }

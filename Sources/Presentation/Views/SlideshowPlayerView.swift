@@ -4,11 +4,18 @@ struct SlideshowPlayerView: View {
     let viewModel: SlideshowPlayerViewModel
     let thumbnailViewModel: ThumbnailViewModel
     let onBack: () -> Void
+    let onSpriteMode: ((Int) -> Void)?
 
-    init(viewModel: SlideshowPlayerViewModel, thumbnailViewModel: ThumbnailViewModel, onBack: @escaping () -> Void) {
+    init(
+        viewModel: SlideshowPlayerViewModel,
+        thumbnailViewModel: ThumbnailViewModel,
+        onBack: @escaping () -> Void,
+        onSpriteMode: ((Int) -> Void)? = nil
+    ) {
         self.viewModel = viewModel
         self.thumbnailViewModel = thumbnailViewModel
         self.onBack = onBack
+        self.onSpriteMode = onSpriteMode
     }
 
     var body: some View {
@@ -53,15 +60,29 @@ struct SlideshowPlayerView: View {
             }
 
             if viewModel.showFilmstrip {
-                Button {
-                    onBack()
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.white)
-                        .padding(16)
+                HStack(spacing: 0) {
+                    if let onSpriteMode {
+                        Button {
+                            onSpriteMode(viewModel.currentIndex)
+                        } label: {
+                            Image(systemName: "pip.enter")
+                                .font(.title2)
+                                .foregroundStyle(.white)
+                                .padding(16)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    Button {
+                        onBack()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(.white)
+                            .padding(16)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
                 .onHover { hovering in
                     if hovering { viewModel.overlayHoverBegan() } else { viewModel.overlayHoverEnded() }
                 }

@@ -49,6 +49,19 @@ final class PresentationContainer: Sendable {
     }
 
     @MainActor
+    func makeSpritePlayerViewModel(slideshow: SlideshowResponse, initialIndex: Int) -> SlideshowPlayerViewModel {
+        SlideshowPlayerViewModel(
+            slideshow: slideshow,
+            loadSlideImage: loadSlideImage,
+            updateSlideshowConfig: updateSlideshowConfig,
+            advanceSlide: advanceSlide,
+            previousSlide: previousSlide,
+            initialIndex: initialIndex,
+            isSpriteMode: true
+        )
+    }
+
+    @MainActor
     func makeSlideshowLibraryViewModel() -> SlideshowLibraryViewModel {
         SlideshowLibraryViewModel(fetchSlideshows: fetchSlideshows, deleteSlideshow: deleteSlideshow)
     }
