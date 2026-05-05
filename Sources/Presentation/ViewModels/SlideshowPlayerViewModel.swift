@@ -77,6 +77,7 @@ final class SlideshowPlayerViewModel {
             currentIndex: currentIndex,
             loop: slideshow.config.loop
         )
+        // Validation failure = programming bug (UI guards these states); nil = no more slides
         if let nextIndex = try? advanceSlideUseCase.execute(request) {
             currentIndex = nextIndex
             await loadCurrentImage()
@@ -91,6 +92,7 @@ final class SlideshowPlayerViewModel {
             currentIndex: currentIndex,
             loop: slideshow.config.loop
         )
+        // Validation failure = programming bug (UI guards these states); nil = no more slides
         if let prevIndex = try? previousSlideUseCase.execute(request) {
             currentIndex = prevIndex
             await loadCurrentImage()
@@ -160,13 +162,23 @@ final class SlideshowPlayerViewModel {
         showFilmstripOverlay()
     }
 
+    func dismissError() {
+        errorMessage = nil
+    }
+
     func showFilmstripOverlay() {
         showFilmstrip = true
         hideFilmstripTask?.cancel()
         hideFilmstripTask = nil
         guard isPlaying else { return }
         hideFilmstripTask = Task {
-            try? await Task.sleep(for: filmstripHideDuration)
+            do {
+                try await Task.sleep(for: filmstripHideDuration)
+            } catch is CancellationError {
+                return
+            } catch {
+                return
+            }
             guard !Task.isCancelled else { return }
             showFilmstrip = false
         }

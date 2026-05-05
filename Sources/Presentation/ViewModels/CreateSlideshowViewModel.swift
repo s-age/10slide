@@ -49,12 +49,17 @@ final class CreateSlideshowViewModel {
             urls: urls,
             existingIdentifiers: selectedIdentifiers
         )
+        // validate() is empty; file-path filtering is best-effort — no user-actionable error
         guard let newPaths = try? addDroppedFilesUseCase.execute(request) else { return }
         selectedIdentifiers.append(contentsOf: newPaths)
     }
 
     func removeFile(_ identifier: String) {
         selectedIdentifiers.removeAll { $0 == identifier }
+    }
+
+    func dismissError() {
+        errorMessage = nil
     }
 
     func saveSlideshow() async -> SlideshowResponse? {

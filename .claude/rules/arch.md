@@ -54,6 +54,7 @@ Each layer communicates only with its immediate neighbor. No layer may skip.
 - `UseCases` → `SwiftData`, `Photos`, `SwiftUI`, `UIKit`, `Repositories/Protocols`
 - `Presentation` → `Domain/Entities`, `Domain/Services`, `Repositories`, `Infrastructure`
 - `Repositories` → `SwiftUI`, `UIKit`
+- `Errors` → everything except `Foundation`
 - Any layer (except `Infrastructure`) → direct framework I/O
 
 ## Swift 6 concurrency

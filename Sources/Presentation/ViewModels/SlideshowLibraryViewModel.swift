@@ -19,6 +19,10 @@ final class SlideshowLibraryViewModel {
         self.deleteSlideshowUseCase = deleteSlideshow
     }
 
+    func dismissError() {
+        errorMessage = nil
+    }
+
     func loadLibrary() async {
         isLoading = true
         errorMessage = nil

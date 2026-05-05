@@ -6,7 +6,7 @@ paths:
 When creating, editing, or reviewing any file in `Sources/Presentation/`:
 
 - **Layer responsibility**: SwiftUI views own display. ViewModels connect use cases to views. `Presentation` is the only layer that may import `SwiftUI` or `UIKit`.
-- **Import allowlist**: `SwiftUI`, `AppKit`, `Foundation`, `UseCases/Protocols`, `UseCases/Requests`, `UseCases/Responses` — never `Domain`, `Repositories`, `Infrastructure`, `SwiftData`, `Photos`.
+- **Import allowlist**: `SwiftUI`, `AppKit`, `Foundation`, `UseCases/Protocols`, `UseCases/Requests`, `UseCases/Responses`, `Errors` — never `Domain`, `Repositories`, `Infrastructure`, `SwiftData`, `Photos`.
 
 ## Directory layout
 

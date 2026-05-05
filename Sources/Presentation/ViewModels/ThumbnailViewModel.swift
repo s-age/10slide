@@ -17,6 +17,7 @@ final class ThumbnailViewModel {
     func loadThumbnail(identifier: String) async {
         guard thumbnails[identifier] == nil else { return }
         let request = LoadThumbnailRequest(localIdentifier: identifier)
+        // validate() is empty; load failure → placeholder image (no user-actionable error)
         guard let data = try? await loadThumbnailUseCase.execute(request) else { return }
         thumbnails[identifier] = data
         images[identifier] = await Task.detached(priority: .userInitiated) {

@@ -6,7 +6,7 @@ paths:
 When creating, editing, or reviewing any file in `Sources/Domain/Services/`:
 
 - **Layer responsibility**: Orchestrates Repository calls and Entity logic. The sole consumer of Repository protocols in the architecture. Called by UseCases only.
-- **Import allowlist**: `Foundation`, `Domain/Entities`, `Repositories/Protocols` — never `SwiftData`, `Photos`, `SwiftUI`, `UIKit`, `Infrastructure`, `UseCases`.
+- **Import allowlist**: `Foundation`, `Domain/Entities`, `Repositories/Protocols`, `Errors` — never `SwiftData`, `Photos`, `SwiftUI`, `UIKit`, `Infrastructure`, `UseCases`.
 
 ## Directory layout
 
