@@ -4,7 +4,7 @@ import Observation
 @Observable
 @MainActor
 final class SlideshowLibraryViewModel {
-    private(set) var slideshows: [Slideshow] = []
+    private(set) var slideshows: [SlideshowResponse] = []
     private(set) var isLoading: Bool = false
     private(set) var errorMessage: String?
 
@@ -21,9 +21,10 @@ final class SlideshowLibraryViewModel {
 
     func loadLibrary() async {
         isLoading = true
+        errorMessage = nil
         defer { isLoading = false }
         do {
-            slideshows = try await fetchSlideshowsUseCase.execute()
+            slideshows = try await fetchSlideshowsUseCase.execute(FetchSlideshowsRequest())
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -31,7 +32,7 @@ final class SlideshowLibraryViewModel {
 
     func deleteSlideshow(id: UUID) async {
         do {
-            try await deleteSlideshowUseCase.execute(id: id)
+            try await deleteSlideshowUseCase.execute(DeleteSlideshowRequest(id: id))
             slideshows.removeAll { $0.id == id }
         } catch {
             errorMessage = error.localizedDescription

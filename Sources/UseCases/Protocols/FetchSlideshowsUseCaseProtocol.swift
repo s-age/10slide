@@ -1,3 +1,3 @@
 protocol FetchSlideshowsUseCaseProtocol: Sendable {
-    func execute() async throws -> [Slideshow]
+    func execute(_ request: FetchSlideshowsRequest) async throws -> [SlideshowResponse]
 }

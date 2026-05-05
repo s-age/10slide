@@ -6,7 +6,7 @@ paths:
 When creating, editing, or reviewing any file in `Sources/Presentation/`:
 
 - **Layer responsibility**: SwiftUI views own display. ViewModels connect use cases to views. `Presentation` is the only layer that may import `SwiftUI` or `UIKit`.
-- **Import allowlist**: `SwiftUI`, `Foundation`, `Domain/Entities`, `UseCases/Protocols` — never `Repositories`, `Infrastructure`, `SwiftData`, `Photos`.
+- **Import allowlist**: `SwiftUI`, `AppKit`, `Foundation`, `UseCases/Protocols`, `UseCases/Requests`, `UseCases/Responses` — never `Domain`, `Repositories`, `Infrastructure`, `SwiftData`, `Photos`.
 
 ## Directory layout
 
@@ -57,10 +57,10 @@ For tasks that depend on a value changing, use `.task(id:)`:
 A ViewModel is a **lifecycle adapter**, not a logic container. Keep business logic in use cases; keep display formatting in the ViewModel.
 
 ```swift
-// Good — ViewModel is a thin bridge
+// Good — ViewModel is a thin bridge; uses Response types only
 @Observable
 final class SlideshowListViewModel {
-    private(set) var slideshows: [Slideshow] = []
+    private(set) var slideshows: [SlideshowResponse] = []
     private(set) var isLoading = false
     private let fetchSlideshows: any FetchSlideshowsUseCaseProtocol
 
@@ -73,7 +73,7 @@ final class SlideshowListViewModel {
         isLoading = true
         defer { isLoading = false }
         do {
-            slideshows = try await fetchSlideshows.execute()
+            slideshows = try await fetchSlideshows.execute(FetchSlideshowsRequest())
         } catch {
             // handle error state
         }
@@ -160,10 +160,11 @@ final class ImageLoadingViewModel {
 
 ## Prohibitions
 
-- Never import `Repositories`, `Infrastructure`, `SwiftData`, or `Photos` — route through use cases
+- Never import `Domain/Entities`, `Domain/Services`, `Repositories`, `Infrastructure`, `SwiftData`, or `Photos` — route through use cases via Request/Response types
 - Never add business logic in a View or ViewModel — extract to a use case
 - Never use `Task {}` in `onAppear` when `.task` modifier can replace it
 - Never hold more than one primary use case's output in a single ViewModel — split ViewModels instead
 - Never put display formatting logic in a use case — formatting belongs here
-- Never call a repository protocol method directly from a ViewModel
+- Never call a repository or domain service protocol method directly from a ViewModel
 - Never use `State(initialValue:)` for an externally injected ViewModel — use `let` or `@Bindable var`
+- Never use `.toDomain` computed properties — those are internal to the UseCase layer

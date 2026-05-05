@@ -1,0 +1,21 @@
+import Foundation
+
+enum SlideDurationResponse: String, Equatable, Sendable, CaseIterable {
+    case five = "5"
+    case ten = "10"
+    case fifteen = "15"
+    case thirty = "30"
+    case sixty = "60"
+    case manual
+
+    var seconds: TimeInterval? {
+        switch self {
+        case .five: return 5
+        case .ten: return 10
+        case .fifteen: return 15
+        case .thirty: return 30
+        case .sixty: return 60
+        case .manual: return nil
+        }
+    }
+}

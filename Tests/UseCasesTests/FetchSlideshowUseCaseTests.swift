@@ -3,7 +3,7 @@ import XCTest
 
 // MARK: - Mock
 
-final class MockSlideshowRepositoryForFetch: SlideshowRepositoryProtocol, @unchecked Sendable {
+final class MockSlideshowDomainServiceForFetch: SlideshowDomainServiceProtocol, @unchecked Sendable {
     var fetchResult: Slideshow?
     var fetchCallCount = 0
     var fetchedID: UUID?
@@ -18,7 +18,13 @@ final class MockSlideshowRepositoryForFetch: SlideshowRepositoryProtocol, @unche
         return fetchResult
     }
 
-    func save(_ slideshow: Slideshow) async throws {}
+    func create(name: String, localIdentifiers: [String], config: SlideshowConfig) async throws -> Slideshow {
+        Slideshow(id: UUID(), name: name, slides: [], config: config, createdAt: Date())
+    }
+
+    func update(id: UUID, name: String, localIdentifiers: [String]) async throws -> Slideshow {
+        Slideshow(id: id, name: name, slides: [], config: .default, createdAt: Date())
+    }
 
     func delete(id: UUID) async throws {}
 }
@@ -31,51 +37,56 @@ private enum FetchSlideshowUseCaseTestError: Error, Equatable {
 
 final class FetchSlideshowUseCaseTests: XCTestCase {
     private var sut: FetchSlideshowUseCase!
-    private var mockSlideshowRepository: MockSlideshowRepositoryForFetch!
+    private var mockDomainService: MockSlideshowDomainServiceForFetch!
 
     override func setUp() {
         super.setUp()
-        mockSlideshowRepository = MockSlideshowRepositoryForFetch()
-        sut = FetchSlideshowUseCase(slideshowRepository: mockSlideshowRepository)
+        mockDomainService = MockSlideshowDomainServiceForFetch()
+        sut = FetchSlideshowUseCase(domainService: mockDomainService)
     }
 
     override func tearDown() {
         sut = nil
-        mockSlideshowRepository = nil
+        mockDomainService = nil
         super.tearDown()
     }
 
-    // MARK: - execute(id:)
+    // MARK: - execute(_:)
 
-    func testExecute_callsRepositoryFetchOnce() async throws {
-        _ = try await sut.execute(id: UUID())
-        XCTAssertEqual(mockSlideshowRepository.fetchCallCount, 1)
+    func testExecute_callsDomainServiceFetchOnce() async throws {
+        let request = FetchSlideshowRequest(id: UUID())
+        _ = try await sut.execute(request)
+        XCTAssertEqual(mockDomainService.fetchCallCount, 1)
     }
 
-    func testExecute_forwardsIDToRepository() async throws {
+    func testExecute_forwardsIDToDomainService() async throws {
         let id = UUID()
-        _ = try await sut.execute(id: id)
-        XCTAssertEqual(mockSlideshowRepository.fetchedID, id)
+        let request = FetchSlideshowRequest(id: id)
+        _ = try await sut.execute(request)
+        XCTAssertEqual(mockDomainService.fetchedID, id)
     }
 
     func testExecute_whenNotFound_returnsNil() async throws {
-        mockSlideshowRepository.fetchResult = nil
-        let result = try await sut.execute(id: UUID())
+        mockDomainService.fetchResult = nil
+        let request = FetchSlideshowRequest(id: UUID())
+        let result = try await sut.execute(request)
         XCTAssertNil(result)
     }
 
     func testExecute_returnsCorrectSlideshowID() async throws {
         let expected = makeSlideshow()
-        mockSlideshowRepository.fetchResult = expected
-        let result = try await sut.execute(id: expected.id)
+        mockDomainService.fetchResult = expected
+        let request = FetchSlideshowRequest(id: expected.id)
+        let result = try await sut.execute(request)
         XCTAssertEqual(result?.id, expected.id)
     }
 
-    func testExecute_whenRepositoryThrows_propagatesError() async {
-        mockSlideshowRepository.throwOnFetch = true
+    func testExecute_whenDomainServiceThrows_propagatesError() async {
+        mockDomainService.throwOnFetch = true
+        let request = FetchSlideshowRequest(id: UUID())
         do {
-            _ = try await sut.execute(id: UUID())
-            XCTFail("Expected execute(id:) to throw")
+            _ = try await sut.execute(request)
+            XCTFail("Expected execute() to throw")
         } catch {
             XCTAssertEqual(error as? FetchSlideshowUseCaseTestError, .intentional)
         }

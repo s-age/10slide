@@ -1,14 +1,14 @@
 import SwiftUI
 
 struct FilmstripView: View {
-    let slides: [Slide]
+    let slides: [SlideResponse]
     let currentIndex: Int
-    let duration: SlideDuration
-    let transition: TransitionType
+    let duration: SlideDurationResponse
+    let transition: TransitionTypeResponse
     let thumbnailViewModel: ThumbnailViewModel
     let onSelect: (Int) -> Void
-    let onDurationChange: (SlideDuration) -> Void
-    let onTransitionChange: (TransitionType) -> Void
+    let onDurationChange: (SlideDurationResponse) -> Void
+    let onTransitionChange: (TransitionTypeResponse) -> Void
     let isPlaying: Bool
     let onPrevious: () -> Void
     let onPlayPause: () -> Void
@@ -26,7 +26,7 @@ struct FilmstripView: View {
     private var infoBar: some View {
         HStack(spacing: 8) {
             Picker("Duration", selection: Binding(get: { duration }, set: { onDurationChange($0) })) {
-                ForEach(SlideDuration.allCases, id: \.self) { d in
+                ForEach(SlideDurationResponse.allCases, id: \.self) { d in
                     Text(d.displayLabel).tag(d)
                 }
             }
@@ -53,7 +53,7 @@ struct FilmstripView: View {
             Spacer()
 
             Picker("Transition", selection: Binding(get: { transition }, set: { onTransitionChange($0) })) {
-                ForEach(TransitionType.allCases, id: \.self) { t in
+                ForEach(TransitionTypeResponse.allCases, id: \.self) { t in
                     Text(t.rawValue.capitalized).tag(t)
                 }
             }

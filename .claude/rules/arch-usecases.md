@@ -5,13 +5,15 @@ paths:
 
 ## Role
 
-Provides a **stable, uniform API surface** for the Presentation layer. Use cases own all business logic and orchestration. ViewModels always call a use case — never a repository directly.
+Provides a **stable, uniform API surface** for the Presentation layer. UseCases accept Request structs, delegate to Domain Services, and return Response types. They never touch Repositories directly.
 
 ## Directory layout
 
 ```
 UseCases/
 ├── Protocols/     # *UseCaseProtocol contracts consumed by Presentation
+├── Requests/      # UseCaseRequest protocol + concrete Request structs
+├── Responses/     # Response structs + Response enums + mapping extensions
 └── *.swift        # Concrete implementations
 ```
 
@@ -19,53 +21,64 @@ UseCases/
 
 | May import | Must NOT import |
 |-----------|----------------|
-| `Foundation`, `Protocols/` (intra), `Domain/Entities` | `SwiftUI`, `UIKit`, `SwiftData`, `Photos` |
-| `Repositories/Protocols/` | `Infrastructure` (concrete or protocol) |
+| `Foundation` | `SwiftUI`, `UIKit`, `SwiftData`, `Photos` |
+| `Domain/Entities` (for Entity → Response mapping) | `Repositories/Protocols` (route through Domain Services) |
+| `Domain/Services/Protocols/` | `Infrastructure` (concrete or protocol) |
+| `Requests/`, `Responses/` (intra-layer) | |
 
-## Patterns
+## Request/Response pattern
 
-**Thin use case — single repository delegation**
+Every UseCase follows this uniform shape:
 
-A use case that delegates directly to one repository is **not a smell** — it is load-bearing architecture. Callers always import from `UseCases/`. They never need to ask "should I call the repository directly or the use case?".
+```swift
+// Protocol
+protocol CreateSlideshowUseCaseProtocol: Sendable {
+    func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse
+}
+
+// Implementation
+final class CreateSlideshowUseCase: CreateSlideshowUseCaseProtocol, Sendable {
+    private let domainService: any SlideshowDomainServiceProtocol
+
+    init(domainService: any SlideshowDomainServiceProtocol) {
+        self.domainService = domainService
+    }
+
+    func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse {
+        try request.validate()
+        let config = SlideshowConfig(
+            duration: request.duration.toDomain,
+            transition: request.transition.toDomain,
+            loop: request.loop
+        )
+        let slideshow = try await domainService.create(
+            name: request.name,
+            localIdentifiers: request.localIdentifiers,
+            config: config
+        )
+        return SlideshowResponse(from: slideshow)
+    }
+}
+```
+
+Key rules:
+1. Always call `request.validate()` before processing
+2. Convert Request enum values to Domain types via `.toDomain`
+3. Convert Domain entities to Response types via `Response(from:)` initializers
+4. Delegate business logic to Domain Services — never implement it here
+
+## Thin use case — single Domain Service delegation
+
+A use case that delegates directly to one Domain Service method is **not a smell** — it is load-bearing architecture. Callers always import from `UseCases/`. They never need to ask "should I call the Domain Service directly or the use case?".
 
 ```swift
 // Good — thin pass-through by design
-protocol FetchSlidesUseCaseProtocol: Sendable {
-    func execute() async throws -> [Slide]
-}
+final class FetchLibraryUseCase: FetchLibraryUseCaseProtocol, Sendable {
+    private let domainService: any ImageDomainServiceProtocol
 
-final class FetchSlidesUseCase: FetchSlidesUseCaseProtocol {
-    private let repository: any SlideRepositoryProtocol
-    init(repository: any SlideRepositoryProtocol) { self.repository = repository }
-
-    func execute() async throws -> [Slide] {
-        try await repository.fetchAll()
-    }
-}
-
-// Bad — ViewModel bypasses the use case layer because "it's just a pass-through"
-// SomeViewModel.swift
-let slides = try await slideRepository.fetchAll()   // NG: always go through a use case
-```
-
-**Use case with orchestration**
-
-```swift
-// Good — delegates entity construction to the domain factory; use case only orchestrates
-final class CreateSlideshowUseCase: CreateSlideshowUseCaseProtocol {
-    private let slideshowRepository: any SlideshowRepositoryProtocol
-
-    func execute(name: String, identifiers: [String], config: SlideshowConfig) async throws -> Slideshow {
-        let slideshow = Slideshow.create(name: name, localIdentifiers: identifiers, config: config)
-        try await slideshowRepository.save(slideshow)
-        return slideshow
-    }
-}
-
-// Bad — use case hard-codes entity construction rules (UUID assignment, ordering, defaults)
-func execute(name: String, identifiers: [String]) async throws -> Slideshow {
-    let slides = identifiers.enumerated().map { idx, id in
-        Slide(id: UUID(), localIdentifier: id, order: idx, duration: 3.0, title: nil)   // NG: domain logic
+    func execute(_ request: FetchLibraryRequest) async throws -> [String] {
+        try request.validate()
+        return try await domainService.fetchAllIdentifiers()
     }
 }
 ```
@@ -73,8 +86,11 @@ func execute(name: String, identifiers: [String]) async throws -> Slideshow {
 ## Prohibitions
 
 - Never import `SwiftUI`, `UIKit`, `SwiftData`, or `Photos` — enforced by SwiftLint
-- Never inject concrete infrastructure or repository classes — inject protocols only
+- Never import `Repositories/Protocols` — route through Domain Services
+- Never inject concrete infrastructure, repository, or Domain Service classes — inject protocols only
 - Never hold `@Published` state or `@Observable` — that belongs in ViewModels
 - Never annotate `@MainActor` — use cases are actor-agnostic
 - Never add display logic (formatting, localized strings) — that belongs in Presentation
 - Never define a protocol in the same file as its implementation — protocols live in `Protocols/`
+- Never return Domain Entity types to callers — always map to Response types
+- Never accept primitive parameters — always accept a UseCaseRequest struct

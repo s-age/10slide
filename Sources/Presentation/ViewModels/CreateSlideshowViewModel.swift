@@ -6,11 +6,11 @@ import Observation
 final class CreateSlideshowViewModel {
     private(set) var selectedIdentifiers: [String] = []
     var slideshowName: String = ""
-    var selectedDuration: SlideDuration = .five
-    var selectedTransition: TransitionType = .fade
+    var selectedDuration: SlideDurationResponse = .five
+    var selectedTransition: TransitionTypeResponse = .fade
     private(set) var isLoading: Bool = false
     private(set) var errorMessage: String?
-    private(set) var editingSlideshow: Slideshow?
+    private(set) var editingSlideshow: SlideshowResponse?
 
     private let createSlideshowUseCase: any CreateSlideshowUseCaseProtocol
     private let updateSlideshowUseCase: any UpdateSlideshowUseCaseProtocol
@@ -32,7 +32,7 @@ final class CreateSlideshowViewModel {
         !slideshowName.isEmpty || !selectedIdentifiers.isEmpty
     }
 
-    func loadSlideshow(_ slideshow: Slideshow) {
+    func loadSlideshow(_ slideshow: SlideshowResponse) {
         editingSlideshow = slideshow
         slideshowName = slideshow.name
         selectedIdentifiers = slideshow.slides.map(\.localIdentifier)
@@ -45,7 +45,11 @@ final class CreateSlideshowViewModel {
     }
 
     func addFiles(_ urls: [URL]) {
-        let newPaths = addDroppedFilesUseCase.execute(urls: urls, existingIdentifiers: selectedIdentifiers)
+        let request = AddDroppedFilesRequest(
+            urls: urls,
+            existingIdentifiers: selectedIdentifiers
+        )
+        guard let newPaths = try? addDroppedFilesUseCase.execute(request) else { return }
         selectedIdentifiers.append(contentsOf: newPaths)
     }
 
@@ -53,28 +57,27 @@ final class CreateSlideshowViewModel {
         selectedIdentifiers.removeAll { $0 == identifier }
     }
 
-    func saveSlideshow() async -> Slideshow? {
+    func saveSlideshow() async -> SlideshowResponse? {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
         do {
             if let existing = editingSlideshow {
-                return try await updateSlideshowUseCase.execute(
-                    slideshow: existing,
+                let request = UpdateSlideshowRequest(
+                    id: existing.id,
                     name: slideshowName,
                     localIdentifiers: selectedIdentifiers
                 )
+                return try await updateSlideshowUseCase.execute(request)
             } else {
-                let config = SlideshowConfig(
+                let request = CreateSlideshowRequest(
+                    name: slideshowName,
+                    localIdentifiers: selectedIdentifiers,
                     duration: selectedDuration,
                     transition: selectedTransition,
                     loop: true
                 )
-                return try await createSlideshowUseCase.execute(
-                    name: slideshowName,
-                    localIdentifiers: selectedIdentifiers,
-                    config: config
-                )
+                return try await createSlideshowUseCase.execute(request)
             }
         } catch {
             errorMessage = error.localizedDescription

@@ -4,16 +4,16 @@ struct HomeView: View {
     private let thumbnailViewModel: ThumbnailViewModel
     private let createViewModel: CreateSlideshowViewModel
     private let slideshowLibraryViewModel: SlideshowLibraryViewModel
-    @State private var pendingEditSlideshow: Slideshow?
+    @State private var pendingEditSlideshow: SlideshowResponse?
     @State private var pendingNewSlideshow = false
     @State private var showDiscardWorkDialog = false
-    let onSlideshowSelected: (Slideshow) -> Void
+    let onSlideshowSelected: (SlideshowResponse) -> Void
 
     init(
         thumbnailViewModel: ThumbnailViewModel,
         createViewModel: CreateSlideshowViewModel,
         slideshowLibraryViewModel: SlideshowLibraryViewModel,
-        onSlideshowSelected: @escaping (Slideshow) -> Void
+        onSlideshowSelected: @escaping (SlideshowResponse) -> Void
     ) {
         self.thumbnailViewModel = thumbnailViewModel
         self.createViewModel = createViewModel
@@ -75,7 +75,7 @@ struct HomeView: View {
         }
     }
 
-    private func handleEdit(_ slideshow: Slideshow) {
+    private func handleEdit(_ slideshow: SlideshowResponse) {
         if createViewModel.hasUnsavedWork {
             pendingEditSlideshow = slideshow
             showDiscardWorkDialog = true
@@ -84,7 +84,7 @@ struct HomeView: View {
         }
     }
 
-    private func applyEdit(_ slideshow: Slideshow) {
+    private func applyEdit(_ slideshow: SlideshowResponse) {
         createViewModel.loadSlideshow(slideshow)
     }
 }

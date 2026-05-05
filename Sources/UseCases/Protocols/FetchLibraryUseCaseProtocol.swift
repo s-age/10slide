@@ -1,3 +1,3 @@
 protocol FetchLibraryUseCaseProtocol: Sendable {
-    func execute() async throws -> [String]
+    func execute(_ request: FetchLibraryRequest) async throws -> [String]
 }

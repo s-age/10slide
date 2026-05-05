@@ -29,8 +29,8 @@ struct SlideshowPlayerView: View {
                     transition: viewModel.slideshow.config.transition,
                     thumbnailViewModel: thumbnailViewModel,
                     onSelect: { index in Task { await viewModel.jumpTo(index: index) } },
-                    onDurationChange: { viewModel.updateDuration($0) },
-                    onTransitionChange: { viewModel.updateTransition($0) },
+                    onDurationChange: { duration in Task { await viewModel.updateDuration(duration) } },
+                    onTransitionChange: { transition in Task { await viewModel.updateTransition(transition) } },
                     isPlaying: viewModel.isPlaying,
                     onPrevious: { Task { await viewModel.previous() } },
                     onPlayPause: {

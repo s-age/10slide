@@ -8,13 +8,15 @@ Lets users select photos and arrange them into timed slideshows.
 
 ## Architecture
 
-Clean Architecture with per-layer DI containers.
+Strict one-way layered architecture with per-layer DI containers.
 
 ```
-Presentation → UseCases → Repositories → Infrastructure
-                    ↕
-               Domain/Entities (shared value types)
+Presentation → UseCases → Domain/Services → Repositories → Infrastructure
+               (Request/       ↑
+                Response)  Domain/Entities
 ```
+
+Each layer communicates only with its immediate neighbor via protocol boundaries. No layer may skip.
 
 When creating, editing, or reviewing files under `Sources/`: the `arch` rule and the rule for the target layer (`arch-presentation`, `arch-usecases`, etc.) are auto-injected from `.claude/rules/`. No manual loading needed.
 
@@ -25,10 +27,13 @@ When creating, editing, or reviewing files under `Sources/`: the `arch` rule and
 | `Sources/App/` | Entry point — `@main`, boots root `Container` |
 | `Sources/DI/` | DI containers — one per layer, wired in `Container.swift` |
 | `Sources/Domain/Entities/` | Pure structs — no framework imports |
+| `Sources/Domain/Services/` | Orchestrators — call Repository protocols, own business logic |
 | `Sources/Infrastructure/` | Raw I/O — SwiftData, Photos, network |
 | `Sources/Repositories/` | DTO ↔ entity conversion; protocol implementations |
-| `Sources/UseCases/` | Business logic — orchestrates repository protocols |
-| `Sources/Presentation/` | SwiftUI views and ViewModels |
+| `Sources/UseCases/` | Request validation, Domain Service delegation, Entity→Response mapping |
+| `Sources/UseCases/Requests/` | Input DTOs with `validate()` — consumed by Presentation |
+| `Sources/UseCases/Responses/` | Output DTOs — the only domain-concept types Presentation sees |
+| `Sources/Presentation/` | SwiftUI views and ViewModels (uses Response types only) |
 
 ## Development
 

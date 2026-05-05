@@ -3,12 +3,12 @@ import SwiftUI
 struct LibraryPickerView: View {
     private let thumbnailViewModel: ThumbnailViewModel
     @Bindable var createViewModel: CreateSlideshowViewModel
-    var onSlideshowCreated: (Slideshow) -> Void
+    var onSlideshowCreated: (SlideshowResponse) -> Void
 
     init(
         thumbnailViewModel: ThumbnailViewModel,
         createViewModel: CreateSlideshowViewModel,
-        onSlideshowCreated: @escaping (Slideshow) -> Void
+        onSlideshowCreated: @escaping (SlideshowResponse) -> Void
     ) {
         self.thumbnailViewModel = thumbnailViewModel
         self.createViewModel = createViewModel

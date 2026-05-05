@@ -3,15 +3,15 @@ import SwiftUI
 struct ContentView: View {
     private let thumbnailViewModel: ThumbnailViewModel
     private let createViewModel: CreateSlideshowViewModel
-    @State private var selectedSlideshow: Slideshow?
+    @State private var selectedSlideshow: SlideshowResponse?
 
-    private let makeSlideshowPlayerViewModel: @MainActor @Sendable (Slideshow) -> SlideshowPlayerViewModel
+    private let makeSlideshowPlayerViewModel: @MainActor @Sendable (SlideshowResponse) -> SlideshowPlayerViewModel
     private let makeSlideshowLibraryViewModel: @MainActor @Sendable () -> SlideshowLibraryViewModel
 
     init(
         thumbnailViewModel: ThumbnailViewModel,
         createViewModel: CreateSlideshowViewModel,
-        makeSlideshowPlayerViewModel: @escaping @MainActor @Sendable (Slideshow) -> SlideshowPlayerViewModel,
+        makeSlideshowPlayerViewModel: @escaping @MainActor @Sendable (SlideshowResponse) -> SlideshowPlayerViewModel,
         makeSlideshowLibraryViewModel: @escaping @MainActor @Sendable () -> SlideshowLibraryViewModel
     ) {
         self.thumbnailViewModel = thumbnailViewModel

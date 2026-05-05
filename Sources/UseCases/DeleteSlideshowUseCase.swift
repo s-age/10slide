@@ -1,13 +1,14 @@
 import Foundation
 
 final class DeleteSlideshowUseCase: DeleteSlideshowUseCaseProtocol, Sendable {
-    private let slideshowRepository: any SlideshowRepositoryProtocol
+    private let domainService: any SlideshowDomainServiceProtocol
 
-    init(slideshowRepository: any SlideshowRepositoryProtocol) {
-        self.slideshowRepository = slideshowRepository
+    init(domainService: any SlideshowDomainServiceProtocol) {
+        self.domainService = domainService
     }
 
-    func execute(id: UUID) async throws {
-        try await slideshowRepository.delete(id: id)
+    func execute(_ request: DeleteSlideshowRequest) async throws {
+        try request.validate()
+        try await domainService.delete(id: request.id)
     }
 }

@@ -36,7 +36,7 @@ final class PresentationContainer: Sendable {
     }
 
     @MainActor
-    func makeSlideshowPlayerViewModel(slideshow: Slideshow) -> SlideshowPlayerViewModel {
+    func makeSlideshowPlayerViewModel(slideshow: SlideshowResponse) -> SlideshowPlayerViewModel {
         SlideshowPlayerViewModel(
             slideshow: slideshow,
             loadSlideImage: loadSlideImage,

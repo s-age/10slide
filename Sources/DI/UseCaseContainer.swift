@@ -1,4 +1,4 @@
-final class UseCaseContainer {
+final class UseCaseContainer: Sendable {
     let createSlideshow: any CreateSlideshowUseCaseProtocol
     let fetchSlideshow: any FetchSlideshowUseCaseProtocol
     let fetchSlideshows: any FetchSlideshowsUseCaseProtocol
@@ -14,36 +14,49 @@ final class UseCaseContainer {
     let deleteSlideshow: any DeleteSlideshowUseCaseProtocol
     let updateSlideshow: any UpdateSlideshowUseCaseProtocol
 
-    init(repositories: RepositoryContainer) {
+    init(domain: DomainContainer) {
         createSlideshow = CreateSlideshowUseCase(
-            slideshowRepository: repositories.slideshowRepository
+            domainService: domain.slideshowService
         )
         fetchSlideshow = FetchSlideshowUseCase(
-            slideshowRepository: repositories.slideshowRepository
+            domainService: domain.slideshowService
         )
         fetchSlideshows = FetchSlideshowsUseCase(
-            slideshowRepository: repositories.slideshowRepository
+            domainService: domain.slideshowService
         )
         fetchLibrary = FetchLibraryUseCase(
-            imageRepository: repositories.imageRepository
+            domainService: domain.imageService
         )
         loadSlideImage = LoadSlideImageUseCase(
-            imageRepository: repositories.imageRepository
+            domainService: domain.imageService
         )
         loadThumbnail = LoadThumbnailUseCase(
-            imageRepository: repositories.imageRepository
+            domainService: domain.imageService
         )
         loadConfig = LoadConfigUseCase(
-            configRepository: repositories.configRepository
+            domainService: domain.configService
         )
         saveConfig = SaveConfigUseCase(
-            configRepository: repositories.configRepository
+            domainService: domain.configService
         )
-        updateSlideshowConfig = UpdateSlideshowConfigUseCase()
-        advanceSlide = AdvanceSlideUseCase()
-        setDirectory = SetDirectoryUseCase(imageRepository: repositories.imageRepository)
-        addDroppedFiles = AddDroppedFilesUseCase(imageRepository: repositories.imageRepository)
-        deleteSlideshow = DeleteSlideshowUseCase(slideshowRepository: repositories.slideshowRepository)
-        updateSlideshow = UpdateSlideshowUseCase(slideshowRepository: repositories.slideshowRepository)
+        updateSlideshowConfig = UpdateSlideshowConfigUseCase(
+            domainService: domain.slideshowService,
+            playbackService: domain.playbackService
+        )
+        advanceSlide = AdvanceSlideUseCase(
+            domainService: domain.playbackService
+        )
+        setDirectory = SetDirectoryUseCase(
+            domainService: domain.imageService
+        )
+        addDroppedFiles = AddDroppedFilesUseCase(
+            domainService: domain.imageService
+        )
+        deleteSlideshow = DeleteSlideshowUseCase(
+            domainService: domain.slideshowService
+        )
+        updateSlideshow = UpdateSlideshowUseCase(
+            domainService: domain.slideshowService
+        )
     }
 }

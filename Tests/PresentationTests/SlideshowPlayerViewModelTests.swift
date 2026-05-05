@@ -10,11 +10,13 @@ private enum SlideshowPlayerTestError: Error {
 // MARK: - Mock: LoadSlideImageUseCase
 
 final class MockLoadSlideImageUseCase: LoadSlideImageUseCaseProtocol, @unchecked Sendable {
-    var executeResult: Data = Data([0xFF])
+    // Minimal valid 1x1 pixel PNG
+    // swiftlint:disable:next line_length
+    var executeResult: Data = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==")!
     var executeCallCount = 0
     var throwOnExecute = false
 
-    func execute(localIdentifier: String) async throws -> Data {
+    func execute(_ request: LoadSlideImageRequest) async throws -> Data {
         executeCallCount += 1
         if throwOnExecute { throw SlideshowPlayerTestError.intentional }
         return executeResult
@@ -25,14 +27,52 @@ final class MockLoadSlideImageUseCase: LoadSlideImageUseCaseProtocol, @unchecked
 
 final class MockUpdateSlideshowConfigUseCase: UpdateSlideshowConfigUseCaseProtocol, @unchecked Sendable {
     var executeCallCount = 0
-    var lastConfig: SlideshowConfig?
+    var lastRequest: UpdateSlideshowConfigRequest?
+    var executeResult: SlideshowResponse?
 
-    func execute(slideshow: Slideshow, config: SlideshowConfig) -> Slideshow {
+    func execute(_ request: UpdateSlideshowConfigRequest) async throws -> SlideshowResponse {
         executeCallCount += 1
-        lastConfig = config
-        var updated = slideshow
-        updated.config = config
-        return updated
+        lastRequest = request
+        if let result = executeResult {
+            return result
+        }
+        return SlideshowResponse(
+            id: request.slideshowID,
+            name: "Updated",
+            slides: [],
+            config: SlideshowConfigResponse(
+                duration: request.duration,
+                transition: request.transition,
+                loop: request.loop
+            ),
+            createdAt: Date()
+        )
+    }
+}
+
+// MARK: - Mock: AdvanceSlideUseCase
+
+final class MockAdvanceSlideUseCase: AdvanceSlideUseCaseProtocol, @unchecked Sendable {
+    func execute(_ request: AdvanceSlideRequest) throws -> Int? {
+        try request.validate()
+        let next = request.currentIndex + 1
+        if next < request.totalSlides {
+            return next
+        } else if request.loop {
+            return 0
+        }
+        return nil
+    }
+
+    func executePrevious(_ request: PreviousSlideRequest) throws -> Int? {
+        try request.validate()
+        let prev = request.currentIndex - 1
+        if prev >= 0 {
+            return prev
+        } else if request.loop {
+            return request.totalSlides - 1
+        }
+        return nil
     }
 }
 
@@ -43,12 +83,13 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
     private var sut: SlideshowPlayerViewModel!
     private var mockLoadSlideImage: MockLoadSlideImageUseCase!
     private var mockUpdateSlideshowConfig: MockUpdateSlideshowConfigUseCase!
+    private var mockAdvanceSlide: MockAdvanceSlideUseCase!
 
     override func setUp() {
         super.setUp()
         mockLoadSlideImage = MockLoadSlideImageUseCase()
         mockUpdateSlideshowConfig = MockUpdateSlideshowConfigUseCase()
-        // Default: 3-slide show, no loop, 60 s per slide so the auto-advance timer never fires.
+        mockAdvanceSlide = MockAdvanceSlideUseCase()
         sut = SlideshowPlayerViewModel(
             slideshow: Self.makeSlideshow(
                 slides: [
@@ -60,15 +101,17 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
             ),
             loadSlideImage: mockLoadSlideImage,
             updateSlideshowConfig: mockUpdateSlideshowConfig,
+            advanceSlide: mockAdvanceSlide,
             filmstripHideDuration: .milliseconds(50)
         )
     }
 
     override func tearDown() {
-        sut.pause()   // cancel any in-flight Tasks before releasing
+        sut.pause()
         sut = nil
         mockLoadSlideImage = nil
         mockUpdateSlideshowConfig = nil
+        mockAdvanceSlide = nil
         super.tearDown()
     }
 
@@ -78,16 +121,16 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
         identifier: String,
         order: Int,
         duration: TimeInterval = 60.0
-    ) -> Slide {
-        Slide(id: UUID(), localIdentifier: identifier, order: order, duration: duration, title: nil)
+    ) -> SlideResponse {
+        SlideResponse(id: UUID(), localIdentifier: identifier, order: order, duration: duration, title: nil)
     }
 
-    private static func makeSlideshow(slides: [Slide], loop: Bool) -> Slideshow {
-        Slideshow(
+    private static func makeSlideshow(slides: [SlideResponse], loop: Bool) -> SlideshowResponse {
+        SlideshowResponse(
             id: UUID(),
             name: "Test Slideshow",
             slides: slides,
-            config: SlideshowConfig(duration: .five, transition: .fade, loop: loop),
+            config: SlideshowConfigResponse(duration: .five, transition: .fade, loop: loop),
             createdAt: Date()
         )
     }
@@ -108,7 +151,8 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
         sut = SlideshowPlayerViewModel(
             slideshow: Self.makeSlideshow(slides: [], loop: false),
             loadSlideImage: mockLoadSlideImage,
-            updateSlideshowConfig: mockUpdateSlideshowConfig
+            updateSlideshowConfig: mockUpdateSlideshowConfig,
+            advanceSlide: mockAdvanceSlide
         )
         sut.play()
         XCTAssertFalse(sut.isPlaying)
@@ -139,7 +183,8 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
         sut = SlideshowPlayerViewModel(
             slideshow: Self.makeSlideshow(slides: [Self.makeSlide(identifier: "only", order: 0)], loop: false),
             loadSlideImage: mockLoadSlideImage,
-            updateSlideshowConfig: mockUpdateSlideshowConfig
+            updateSlideshowConfig: mockUpdateSlideshowConfig,
+            advanceSlide: mockAdvanceSlide
         )
         sut.play()
         await sut.next()
@@ -150,7 +195,8 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
         sut = SlideshowPlayerViewModel(
             slideshow: Self.makeSlideshow(slides: [Self.makeSlide(identifier: "only", order: 0)], loop: false),
             loadSlideImage: mockLoadSlideImage,
-            updateSlideshowConfig: mockUpdateSlideshowConfig
+            updateSlideshowConfig: mockUpdateSlideshowConfig,
+            advanceSlide: mockAdvanceSlide
         )
         await sut.next()
         XCTAssertEqual(sut.currentIndex, 0)
@@ -166,10 +212,11 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
                 loop: true
             ),
             loadSlideImage: mockLoadSlideImage,
-            updateSlideshowConfig: mockUpdateSlideshowConfig
+            updateSlideshowConfig: mockUpdateSlideshowConfig,
+            advanceSlide: mockAdvanceSlide
         )
-        await sut.next()   // 0 → 1
-        await sut.next()   // 1 → wraps to 0
+        await sut.next()   // 0 -> 1
+        await sut.next()   // 1 -> wraps to 0
         XCTAssertEqual(sut.currentIndex, 0)
     }
 
@@ -177,7 +224,8 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
         sut = SlideshowPlayerViewModel(
             slideshow: Self.makeSlideshow(slides: [], loop: false),
             loadSlideImage: mockLoadSlideImage,
-            updateSlideshowConfig: mockUpdateSlideshowConfig
+            updateSlideshowConfig: mockUpdateSlideshowConfig,
+            advanceSlide: mockAdvanceSlide
         )
         await sut.next()
         XCTAssertEqual(sut.currentIndex, 0)
@@ -186,8 +234,8 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
     // MARK: - previous()
 
     func testPrevious_decrementsCurrentIndex() async {
-        await sut.next()      // currentIndex → 1
-        await sut.previous()  // currentIndex → 0
+        await sut.next()      // currentIndex -> 1
+        await sut.previous()  // currentIndex -> 0
         XCTAssertEqual(sut.currentIndex, 0)
     }
 
@@ -206,7 +254,8 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
                 loop: true
             ),
             loadSlideImage: mockLoadSlideImage,
-            updateSlideshowConfig: mockUpdateSlideshowConfig
+            updateSlideshowConfig: mockUpdateSlideshowConfig,
+            advanceSlide: mockAdvanceSlide
         )
         await sut.previous()
         XCTAssertEqual(sut.currentIndex, 1)
@@ -216,7 +265,8 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
         sut = SlideshowPlayerViewModel(
             slideshow: Self.makeSlideshow(slides: [], loop: false),
             loadSlideImage: mockLoadSlideImage,
-            updateSlideshowConfig: mockUpdateSlideshowConfig
+            updateSlideshowConfig: mockUpdateSlideshowConfig,
+            advanceSlide: mockAdvanceSlide
         )
         await sut.previous()
         XCTAssertEqual(sut.currentIndex, 0)
@@ -230,7 +280,7 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
     }
 
     func testJumpTo_fromNonZero_setsCurrentIndexToTarget() async {
-        await sut.next()           // currentIndex → 1
+        await sut.next()           // currentIndex -> 1
         await sut.jumpTo(index: 0)
         XCTAssertEqual(sut.currentIndex, 0)
     }
@@ -247,9 +297,9 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
 
     // MARK: - loadCurrentImage()
 
-    func testLoadCurrentImage_whenSlideExists_setsCurrentImage() async {
+    func testLoadCurrentImage_whenSlideExists_setsCurrentNSImage() async {
         await sut.loadCurrentImage()
-        XCTAssertNotNil(sut.currentImage)
+        XCTAssertNotNil(sut.currentNSImage)
     }
 
     func testLoadCurrentImage_callsUseCaseOnce() async {
@@ -257,49 +307,50 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
         XCTAssertEqual(mockLoadSlideImage.executeCallCount, 1)
     }
 
-    func testLoadCurrentImage_withEmptySlides_setsCurrentImageToNil() async {
+    func testLoadCurrentImage_withEmptySlides_setsCurrentNSImageToNil() async {
         sut = SlideshowPlayerViewModel(
             slideshow: Self.makeSlideshow(slides: [], loop: false),
             loadSlideImage: mockLoadSlideImage,
-            updateSlideshowConfig: mockUpdateSlideshowConfig
+            updateSlideshowConfig: mockUpdateSlideshowConfig,
+            advanceSlide: mockAdvanceSlide
         )
         await sut.loadCurrentImage()
-        XCTAssertNil(sut.currentImage)
+        XCTAssertNil(sut.currentNSImage)
     }
 
-    func testLoadCurrentImage_whenUseCaseThrows_setsCurrentImageToNil() async {
+    func testLoadCurrentImage_whenUseCaseThrows_setsCurrentNSImageToNil() async {
         mockLoadSlideImage.throwOnExecute = true
         await sut.loadCurrentImage()
-        XCTAssertNil(sut.currentImage)
+        XCTAssertNil(sut.currentNSImage)
     }
 
     // MARK: - updateDuration()
 
-    func testUpdateDuration_callsUseCaseOnce() {
-        sut.updateDuration(.ten)
+    func testUpdateDuration_callsUseCaseOnce() async {
+        await sut.updateDuration(.ten)
         XCTAssertEqual(mockUpdateSlideshowConfig.executeCallCount, 1)
     }
 
-    func testUpdateDuration_updatesSlideshowConfig() {
-        sut.updateDuration(.ten)
+    func testUpdateDuration_updatesSlideshowConfig() async {
+        await sut.updateDuration(.ten)
         XCTAssertEqual(sut.slideshow.config.duration, .ten)
     }
 
-    func testUpdateDuration_whilePlaying_restartsPlayback() {
+    func testUpdateDuration_whilePlaying_restartsPlayback() async {
         sut.play()
-        sut.updateDuration(.thirty)
+        await sut.updateDuration(.thirty)
         XCTAssertTrue(sut.isPlaying)
     }
 
     // MARK: - updateTransition()
 
-    func testUpdateTransition_callsUseCaseOnce() {
-        sut.updateTransition(.slide)
+    func testUpdateTransition_callsUseCaseOnce() async {
+        await sut.updateTransition(.slide)
         XCTAssertEqual(mockUpdateSlideshowConfig.executeCallCount, 1)
     }
 
-    func testUpdateTransition_updatesSlideshowConfig() {
-        sut.updateTransition(.slide)
+    func testUpdateTransition_updatesSlideshowConfig() async {
+        await sut.updateTransition(.slide)
         XCTAssertEqual(sut.slideshow.config.transition, .slide)
     }
 
@@ -318,16 +369,14 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
     }
 
     func testShowFilmstripOverlay_whileNotPlaying_showFilmstripRemainsTrue() async throws {
-        // When not playing the hide-timer must NOT start; showFilmstrip stays true indefinitely.
         sut.showFilmstripOverlay()
         try await Task.sleep(for: .milliseconds(100))
         XCTAssertTrue(sut.showFilmstrip)
     }
 
     func testShowFilmstripOverlay_whilePlaying_hidesAfterHideDuration() async throws {
-        // setUp passes filmstripHideDuration: .milliseconds(50), so we only need to wait 100 ms.
         sut.play()
-        XCTAssertTrue(sut.showFilmstrip)           // immediately after play()
+        XCTAssertTrue(sut.showFilmstrip)
         try await Task.sleep(for: .milliseconds(100))
         XCTAssertFalse(sut.showFilmstrip)
     }

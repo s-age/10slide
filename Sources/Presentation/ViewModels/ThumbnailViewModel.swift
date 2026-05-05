@@ -16,7 +16,8 @@ final class ThumbnailViewModel {
 
     func loadThumbnail(identifier: String) async {
         guard thumbnails[identifier] == nil else { return }
-        guard let data = try? await loadThumbnailUseCase.execute(localIdentifier: identifier) else { return }
+        let request = LoadThumbnailRequest(localIdentifier: identifier)
+        guard let data = try? await loadThumbnailUseCase.execute(request) else { return }
         thumbnails[identifier] = data
         images[identifier] = await Task.detached(priority: .userInitiated) {
             NSImage(data: data)

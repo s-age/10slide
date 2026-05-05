@@ -1,4 +1,4 @@
-extension SlideDuration {
+extension SlideDurationResponse {
     var displayLabel: String {
         switch self {
         case .five: return "5 sec"

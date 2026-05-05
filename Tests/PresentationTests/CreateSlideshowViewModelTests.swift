@@ -10,22 +10,42 @@ private enum CreateSlideshowViewModelTestError: Error {
 // MARK: - Mock: CreateSlideshowUseCase
 
 final class MockCreateSlideshowUseCase: CreateSlideshowUseCaseProtocol, @unchecked Sendable {
-    var executeResult: Slideshow = Slideshow(
+    var executeResult: SlideshowResponse = SlideshowResponse(
         id: UUID(), name: "Mock", slides: [], config: .default, createdAt: Date()
     )
     var executeCallCount = 0
-    var lastReceivedName: String?
-    var lastReceivedIdentifiers: [String]?
-    var lastReceivedConfig: SlideshowConfig?
+    var lastReceivedRequest: CreateSlideshowRequest?
     var throwOnExecute = false
 
-    func execute(name: String, localIdentifiers: [String], config: SlideshowConfig) async throws -> Slideshow {
+    func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse {
         executeCallCount += 1
-        lastReceivedName = name
-        lastReceivedIdentifiers = localIdentifiers
-        lastReceivedConfig = config
+        lastReceivedRequest = request
         if throwOnExecute { throw CreateSlideshowViewModelTestError.intentional }
         return executeResult
+    }
+}
+
+// MARK: - Mock: UpdateSlideshowUseCase
+
+final class MockUpdateSlideshowUseCaseForCreate: UpdateSlideshowUseCaseProtocol, @unchecked Sendable {
+    var executeResult: SlideshowResponse = SlideshowResponse(
+        id: UUID(), name: "Mock", slides: [], config: .default, createdAt: Date()
+    )
+    var executeCallCount = 0
+
+    func execute(_ request: UpdateSlideshowRequest) async throws -> SlideshowResponse {
+        executeCallCount += 1
+        return executeResult
+    }
+}
+
+// MARK: - Mock: AddDroppedFilesUseCase
+
+final class MockAddDroppedFilesUseCaseForCreate: AddDroppedFilesUseCaseProtocol, @unchecked Sendable {
+    var executeResult: [String] = []
+
+    func execute(_ request: AddDroppedFilesRequest) throws -> [String] {
+        executeResult
     }
 }
 
@@ -35,87 +55,113 @@ final class MockCreateSlideshowUseCase: CreateSlideshowUseCaseProtocol, @uncheck
 final class CreateSlideshowViewModelTests: XCTestCase {
     private var sut: CreateSlideshowViewModel!
     private var mockCreateSlideshow: MockCreateSlideshowUseCase!
+    private var mockUpdateSlideshow: MockUpdateSlideshowUseCaseForCreate!
+    private var mockAddDroppedFiles: MockAddDroppedFilesUseCaseForCreate!
 
     override func setUp() {
         super.setUp()
         mockCreateSlideshow = MockCreateSlideshowUseCase()
-        sut = CreateSlideshowViewModel(createSlideshow: mockCreateSlideshow)
+        mockUpdateSlideshow = MockUpdateSlideshowUseCaseForCreate()
+        mockAddDroppedFiles = MockAddDroppedFilesUseCaseForCreate()
+        sut = CreateSlideshowViewModel(
+            createSlideshow: mockCreateSlideshow,
+            updateSlideshow: mockUpdateSlideshow,
+            addDroppedFiles: mockAddDroppedFiles
+        )
     }
 
     override func tearDown() {
         sut = nil
         mockCreateSlideshow = nil
+        mockUpdateSlideshow = nil
+        mockAddDroppedFiles = nil
         super.tearDown()
     }
 
-    // MARK: - createSlideshow()
+    // MARK: - saveSlideshow()
 
-    func testCreateSlideshow_callsUseCaseOnce() async {
-        _ = await sut.createSlideshow()
+    func testSaveSlideshow_callsUseCaseOnce() async {
+        sut.slideshowName = "Test"
+        sut.addFiles([])
+        mockAddDroppedFiles.executeResult = ["id-1"]
+        sut.addFiles([URL(fileURLWithPath: "/tmp/img.jpg")])
+        _ = await sut.saveSlideshow()
         XCTAssertEqual(mockCreateSlideshow.executeCallCount, 1)
     }
 
-    func testCreateSlideshow_passesSlideshowNameToUseCase() async {
+    func testSaveSlideshow_passesSlideshowNameToUseCase() async {
         sut.slideshowName = "Summer Vacation"
-        _ = await sut.createSlideshow()
-        XCTAssertEqual(mockCreateSlideshow.lastReceivedName, "Summer Vacation")
+        mockAddDroppedFiles.executeResult = ["id-1"]
+        sut.addFiles([URL(fileURLWithPath: "/tmp/img.jpg")])
+        _ = await sut.saveSlideshow()
+        XCTAssertEqual(mockCreateSlideshow.lastReceivedRequest?.name, "Summer Vacation")
     }
 
-    func testCreateSlideshow_passesSelectedIdentifiersToUseCase() async {
-        sut.toggleSelection("id-1")
-        sut.toggleSelection("id-2")
-        _ = await sut.createSlideshow()
-        let received = Set(mockCreateSlideshow.lastReceivedIdentifiers ?? [])
-        XCTAssertEqual(received, Set(["id-1", "id-2"]))
-    }
-
-    func testCreateSlideshow_withEmptyIdentifiers_passesEmptyArrayToUseCase() async {
-        _ = await sut.createSlideshow()
-        XCTAssertTrue(mockCreateSlideshow.lastReceivedIdentifiers?.isEmpty == true)
-    }
-
-    func testCreateSlideshow_passesSelectedDurationInConfig() async {
+    func testSaveSlideshow_passesSelectedDurationInRequest() async {
+        sut.slideshowName = "Test"
         sut.selectedDuration = .thirty
-        _ = await sut.createSlideshow()
-        XCTAssertEqual(mockCreateSlideshow.lastReceivedConfig?.duration, .thirty)
+        mockAddDroppedFiles.executeResult = ["id-1"]
+        sut.addFiles([URL(fileURLWithPath: "/tmp/img.jpg")])
+        _ = await sut.saveSlideshow()
+        XCTAssertEqual(mockCreateSlideshow.lastReceivedRequest?.duration, .thirty)
     }
 
-    func testCreateSlideshow_passesSelectedTransitionInConfig() async {
+    func testSaveSlideshow_passesSelectedTransitionInRequest() async {
+        sut.slideshowName = "Test"
         sut.selectedTransition = .slide
-        _ = await sut.createSlideshow()
-        XCTAssertEqual(mockCreateSlideshow.lastReceivedConfig?.transition, .slide)
+        mockAddDroppedFiles.executeResult = ["id-1"]
+        sut.addFiles([URL(fileURLWithPath: "/tmp/img.jpg")])
+        _ = await sut.saveSlideshow()
+        XCTAssertEqual(mockCreateSlideshow.lastReceivedRequest?.transition, .slide)
     }
 
-    func testCreateSlideshow_returnsSlideshowFromUseCase() async {
-        let expected = Slideshow(id: UUID(), name: "My Show", slides: [], config: .default, createdAt: Date())
-        mockCreateSlideshow.executeResult = expected
-        let result = await sut.createSlideshow()
-        XCTAssertEqual(result?.id, expected.id)
+    func testSaveSlideshow_returnsSlideshowResponseFromUseCase() async {
+        let expectedID = UUID()
+        mockCreateSlideshow.executeResult = SlideshowResponse(
+            id: expectedID, name: "My Show", slides: [], config: .default, createdAt: Date()
+        )
+        sut.slideshowName = "My Show"
+        mockAddDroppedFiles.executeResult = ["id-1"]
+        sut.addFiles([URL(fileURLWithPath: "/tmp/img.jpg")])
+        let result = await sut.saveSlideshow()
+        XCTAssertEqual(result?.id, expectedID)
     }
 
-    func testCreateSlideshow_isLoadingFalseAfterCompletion() async {
-        _ = await sut.createSlideshow()
+    func testSaveSlideshow_isLoadingFalseAfterCompletion() async {
+        sut.slideshowName = "Test"
+        mockAddDroppedFiles.executeResult = ["id-1"]
+        sut.addFiles([URL(fileURLWithPath: "/tmp/img.jpg")])
+        _ = await sut.saveSlideshow()
         XCTAssertFalse(sut.isLoading)
     }
 
-    func testCreateSlideshow_whenUseCaseThrows_setsErrorMessage() async {
+    func testSaveSlideshow_whenUseCaseThrows_setsErrorMessage() async {
         mockCreateSlideshow.throwOnExecute = true
-        _ = await sut.createSlideshow()
+        sut.slideshowName = "Test"
+        mockAddDroppedFiles.executeResult = ["id-1"]
+        sut.addFiles([URL(fileURLWithPath: "/tmp/img.jpg")])
+        _ = await sut.saveSlideshow()
         XCTAssertEqual(
             sut.errorMessage,
             CreateSlideshowViewModelTestError.intentional.localizedDescription
         )
     }
 
-    func testCreateSlideshow_whenUseCaseThrows_returnsNil() async {
+    func testSaveSlideshow_whenUseCaseThrows_returnsNil() async {
         mockCreateSlideshow.throwOnExecute = true
-        let result = await sut.createSlideshow()
+        sut.slideshowName = "Test"
+        mockAddDroppedFiles.executeResult = ["id-1"]
+        sut.addFiles([URL(fileURLWithPath: "/tmp/img.jpg")])
+        let result = await sut.saveSlideshow()
         XCTAssertNil(result)
     }
 
-    func testCreateSlideshow_whenUseCaseThrows_isLoadingFalseAfterCompletion() async {
+    func testSaveSlideshow_whenUseCaseThrows_isLoadingFalseAfterCompletion() async {
         mockCreateSlideshow.throwOnExecute = true
-        _ = await sut.createSlideshow()
+        sut.slideshowName = "Test"
+        mockAddDroppedFiles.executeResult = ["id-1"]
+        sut.addFiles([URL(fileURLWithPath: "/tmp/img.jpg")])
+        _ = await sut.saveSlideshow()
         XCTAssertFalse(sut.isLoading)
     }
 }

@@ -1,5 +1,3 @@
-import Foundation
-
 protocol AddDroppedFilesUseCaseProtocol: Sendable {
-    func execute(urls: [URL], existingIdentifiers: [String]) -> [String]
+    func execute(_ request: AddDroppedFilesRequest) throws -> [String]
 }

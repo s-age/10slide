@@ -1,5 +1,5 @@
 import Foundation
 
 protocol LoadSlideImageUseCaseProtocol: Sendable {
-    func execute(localIdentifier: String) async throws -> Data
+    func execute(_ request: LoadSlideImageRequest) async throws -> Data
 }

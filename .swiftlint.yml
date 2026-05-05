@@ -98,3 +98,17 @@ custom_rules:
     regex: "^import (SwiftUI|UIKit)"
     message: "Repository layer must not import UI frameworks."
     severity: error
+
+  domain_services_no_infrastructure_imports:
+    included: "Sources/Domain/Services/.*\\.swift"
+    name: "Domain Services No Infrastructure Imports"
+    regex: "^import (SwiftData|Photos)"
+    message: "Domain Services must not import infrastructure frameworks. Use Repository protocols."
+    severity: error
+
+  domain_services_no_ui_imports:
+    included: "Sources/Domain/Services/.*\\.swift"
+    name: "Domain Services No UI Imports"
+    regex: "^import (SwiftUI|UIKit)"
+    message: "Domain Services must not import UI frameworks."
+    severity: error

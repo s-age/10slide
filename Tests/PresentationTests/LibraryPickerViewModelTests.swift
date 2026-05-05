@@ -3,74 +3,85 @@ import XCTest
 
 // MARK: - Error
 
-private enum LibraryPickerViewModelTestError: Error {
+private enum SlideshowLibraryViewModelTestError: Error {
     case intentional
 }
 
-// MARK: - Mock: FetchLibraryUseCase
+// MARK: - Mock: FetchSlideshowsUseCase
 
-final class MockFetchLibraryUseCase: FetchLibraryUseCaseProtocol, @unchecked Sendable {
-    var executeResult: [String] = []
+final class MockFetchSlideshowsUseCase: FetchSlideshowsUseCaseProtocol, @unchecked Sendable {
+    var executeResult: [SlideshowResponse] = []
     var executeCallCount = 0
     var throwOnExecute = false
-    /// When non-zero, execute() sleeps this long before returning (enables isLoading observation).
     var delay: Duration = .zero
 
-    func execute() async throws -> [String] {
+    func execute(_ request: FetchSlideshowsRequest) async throws -> [SlideshowResponse] {
         executeCallCount += 1
         if delay != .zero {
             try? await Task.sleep(for: delay)
         }
-        if throwOnExecute { throw LibraryPickerViewModelTestError.intentional }
+        if throwOnExecute { throw SlideshowLibraryViewModelTestError.intentional }
         return executeResult
     }
 }
 
-// MARK: - Mock: LoadThumbnailUseCase
+// MARK: - Mock: DeleteSlideshowUseCase
 
-final class MockLoadThumbnailUseCase: LoadThumbnailUseCaseProtocol, @unchecked Sendable {
-    func execute(localIdentifier: String) async throws -> Data { Data() }
+final class MockDeleteSlideshowUseCaseForLibrary: DeleteSlideshowUseCaseProtocol, @unchecked Sendable {
+    var executeCallCount = 0
+    var throwOnExecute = false
+
+    func execute(_ request: DeleteSlideshowRequest) async throws {
+        executeCallCount += 1
+        if throwOnExecute { throw SlideshowLibraryViewModelTestError.intentional }
+    }
 }
 
-// MARK: - LibraryPickerViewModelTests
+// MARK: - SlideshowLibraryViewModelTests
 
 @MainActor
-final class LibraryPickerViewModelTests: XCTestCase {
-    private var sut: LibraryPickerViewModel!
-    private var mockFetchLibrary: MockFetchLibraryUseCase!
+final class SlideshowLibraryViewModelTests: XCTestCase {
+    private var sut: SlideshowLibraryViewModel!
+    private var mockFetchSlideshows: MockFetchSlideshowsUseCase!
+    private var mockDeleteSlideshow: MockDeleteSlideshowUseCaseForLibrary!
 
     override func setUp() {
         super.setUp()
-        mockFetchLibrary = MockFetchLibraryUseCase()
-        sut = LibraryPickerViewModel(
-            fetchLibrary: mockFetchLibrary,
-            loadThumbnail: MockLoadThumbnailUseCase()
+        mockFetchSlideshows = MockFetchSlideshowsUseCase()
+        mockDeleteSlideshow = MockDeleteSlideshowUseCaseForLibrary()
+        sut = SlideshowLibraryViewModel(
+            fetchSlideshows: mockFetchSlideshows,
+            deleteSlideshow: mockDeleteSlideshow
         )
     }
 
     override func tearDown() {
         sut = nil
-        mockFetchLibrary = nil
+        mockFetchSlideshows = nil
+        mockDeleteSlideshow = nil
         super.tearDown()
     }
 
     // MARK: - loadLibrary()
 
-    func testLoadLibrary_populatesIdentifiersFromUseCase() async {
-        mockFetchLibrary.executeResult = ["id-1", "id-2", "id-3"]
+    func testLoadLibrary_populatesSlideshowsFromUseCase() async {
+        mockFetchSlideshows.executeResult = [
+            SlideshowResponse(id: UUID(), name: "Show 1", slides: [], config: .default, createdAt: Date()),
+            SlideshowResponse(id: UUID(), name: "Show 2", slides: [], config: .default, createdAt: Date())
+        ]
         await sut.loadLibrary()
-        XCTAssertEqual(sut.identifiers, ["id-1", "id-2", "id-3"])
+        XCTAssertEqual(sut.slideshows.count, 2)
     }
 
-    func testLoadLibrary_callsFetchLibraryUseCaseOnce() async {
+    func testLoadLibrary_callsFetchSlideshowsUseCaseOnce() async {
         await sut.loadLibrary()
-        XCTAssertEqual(mockFetchLibrary.executeCallCount, 1)
+        XCTAssertEqual(mockFetchSlideshows.executeCallCount, 1)
     }
 
-    func testLoadLibrary_withEmptyResult_identifiersIsEmpty() async {
-        mockFetchLibrary.executeResult = []
+    func testLoadLibrary_withEmptyResult_slideshowsIsEmpty() async {
+        mockFetchSlideshows.executeResult = []
         await sut.loadLibrary()
-        XCTAssertTrue(sut.identifiers.isEmpty)
+        XCTAssertTrue(sut.slideshows.isEmpty)
     }
 
     func testLoadLibrary_isLoadingFalseAfterCompletion() async {
@@ -79,8 +90,7 @@ final class LibraryPickerViewModelTests: XCTestCase {
     }
 
     func testLoadLibrary_isLoadingTrueWhileExecuting() async throws {
-        // Mock delays 200 ms; we observe isLoading at 50 ms while it's still in-flight.
-        mockFetchLibrary.delay = .milliseconds(200)
+        mockFetchSlideshows.delay = .milliseconds(200)
         let task = Task { await self.sut.loadLibrary() }
         try await Task.sleep(for: .milliseconds(50))
         let isLoading = sut.isLoading
@@ -89,31 +99,45 @@ final class LibraryPickerViewModelTests: XCTestCase {
     }
 
     func testLoadLibrary_whenUseCaseThrows_setsErrorMessage() async {
-        mockFetchLibrary.throwOnExecute = true
+        mockFetchSlideshows.throwOnExecute = true
         await sut.loadLibrary()
         XCTAssertEqual(
             sut.errorMessage,
-            LibraryPickerViewModelTestError.intentional.localizedDescription
+            SlideshowLibraryViewModelTestError.intentional.localizedDescription
         )
     }
 
-    func testLoadLibrary_whenUseCaseThrows_identifiersRemainsEmpty() async {
-        mockFetchLibrary.throwOnExecute = true
+    func testLoadLibrary_whenUseCaseThrows_slideshowsRemainsEmpty() async {
+        mockFetchSlideshows.throwOnExecute = true
         await sut.loadLibrary()
-        XCTAssertTrue(sut.identifiers.isEmpty)
+        XCTAssertTrue(sut.slideshows.isEmpty)
     }
 
     func testLoadLibrary_whenUseCaseThrows_isLoadingFalseAfterCompletion() async {
-        mockFetchLibrary.throwOnExecute = true
+        mockFetchSlideshows.throwOnExecute = true
         await sut.loadLibrary()
         XCTAssertFalse(sut.isLoading)
     }
 
-    func testLoadLibrary_onSuccessfulCall_clearsErrorMessage() async {
-        mockFetchLibrary.throwOnExecute = true
-        await sut.loadLibrary()               // first call: sets errorMessage
-        mockFetchLibrary.throwOnExecute = false
-        await sut.loadLibrary()               // second call: must clear errorMessage
-        XCTAssertNil(sut.errorMessage)
+    // MARK: - deleteSlideshow(id:)
+
+    func testDeleteSlideshow_callsDeleteUseCaseOnce() async {
+        let id = UUID()
+        mockFetchSlideshows.executeResult = [
+            SlideshowResponse(id: id, name: "Show", slides: [], config: .default, createdAt: Date())
+        ]
+        await sut.loadLibrary()
+        await sut.deleteSlideshow(id: id)
+        XCTAssertEqual(mockDeleteSlideshow.executeCallCount, 1)
+    }
+
+    func testDeleteSlideshow_removesFromLocalList() async {
+        let id = UUID()
+        mockFetchSlideshows.executeResult = [
+            SlideshowResponse(id: id, name: "Show", slides: [], config: .default, createdAt: Date())
+        ]
+        await sut.loadLibrary()
+        await sut.deleteSlideshow(id: id)
+        XCTAssertTrue(sut.slideshows.isEmpty)
     }
 }

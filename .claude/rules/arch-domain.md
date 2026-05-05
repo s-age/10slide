@@ -1,11 +1,11 @@
 ---
 paths:
-  - 'Sources/Domain/**/*.swift'
+  - 'Sources/Domain/Entities/**/*.swift'
 ---
 
-When creating, editing, or reviewing any file in `Sources/Domain/`:
+When creating, editing, or reviewing any file in `Sources/Domain/Entities/`:
 
-- **Layer responsibility**: Pure Swift value types that model business concepts. No I/O, no UI, no persistence framework dependencies. All layers may import from here.
+- **Layer responsibility**: Pure Swift value types that model business concepts. No I/O, no UI, no persistence framework dependencies. Domain/Services and all upper layers may import from here.
 - **Import allowlist**: `Foundation` only — never `SwiftData`, `Photos`, `SwiftUI`, `UIKit`, or any infrastructure framework.
 
 ## Patterns

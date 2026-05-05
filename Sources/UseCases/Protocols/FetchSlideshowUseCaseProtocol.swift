@@ -1,5 +1,3 @@
-import Foundation
-
 protocol FetchSlideshowUseCaseProtocol: Sendable {
-    func execute(id: UUID) async throws -> Slideshow?
+    func execute(_ request: FetchSlideshowRequest) async throws -> SlideshowResponse?
 }

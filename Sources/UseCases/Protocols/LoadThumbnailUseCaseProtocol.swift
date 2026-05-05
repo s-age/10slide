@@ -1,5 +1,5 @@
 import Foundation
 
 protocol LoadThumbnailUseCaseProtocol: Sendable {
-    func execute(localIdentifier: String) async throws -> Data
+    func execute(_ request: LoadThumbnailRequest) async throws -> Data
 }

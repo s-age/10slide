@@ -3,7 +3,7 @@ import XCTest
 
 // MARK: - Mock
 
-final class MockImageRepositoryForLibrary: ImageRepositoryProtocol, @unchecked Sendable {
+final class MockImageDomainServiceForLibrary: ImageDomainServiceProtocol, @unchecked Sendable {
     var fetchAllIdentifiersResult: [String] = []
     var fetchAllIdentifiersCallCount = 0
     var throwOnFetchAllIdentifiers = false
@@ -16,6 +16,8 @@ final class MockImageRepositoryForLibrary: ImageRepositoryProtocol, @unchecked S
 
     func fetchImageData(localIdentifier: String) async throws -> Data { Data() }
     func fetchThumbnailData(localIdentifier: String) async throws -> Data { Data() }
+    func setDirectory(_ url: URL) async {}
+    func filterDroppedFiles(urls: [URL], existingIdentifiers: [String]) -> [String] { [] }
 }
 
 private enum FetchLibraryUseCaseTestError: Error, Equatable {
@@ -26,43 +28,43 @@ private enum FetchLibraryUseCaseTestError: Error, Equatable {
 
 final class FetchLibraryUseCaseTests: XCTestCase {
     private var sut: FetchLibraryUseCase!
-    private var mockImageRepository: MockImageRepositoryForLibrary!
+    private var mockDomainService: MockImageDomainServiceForLibrary!
 
     override func setUp() {
         super.setUp()
-        mockImageRepository = MockImageRepositoryForLibrary()
-        sut = FetchLibraryUseCase(imageRepository: mockImageRepository)
+        mockDomainService = MockImageDomainServiceForLibrary()
+        sut = FetchLibraryUseCase(domainService: mockDomainService)
     }
 
     override func tearDown() {
         sut = nil
-        mockImageRepository = nil
+        mockDomainService = nil
         super.tearDown()
     }
 
-    // MARK: - execute()
+    // MARK: - execute(_:)
 
     func testExecute_callsFetchAllIdentifiersOnce() async throws {
-        _ = try await sut.execute()
-        XCTAssertEqual(mockImageRepository.fetchAllIdentifiersCallCount, 1)
+        _ = try await sut.execute(FetchLibraryRequest())
+        XCTAssertEqual(mockDomainService.fetchAllIdentifiersCallCount, 1)
     }
 
     func testExecute_returnsIdentifiers_unchanged() async throws {
-        mockImageRepository.fetchAllIdentifiersResult = ["id-1", "id-2", "id-3"]
-        let result = try await sut.execute()
+        mockDomainService.fetchAllIdentifiersResult = ["id-1", "id-2", "id-3"]
+        let result = try await sut.execute(FetchLibraryRequest())
         XCTAssertEqual(result, ["id-1", "id-2", "id-3"])
     }
 
     func testExecute_whenEmpty_returnsEmptyArray() async throws {
-        mockImageRepository.fetchAllIdentifiersResult = []
-        let result = try await sut.execute()
+        mockDomainService.fetchAllIdentifiersResult = []
+        let result = try await sut.execute(FetchLibraryRequest())
         XCTAssertTrue(result.isEmpty)
     }
 
-    func testExecute_whenRepositoryThrows_propagatesError() async {
-        mockImageRepository.throwOnFetchAllIdentifiers = true
+    func testExecute_whenDomainServiceThrows_propagatesError() async {
+        mockDomainService.throwOnFetchAllIdentifiers = true
         do {
-            _ = try await sut.execute()
+            _ = try await sut.execute(FetchLibraryRequest())
             XCTFail("Expected execute() to throw")
         } catch {
             XCTAssertEqual(error as? FetchLibraryUseCaseTestError, .intentional)

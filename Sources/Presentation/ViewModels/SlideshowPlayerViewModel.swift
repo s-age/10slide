@@ -5,7 +5,7 @@ import Observation
 @Observable
 @MainActor
 final class SlideshowPlayerViewModel {
-    private(set) var slideshow: Slideshow
+    private(set) var slideshow: SlideshowResponse
     private(set) var currentIndex: Int = 0
     private(set) var currentNSImage: NSImage?
     private(set) var isPlaying: Bool = false
@@ -19,7 +19,7 @@ final class SlideshowPlayerViewModel {
     private var hideFilmstripTask: Task<Void, Never>?
 
     init(
-        slideshow: Slideshow,
+        slideshow: SlideshowResponse,
         loadSlideImage: any LoadSlideImageUseCaseProtocol,
         updateSlideshowConfig: any UpdateSlideshowConfigUseCaseProtocol,
         advanceSlide: any AdvanceSlideUseCaseProtocol,
@@ -32,7 +32,7 @@ final class SlideshowPlayerViewModel {
         self.filmstripHideDuration = filmstripHideDuration
     }
 
-    private var currentSlide: Slide? {
+    private var currentSlide: SlideResponse? {
         guard !slideshow.slides.isEmpty, currentIndex < slideshow.slides.count else { return nil }
         return slideshow.slides[currentIndex]
     }
@@ -68,7 +68,12 @@ final class SlideshowPlayerViewModel {
     }
 
     func next() async {
-        if let nextIndex = advanceSlideUseCase.execute(slideshow: slideshow, currentIndex: currentIndex) {
+        let request = AdvanceSlideRequest(
+            totalSlides: slideshow.slides.count,
+            currentIndex: currentIndex,
+            loop: slideshow.config.loop
+        )
+        if let nextIndex = try? advanceSlideUseCase.execute(request) {
             currentIndex = nextIndex
             await loadCurrentImage()
         } else {
@@ -77,7 +82,12 @@ final class SlideshowPlayerViewModel {
     }
 
     func previous() async {
-        if let prevIndex = advanceSlideUseCase.executePrevious(slideshow: slideshow, currentIndex: currentIndex) {
+        let request = PreviousSlideRequest(
+            totalSlides: slideshow.slides.count,
+            currentIndex: currentIndex,
+            loop: slideshow.config.loop
+        )
+        if let prevIndex = try? advanceSlideUseCase.executePrevious(request) {
             currentIndex = prevIndex
             await loadCurrentImage()
         }
@@ -96,7 +106,8 @@ final class SlideshowPlayerViewModel {
         }
         let expectedIndex = currentIndex
         do {
-            let data = try await loadSlideImageUseCase.execute(localIdentifier: slide.localIdentifier)
+            let request = LoadSlideImageRequest(localIdentifier: slide.localIdentifier)
+            let data = try await loadSlideImageUseCase.execute(request)
             guard currentIndex == expectedIndex else { return }
             let image = await Task.detached(priority: .userInitiated) {
                 NSImage(data: data)
@@ -110,17 +121,29 @@ final class SlideshowPlayerViewModel {
 
     // MARK: - Config mutation
 
-    func updateDuration(_ duration: SlideDuration) {
-        var config = slideshow.config
-        config.duration = duration
-        slideshow = updateSlideshowConfigUseCase.execute(slideshow: slideshow, config: config)
+    func updateDuration(_ duration: SlideDurationResponse) async {
+        let request = UpdateSlideshowConfigRequest(
+            slideshowID: slideshow.id,
+            duration: duration,
+            transition: slideshow.config.transition,
+            loop: slideshow.config.loop
+        )
+        if let updated = try? await updateSlideshowConfigUseCase.execute(request) {
+            slideshow = updated
+        }
         if isPlaying { play() }
     }
 
-    func updateTransition(_ transition: TransitionType) {
-        var config = slideshow.config
-        config.transition = transition
-        slideshow = updateSlideshowConfigUseCase.execute(slideshow: slideshow, config: config)
+    func updateTransition(_ transition: TransitionTypeResponse) async {
+        let request = UpdateSlideshowConfigRequest(
+            slideshowID: slideshow.id,
+            duration: slideshow.config.duration,
+            transition: transition,
+            loop: slideshow.config.loop
+        )
+        if let updated = try? await updateSlideshowConfigUseCase.execute(request) {
+            slideshow = updated
+        }
     }
 
     // MARK: - Filmstrip visibility

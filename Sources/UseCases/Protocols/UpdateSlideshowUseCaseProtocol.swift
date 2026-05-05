@@ -1,5 +1,3 @@
-import Foundation
-
 protocol UpdateSlideshowUseCaseProtocol: Sendable {
-    func execute(slideshow: Slideshow, name: String, localIdentifiers: [String]) async throws -> Slideshow
+    func execute(_ request: UpdateSlideshowRequest) async throws -> SlideshowResponse
 }
