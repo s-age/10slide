@@ -27,6 +27,7 @@ struct ContentView: View {
                 thumbnailViewModel: thumbnailViewModel,
                 onBack: { selectedSlideshow = nil }
             )
+            .navigationTitle(slideshow.name)
         } else {
             HomeView(
                 thumbnailViewModel: thumbnailViewModel,
@@ -34,6 +35,7 @@ struct ContentView: View {
                 slideshowLibraryViewModel: makeSlideshowLibraryViewModel(),
                 onSlideshowSelected: { selectedSlideshow = $0 }
             )
+            .navigationTitle("")
         }
     }
 }
