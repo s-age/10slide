@@ -23,9 +23,9 @@ presentation = PresentationContainer(useCases: useCases)
 
 | Container | Owns |
 |-----------|------|
-| `InfrastructureContainer` | `ModelContainer`, data source instances |
+| `InfrastructureContainer` | `ModelContainer`, data source / store instances |
 | `RepositoryContainer` | Repository instances (injected with infra protocols) |
-| `DomainContainer` | Domain service instances (injected with repository protocols) |
+| `DomainContainer` | Domain service instances (injected with repository protocols where needed) |
 | `UseCaseContainer` | Use case instances wrapped in decorators (injected with domain service protocols) |
 | `PresentationContainer` | ViewModel factories or instances (injected with use case protocols) |
 
@@ -107,12 +107,12 @@ Sub-containers receive an upstream container in `init()` but must **extract prot
 
 ```swift
 // Good — extract protocols at init, discard container
-final class RepositoryContainer {
+final class RepositoryContainer: Sendable {
     let slideRepository: any SlideRepositoryProtocol
 
     init(infrastructure: InfrastructureContainer) {
         slideRepository = SlideRepository(
-            slideDataSource: infrastructure.slideDataSource
+            store: infrastructure.swiftDataStore
         )
         // infrastructure reference is NOT stored
     }
