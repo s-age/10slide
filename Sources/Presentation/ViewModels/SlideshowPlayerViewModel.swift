@@ -15,6 +15,7 @@ final class SlideshowPlayerViewModel {
     var displayedSlides: [SlideResponse] {
         shuffledSlides ?? slideshow.slides
     }
+
     enum FullscreenHintType: Equatable {
         case enter
         case exit
@@ -61,13 +62,17 @@ final class SlideshowPlayerViewModel {
 
     func toggleShuffle() async {
         if isShuffled {
+            let currentID = currentSlide?.id
             isShuffled = false
             shuffledSlides = nil
+            currentIndex = currentID.flatMap { id in
+                slideshow.slides.firstIndex(where: { $0.id == id })
+            } ?? 0
         } else {
             shuffledSlides = slideshow.slides.shuffled()
             isShuffled = true
+            currentIndex = 0
         }
-        currentIndex = 0
         await loadCurrentImage()
     }
 
