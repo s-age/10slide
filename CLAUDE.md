@@ -14,6 +14,7 @@ Strict one-way layered architecture with per-layer DI containers.
 Presentation → UseCases → Domain/Services → Repositories → Infrastructure
                (Request/       ↑
                 Response)  Domain/Entities
+                           Errors (shared leaf — all layers may reference)
 ```
 
 Each layer communicates only with its immediate neighbor via protocol boundaries. No layer may skip.
@@ -26,6 +27,7 @@ When creating, editing, or reviewing files under `Sources/`: the `arch` rule and
 |-----------|------|
 | `Sources/App/` | Entry point — `@main`, boots root `Container` |
 | `Sources/DI/` | DI containers — one per layer, wired in `Container.swift` |
+| `Sources/Errors/` | Pure error enums (`LocalizedError`) — accessible from all layers |
 | `Sources/Domain/Entities/` | Pure structs — no framework imports |
 | `Sources/Domain/Services/` | Orchestrators — call Repository protocols, own business logic |
 | `Sources/Infrastructure/` | Raw I/O — SwiftData, Photos, network |

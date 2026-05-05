@@ -57,6 +57,7 @@ Presentation and DI layers use the typealias name directly — no `any` prefix (
 | `Foundation` | `SwiftUI`, `UIKit`, `SwiftData`, `Photos` |
 | `Domain/Entities` (for Entity → Response mapping) | `Repositories/Protocols` (route through Domain Services) |
 | `Domain/Services/Protocols/` | `Infrastructure` (concrete or protocol) |
+| `Errors/` (shared error types) | |
 | `Requests/`, `Responses/` (intra-layer) | |
 
 ## Request/Response pattern
