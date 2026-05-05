@@ -16,6 +16,10 @@ Original design called for a base class (`class UseCaseRequest`) with subclass i
 
 `UpdateSlideshowConfigUseCase` fetches the slideshow from the repository before applying the config change. This adds a DB roundtrip for what was previously a pure in-memory transformation. Accepted trade-off for architectural consistency. If performance becomes an issue, the Request could carry the full slideshow state to avoid the fetch.
 
+## UseCaseError vs DomainError — error types respect layer boundaries
+
+`DomainError` lives in `Domain/Services/` and is thrown by Domain Services internally. UseCases must not throw `DomainError` directly — doing so leaks a concrete Domain type through the UseCase boundary. Instead, `UseCaseError` (in `UseCases/Requests/`) mirrors the relevant cases. The UseCase catches or re-throws at its own layer. This keeps Presentation decoupled from Domain internals even for error handling.
+
 ## Domain entity method removal
 
 `Slideshow.nextSlideIndex(from:)` and `Slideshow.previousSlideIndex(from:)` were removed after logic moved to `PlaybackDomainService`. Entities should remain pure data containers — behavioral methods that don't depend on the entity's own state (only on passed-in parameters) belong in Domain Services.

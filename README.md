@@ -1,6 +1,6 @@
 # 10slide
 
-A macOS slideshow app built as a Swift learning project, demonstrating Clean Architecture, SwiftUI, and SwiftData on macOS 26.
+A macOS slideshow app built as a Swift learning project, demonstrating strict layered architecture, SwiftUI, and SwiftData on macOS 26.
 
 > **Name origin:** 「テンプレートプロジェクトを作ろうと思ったら、スライドショーアプリが出来上がった件」
 
@@ -10,22 +10,23 @@ A macOS slideshow app built as a Swift learning project, demonstrating Clean Arc
 
 ## Architecture
 
-Clean Architecture with per-layer DI containers.
+Strict one-way layered architecture with per-layer DI containers. Each layer communicates only with its immediate neighbor via protocol boundaries.
 
 ```
-Presentation → UseCases → Repositories → Infrastructure
-                    ↕
-               Domain/Entities
+Presentation → UseCases → Domain/Services → Repositories → Infrastructure
+               (Request/       ↑
+                Response)  Domain/Entities
 ```
 
 | Layer | Directory | Role |
 |-------|-----------|------|
-| Presentation | `Sources/Presentation/` | SwiftUI views and ViewModels |
-| Use Cases | `Sources/UseCases/` | Business logic |
+| Presentation | `Sources/Presentation/` | SwiftUI views and ViewModels — uses Response types only |
+| Use Cases | `Sources/UseCases/` | Request validation, Domain Service delegation, Entity→Response mapping |
+| Domain Services | `Sources/Domain/Services/` | Business logic orchestration — sole owner of Repository calls |
+| Domain Entities | `Sources/Domain/Entities/` | Pure value types — no framework imports |
 | Repositories | `Sources/Repositories/` | DTO ↔ entity conversion |
 | Infrastructure | `Sources/Infrastructure/` | SwiftData, Photos framework, file I/O |
 | DI | `Sources/DI/` | Per-layer containers wired in `Container.swift` |
-| Domain | `Sources/Domain/` | Pure value types, no framework imports |
 
 ## Requirements
 
