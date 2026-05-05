@@ -10,15 +10,17 @@ The lowest layer — the only place that may directly use persistence (SwiftData
 | Path | Role |
 |------|------|
 | `SwiftData/` | `SwiftDataStore` — generic `@ModelActor` store; executes fetch/delete/write on `ModelContext` |
-| `Image/` | `ImageDataSource` — Photos framework access |
-| `Image/DTO/` | Raw transport types (`ImageDTO`) returned from adapters |
+| `Config/` | `ConfigStore` — YAML config file I/O via `Yams` |
+| `Config/DTO/` | Raw transport types (`ConfigDTO`) returned from config adapters |
+| `Image/` | `ImageDataSource` (Photos), `FileSystemImageDataSource` (filesystem) |
+| `Image/DTO/` | Raw transport types (`ImageDTO`) returned from image adapters |
 | `Protocols/` | `*Protocol` contracts consumed by `Repositories` |
 
 ## Import Rules
 
 | May import | Must NOT import |
 |-----------|----------------|
-| `Foundation`, `SwiftData`, `Photos`, `CoreLocation`, `Network`, `ImageIO`, `CoreGraphics`, …, `Errors` | `SwiftUI`, `UIKit`, `AppKit` |
+| `Foundation`, `SwiftData`, `Photos`, `CoreLocation`, `Network`, `ImageIO`, `CoreGraphics`, `Yams`, `Synchronization`, …, `Errors` | `SwiftUI`, `UIKit`, `AppKit` |
 | `Protocols/` (intra-layer) | `Repositories`, `UseCases`, `Domain` layer types |
 
 > **Exception**: `TenSlideApp.swift` in `App/` may import `SwiftData` solely to pass `ModelContainer` to the SwiftUI environment.
@@ -58,12 +60,15 @@ final class SlideDataSource {
 
 ## Adapter pattern
 
-Each infrastructure capability implements a protocol from `Protocols/`. No bare function exports.
+Each infrastructure capability implements a protocol from `Protocols/`. No bare function exports. Adapters may be `@ModelActor actor` (SwiftData) or `final class` (file I/O, network, etc.) depending on the backing API.
 
 ```swift
-// Good — protocol-backed actor in SwiftData/
+// Good — @ModelActor actor for SwiftData
 @ModelActor
 actor SwiftDataStore: SwiftDataStoreProtocol { ... }
+
+// Good — final class for non-SwiftData I/O (file, network, YAML, etc.)
+final class ConfigStore: ConfigDataSourceProtocol { ... }
 
 // Bad — standalone function bypasses DI and the protocol boundary
 func fetchAllSlides(container: ModelContainer) async throws -> [Slide] { ... }
@@ -137,6 +142,31 @@ options.deliveryMode = .opportunistic   // NG: callback fires twice → double r
 ```
 
 **Image data vs NSImage**: `requestImage(for:targetSize:contentMode:options:resultHandler:)` returns `NSImage` on macOS, which requires `AppKit`. Use `requestImageDataAndOrientation` instead — it returns raw `Data` with no UI framework dependency. Resize using `CGImageSourceCreateThumbnailAtIndex` (ImageIO) in a detached task.
+
+## Data format conversion in Infrastructure
+
+Infrastructure may perform **low-level data format conversion** (resize, transcode, compress) when the conversion is inseparable from the I/O operation and requires framework APIs that only Infrastructure may import (e.g. `ImageIO`, `CoreGraphics`). This is distinct from DTO→Entity conversion, which belongs in Repositories.
+
+A valid Infrastructure conversion must satisfy **all three** conditions:
+1. It uses a framework that only Infrastructure may import (`ImageIO`, `Photos`, `CGImage*`, etc.)
+2. It produces a generic transport type (`Data`, DTO), not a domain entity
+3. It contains no business logic — no domain rules, no conditional branching based on domain state
+
+```swift
+// Good — thumbnail generation requires ImageIO; returns raw Data
+func fetchThumbnail(localIdentifier: String) async throws -> Data {
+    // ... fetch raw image via Photos/FileSystem ...
+    return try await Task.detached(priority: .userInitiated) {
+        // CGImageSource → resize → JPEG encode → Data
+    }.value
+}
+
+// Bad — domain-level decision does not belong here
+func fetchThumbnail(localIdentifier: String) async throws -> Data {
+    let slide = try await fetchSlide(...)   // NG: domain entity
+    if slide.isHidden { return Data() }     // NG: business logic
+}
+```
 
 ## Prohibitions
 
