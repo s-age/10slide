@@ -12,10 +12,10 @@ final class SlideshowPlayerViewModel {
     private(set) var showFilmstrip: Bool = true
     private(set) var errorMessage: String?
 
-    private let loadSlideImageUseCase: LoadSlideImageUseCaseProtocol
-    private let updateSlideshowConfigUseCase: UpdateSlideshowConfigUseCaseProtocol
-    private let advanceSlideUseCase: AdvanceSlideUseCaseProtocol
-    private let previousSlideUseCase: PreviousSlideUseCaseProtocol
+    private let loadSlideImage: LoadSlideImageUseCaseProtocol
+    private let updateSlideshowConfig: UpdateSlideshowConfigUseCaseProtocol
+    private let advanceSlide: AdvanceSlideUseCaseProtocol
+    private let previousSlide: PreviousSlideUseCaseProtocol
     private let filmstripHideDuration: Duration
     private var timerTask: Task<Void, Never>?
     private var hideFilmstripTask: Task<Void, Never>?
@@ -29,10 +29,10 @@ final class SlideshowPlayerViewModel {
         filmstripHideDuration: Duration = .seconds(3)
     ) {
         self.slideshow = slideshow
-        self.loadSlideImageUseCase = loadSlideImage
-        self.updateSlideshowConfigUseCase = updateSlideshowConfig
-        self.advanceSlideUseCase = advanceSlide
-        self.previousSlideUseCase = previousSlide
+        self.loadSlideImage = loadSlideImage
+        self.updateSlideshowConfig = updateSlideshowConfig
+        self.advanceSlide = advanceSlide
+        self.previousSlide = previousSlide
         self.filmstripHideDuration = filmstripHideDuration
     }
 
@@ -78,7 +78,7 @@ final class SlideshowPlayerViewModel {
             loop: slideshow.config.loop
         )
         // Validation failure = programming bug (UI guards these states); nil = no more slides
-        if let nextIndex = try? advanceSlideUseCase.execute(request) {
+        if let nextIndex = try? advanceSlide.execute(request) {
             currentIndex = nextIndex
             await loadCurrentImage()
         } else {
@@ -93,7 +93,7 @@ final class SlideshowPlayerViewModel {
             loop: slideshow.config.loop
         )
         // Validation failure = programming bug (UI guards these states); nil = no more slides
-        if let prevIndex = try? previousSlideUseCase.execute(request) {
+        if let prevIndex = try? previousSlide.execute(request) {
             currentIndex = prevIndex
             await loadCurrentImage()
         }
@@ -113,7 +113,7 @@ final class SlideshowPlayerViewModel {
         let expectedIndex = currentIndex
         do {
             let request = LoadSlideImageRequest(localIdentifier: slide.localIdentifier)
-            let data = try await loadSlideImageUseCase.execute(request)
+            let data = try await loadSlideImage.execute(request)
             guard currentIndex == expectedIndex else { return }
             let image = await Task.detached(priority: .userInitiated) {
                 NSImage(data: data)
@@ -135,7 +135,7 @@ final class SlideshowPlayerViewModel {
             loop: slideshow.config.loop
         )
         do {
-            slideshow = try await updateSlideshowConfigUseCase.execute(request)
+            slideshow = try await updateSlideshowConfig.execute(request)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -150,7 +150,7 @@ final class SlideshowPlayerViewModel {
             loop: slideshow.config.loop
         )
         do {
-            slideshow = try await updateSlideshowConfigUseCase.execute(request)
+            slideshow = try await updateSlideshowConfig.execute(request)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -172,13 +172,7 @@ final class SlideshowPlayerViewModel {
         hideFilmstripTask = nil
         guard isPlaying else { return }
         hideFilmstripTask = Task {
-            do {
-                try await Task.sleep(for: filmstripHideDuration)
-            } catch is CancellationError {
-                return
-            } catch {
-                return
-            }
+            try? await Task.sleep(for: filmstripHideDuration)
             guard !Task.isCancelled else { return }
             showFilmstrip = false
         }

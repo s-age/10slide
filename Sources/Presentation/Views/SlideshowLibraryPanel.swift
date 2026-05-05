@@ -85,7 +85,7 @@ struct SlideshowLibraryPanel: View {
         ) {
             Button("Delete", role: .destructive) {
                 if let slideshow = slideshowPendingDelete {
-                    Task { await viewModel.deleteSlideshow(id: slideshow.id) }
+                    Task { await viewModel.delete(id: slideshow.id) }
                 }
                 slideshowPendingDelete = nil
             }

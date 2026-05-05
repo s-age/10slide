@@ -12,18 +12,18 @@ final class CreateSlideshowViewModel {
     private(set) var errorMessage: String?
     private(set) var editingSlideshow: SlideshowResponse?
 
-    private let createSlideshowUseCase: CreateSlideshowUseCaseProtocol
-    private let updateSlideshowUseCase: UpdateSlideshowUseCaseProtocol
-    private let addDroppedFilesUseCase: AddDroppedFilesUseCaseProtocol
+    private let createSlideshow: CreateSlideshowUseCaseProtocol
+    private let updateSlideshow: UpdateSlideshowUseCaseProtocol
+    private let addDroppedFiles: AddDroppedFilesUseCaseProtocol
 
     init(
         createSlideshow: CreateSlideshowUseCaseProtocol,
         updateSlideshow: UpdateSlideshowUseCaseProtocol,
         addDroppedFiles: AddDroppedFilesUseCaseProtocol
     ) {
-        self.createSlideshowUseCase = createSlideshow
-        self.updateSlideshowUseCase = updateSlideshow
-        self.addDroppedFilesUseCase = addDroppedFiles
+        self.createSlideshow = createSlideshow
+        self.updateSlideshow = updateSlideshow
+        self.addDroppedFiles = addDroppedFiles
     }
 
     var isEditing: Bool { editingSlideshow != nil }
@@ -50,7 +50,7 @@ final class CreateSlideshowViewModel {
             existingIdentifiers: selectedIdentifiers
         )
         // validate() is empty; file-path filtering is best-effort — no user-actionable error
-        guard let newPaths = try? addDroppedFilesUseCase.execute(request) else { return }
+        guard let newPaths = try? addDroppedFiles.execute(request) else { return }
         selectedIdentifiers.append(contentsOf: newPaths)
     }
 
@@ -73,7 +73,7 @@ final class CreateSlideshowViewModel {
                     name: slideshowName,
                     localIdentifiers: selectedIdentifiers
                 )
-                return try await updateSlideshowUseCase.execute(request)
+                return try await updateSlideshow.execute(request)
             } else {
                 let request = CreateSlideshowRequest(
                     name: slideshowName,
@@ -82,7 +82,7 @@ final class CreateSlideshowViewModel {
                     transition: selectedTransition,
                     loop: true
                 )
-                return try await createSlideshowUseCase.execute(request)
+                return try await createSlideshow.execute(request)
             }
         } catch {
             errorMessage = error.localizedDescription

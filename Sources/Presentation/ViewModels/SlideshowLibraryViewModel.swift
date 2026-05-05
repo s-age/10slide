@@ -8,15 +8,15 @@ final class SlideshowLibraryViewModel {
     private(set) var isLoading: Bool = false
     private(set) var errorMessage: String?
 
-    private let fetchSlideshowsUseCase: FetchSlideshowsUseCaseProtocol
-    private let deleteSlideshowUseCase: DeleteSlideshowUseCaseProtocol
+    private let fetchSlideshows: FetchSlideshowsUseCaseProtocol
+    private let deleteSlideshow: DeleteSlideshowUseCaseProtocol
 
     init(
         fetchSlideshows: FetchSlideshowsUseCaseProtocol,
         deleteSlideshow: DeleteSlideshowUseCaseProtocol
     ) {
-        self.fetchSlideshowsUseCase = fetchSlideshows
-        self.deleteSlideshowUseCase = deleteSlideshow
+        self.fetchSlideshows = fetchSlideshows
+        self.deleteSlideshow = deleteSlideshow
     }
 
     func dismissError() {
@@ -28,15 +28,15 @@ final class SlideshowLibraryViewModel {
         errorMessage = nil
         defer { isLoading = false }
         do {
-            slideshows = try await fetchSlideshowsUseCase.execute(FetchSlideshowsRequest())
+            slideshows = try await fetchSlideshows.execute(FetchSlideshowsRequest())
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
-    func deleteSlideshow(id: UUID) async {
+    func delete(id: UUID) async {
         do {
-            try await deleteSlideshowUseCase.execute(DeleteSlideshowRequest(id: id))
+            try await deleteSlideshow.execute(DeleteSlideshowRequest(id: id))
             slideshows.removeAll { $0.id == id }
         } catch {
             errorMessage = error.localizedDescription

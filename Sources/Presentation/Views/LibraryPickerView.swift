@@ -33,7 +33,7 @@ struct LibraryPickerView: View {
                                     onRemove: { createViewModel.removeFile(identifier) }
                                 )
                                 .task(id: identifier) {
-                                    await thumbnailViewModel.loadThumbnail(identifier: identifier)
+                                    await thumbnailViewModel.load(identifier: identifier)
                                 }
                             }
                         }

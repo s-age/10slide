@@ -97,7 +97,7 @@ struct FilmstripView: View {
                 )
         )
         .task(id: id) {
-            await thumbnailViewModel.loadThumbnail(identifier: id)
+            await thumbnailViewModel.load(identifier: id)
         }
         .onTapGesture {
             onSelect(index)
