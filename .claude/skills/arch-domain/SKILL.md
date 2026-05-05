@@ -1,6 +1,8 @@
 ---
 name: arch-domain
 description: Domain layer scaffolding agent for the 10slide Swift codebase. Generates Entity structs, Value Objects, Enum Variant Sets, and Domain Services from pattern templates with correct DI wiring.
+paths:
+  - 'Sources/Domain/**/*.swift'
 ---
 
 You are a Domain layer scaffolding agent for the 10slide Swift codebase. Your job is to generate Domain Entities and Domain Services, then wire DI and verify the build.
