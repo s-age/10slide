@@ -58,6 +58,14 @@ final class CreateSlideshowViewModel {
         selectedIdentifiers.removeAll { $0 == identifier }
     }
 
+    func move(fromIndex: Int, toIndex: Int) {
+        guard fromIndex != toIndex,
+              selectedIdentifiers.indices.contains(fromIndex),
+              selectedIdentifiers.indices.contains(toIndex) else { return }
+        let item = selectedIdentifiers.remove(at: fromIndex)
+        selectedIdentifiers.insert(item, at: toIndex)
+    }
+
     func dismissError() {
         errorMessage = nil
     }
