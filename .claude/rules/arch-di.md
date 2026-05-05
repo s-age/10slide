@@ -14,7 +14,8 @@ When creating, editing, or reviewing any file in `Sources/DI/`:
 // Container.swift — always this order
 infrastructure = try InfrastructureContainer()
 repositories = RepositoryContainer(infrastructure: infrastructure)
-useCases = UseCaseContainer(repositories: repositories)
+domain = DomainContainer(repositories: repositories)
+useCases = UseCaseContainer(domain: domain)
 presentation = PresentationContainer(useCases: useCases)
 ```
 
@@ -24,6 +25,7 @@ presentation = PresentationContainer(useCases: useCases)
 |-----------|------|
 | `InfrastructureContainer` | `ModelContainer`, data source instances |
 | `RepositoryContainer` | Repository instances (injected with infra protocols) |
+| `DomainContainer` | Domain service instances (injected with repository protocols) |
 | `UseCaseContainer` | Use case instances wrapped in decorators (injected with domain service protocols) |
 | `PresentationContainer` | ViewModel factories or instances (injected with use case protocols) |
 
@@ -61,10 +63,16 @@ createSlideshow = CreateSlideshowUseCase(domainService: domain.slideshowService)
 final class Container {
     let infrastructure: InfrastructureContainer
     let repositories: RepositoryContainer
+    let domain: DomainContainer
+    let useCases: UseCaseContainer
+    let presentation: PresentationContainer
 
     init() throws {
         infrastructure = try InfrastructureContainer()
         repositories = RepositoryContainer(infrastructure: infrastructure)
+        domain = DomainContainer(repositories: repositories)
+        useCases = UseCaseContainer(domain: domain)
+        presentation = PresentationContainer(useCases: useCases)
     }
 }
 
