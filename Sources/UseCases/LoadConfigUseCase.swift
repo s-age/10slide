@@ -1,6 +1,6 @@
 import Foundation
 
-final class LoadConfigUseCase: LoadConfigUseCaseProtocol, Sendable {
+final class LoadConfigUseCase: AsyncUseCase, Sendable {
     private let domainService: any ConfigDomainServiceProtocol
 
     init(domainService: any ConfigDomainServiceProtocol) {
@@ -8,7 +8,6 @@ final class LoadConfigUseCase: LoadConfigUseCaseProtocol, Sendable {
     }
 
     func execute(_ request: LoadConfigRequest) async throws -> SlideshowConfigResponse {
-        try request.validate()
         let config = try await domainService.load()
         return SlideshowConfigResponse(from: config)
     }

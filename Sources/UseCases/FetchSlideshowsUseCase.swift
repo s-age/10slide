@@ -1,4 +1,4 @@
-final class FetchSlideshowsUseCase: FetchSlideshowsUseCaseProtocol, Sendable {
+final class FetchSlideshowsUseCase: AsyncUseCase, Sendable {
     private let domainService: any SlideshowDomainServiceProtocol
 
     init(domainService: any SlideshowDomainServiceProtocol) {
@@ -6,7 +6,6 @@ final class FetchSlideshowsUseCase: FetchSlideshowsUseCaseProtocol, Sendable {
     }
 
     func execute(_ request: FetchSlideshowsRequest) async throws -> [SlideshowResponse] {
-        try request.validate()
         let slideshows = try await domainService.fetchAll()
         return slideshows.map { SlideshowResponse(from: $0) }
     }

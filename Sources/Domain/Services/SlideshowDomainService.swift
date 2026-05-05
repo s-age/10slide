@@ -22,6 +22,15 @@ final class SlideshowDomainService: SlideshowDomainServiceProtocol, Sendable {
         return updated
     }
 
+    func updateConfig(id: UUID, config: SlideshowConfig) async throws -> Slideshow {
+        guard let existing = try await repository.fetch(id: id) else {
+            throw DomainError.slideshowNotFound(id)
+        }
+        let updated = existing.applying(config: config)
+        try await repository.save(updated)
+        return updated
+    }
+
     func delete(id: UUID) async throws {
         try await repository.delete(id: id)
     }

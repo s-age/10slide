@@ -26,6 +26,10 @@ final class MockSlideshowDomainServiceForCreate: SlideshowDomainServiceProtocol,
         Slideshow(id: id, name: name, slides: [], config: .default, createdAt: Date())
     }
 
+    func updateConfig(id: UUID, config: SlideshowConfig) async throws -> Slideshow {
+        Slideshow(id: id, name: "Mock", slides: [], config: config, createdAt: Date())
+    }
+
     func delete(id: UUID) async throws {}
     func fetch(id: UUID) async throws -> Slideshow? { nil }
     func fetchAll() async throws -> [Slideshow] { [] }
@@ -137,39 +141,5 @@ final class CreateSlideshowUseCaseTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? CreateSlideshowUseCaseTestError, .intentional)
         }
-    }
-
-    // MARK: - Validation
-
-    func testExecute_withEmptyName_throwsValidationError() async {
-        let request = CreateSlideshowRequest(
-            name: "", localIdentifiers: ["a"], duration: .five, transition: .fade, loop: true
-        )
-        do {
-            _ = try await sut.execute(request)
-            XCTFail("Expected execute() to throw validation error")
-        } catch {
-            XCTAssertEqual(error as? ValidationError, .emptyName)
-        }
-    }
-
-    func testExecute_withEmptyIdentifiers_throwsValidationError() async {
-        let request = CreateSlideshowRequest(
-            name: "Show", localIdentifiers: [], duration: .five, transition: .fade, loop: true
-        )
-        do {
-            _ = try await sut.execute(request)
-            XCTFail("Expected execute() to throw validation error")
-        } catch {
-            XCTAssertEqual(error as? ValidationError, .noIdentifiers)
-        }
-    }
-
-    func testExecute_withEmptyName_doesNotCallDomainService() async {
-        let request = CreateSlideshowRequest(
-            name: "", localIdentifiers: ["a"], duration: .five, transition: .fade, loop: true
-        )
-        _ = try? await sut.execute(request)
-        XCTAssertEqual(mockDomainService.createCallCount, 0)
     }
 }

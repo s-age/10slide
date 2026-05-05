@@ -1,3 +1,1 @@
-protocol DeleteSlideshowUseCaseProtocol: Sendable {
-    func execute(_ request: DeleteSlideshowRequest) async throws
-}
+typealias DeleteSlideshowUseCaseProtocol = any AsyncUseCase<DeleteSlideshowRequest, Void>

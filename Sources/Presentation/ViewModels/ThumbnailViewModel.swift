@@ -8,9 +8,9 @@ final class ThumbnailViewModel {
     private(set) var thumbnails: [String: Data] = [:]
     private(set) var images: [String: NSImage] = [:]
 
-    private let loadThumbnailUseCase: any LoadThumbnailUseCaseProtocol
+    private let loadThumbnailUseCase: LoadThumbnailUseCaseProtocol
 
-    init(loadThumbnail: any LoadThumbnailUseCaseProtocol) {
+    init(loadThumbnail: LoadThumbnailUseCaseProtocol) {
         self.loadThumbnailUseCase = loadThumbnail
     }
 

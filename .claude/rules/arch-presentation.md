@@ -58,13 +58,14 @@ A ViewModel is a **lifecycle adapter**, not a logic container. Keep business log
 
 ```swift
 // Good — ViewModel is a thin bridge; uses Response types only
+// UseCase typealiases embed `any` — do not add `any` prefix
 @Observable
 final class SlideshowListViewModel {
     private(set) var slideshows: [SlideshowResponse] = []
     private(set) var isLoading = false
-    private let fetchSlideshows: any FetchSlideshowsUseCaseProtocol
+    private let fetchSlideshows: FetchSlideshowsUseCaseProtocol
 
-    init(fetchSlideshows: any FetchSlideshowsUseCaseProtocol) {
+    init(fetchSlideshows: FetchSlideshowsUseCaseProtocol) {
         self.fetchSlideshows = fetchSlideshows
     }
 

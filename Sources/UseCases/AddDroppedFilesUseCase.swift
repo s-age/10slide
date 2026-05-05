@@ -1,6 +1,6 @@
 import Foundation
 
-final class AddDroppedFilesUseCase: AddDroppedFilesUseCaseProtocol, Sendable {
+final class AddDroppedFilesUseCase: SyncUseCase, Sendable {
     private let domainService: any ImageDomainServiceProtocol
 
     init(domainService: any ImageDomainServiceProtocol) {
@@ -8,8 +8,7 @@ final class AddDroppedFilesUseCase: AddDroppedFilesUseCaseProtocol, Sendable {
     }
 
     func execute(_ request: AddDroppedFilesRequest) throws -> [String] {
-        try request.validate()
-        return domainService.filterDroppedFiles(
+        domainService.filterDroppedFiles(
             urls: request.urls,
             existingIdentifiers: request.existingIdentifiers
         )

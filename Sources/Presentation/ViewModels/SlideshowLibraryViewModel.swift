@@ -8,12 +8,12 @@ final class SlideshowLibraryViewModel {
     private(set) var isLoading: Bool = false
     private(set) var errorMessage: String?
 
-    private let fetchSlideshowsUseCase: any FetchSlideshowsUseCaseProtocol
-    private let deleteSlideshowUseCase: any DeleteSlideshowUseCaseProtocol
+    private let fetchSlideshowsUseCase: FetchSlideshowsUseCaseProtocol
+    private let deleteSlideshowUseCase: DeleteSlideshowUseCaseProtocol
 
     init(
-        fetchSlideshows: any FetchSlideshowsUseCaseProtocol,
-        deleteSlideshow: any DeleteSlideshowUseCaseProtocol
+        fetchSlideshows: FetchSlideshowsUseCaseProtocol,
+        deleteSlideshow: DeleteSlideshowUseCaseProtocol
     ) {
         self.fetchSlideshowsUseCase = fetchSlideshows
         self.deleteSlideshowUseCase = deleteSlideshow

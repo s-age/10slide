@@ -1,6 +1,6 @@
 import Foundation
 
-final class LoadThumbnailUseCase: LoadThumbnailUseCaseProtocol, Sendable {
+final class LoadThumbnailUseCase: AsyncUseCase, Sendable {
     private let domainService: any ImageDomainServiceProtocol
 
     init(domainService: any ImageDomainServiceProtocol) {
@@ -8,7 +8,6 @@ final class LoadThumbnailUseCase: LoadThumbnailUseCaseProtocol, Sendable {
     }
 
     func execute(_ request: LoadThumbnailRequest) async throws -> Data {
-        try request.validate()
         return try await domainService.fetchThumbnailData(localIdentifier: request.localIdentifier)
     }
 }

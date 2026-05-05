@@ -1,6 +1,6 @@
 import Foundation
 
-final class DeleteSlideshowUseCase: DeleteSlideshowUseCaseProtocol, Sendable {
+final class DeleteSlideshowUseCase: AsyncUseCase, Sendable {
     private let domainService: any SlideshowDomainServiceProtocol
 
     init(domainService: any SlideshowDomainServiceProtocol) {
@@ -8,7 +8,6 @@ final class DeleteSlideshowUseCase: DeleteSlideshowUseCaseProtocol, Sendable {
     }
 
     func execute(_ request: DeleteSlideshowRequest) async throws {
-        try request.validate()
         try await domainService.delete(id: request.id)
     }
 }

@@ -10,25 +10,29 @@ final class SlideshowPlayerViewModel {
     private(set) var currentNSImage: NSImage?
     private(set) var isPlaying: Bool = false
     private(set) var showFilmstrip: Bool = true
+    private(set) var errorMessage: String?
 
-    private let loadSlideImageUseCase: any LoadSlideImageUseCaseProtocol
-    private let updateSlideshowConfigUseCase: any UpdateSlideshowConfigUseCaseProtocol
-    private let advanceSlideUseCase: any AdvanceSlideUseCaseProtocol
+    private let loadSlideImageUseCase: LoadSlideImageUseCaseProtocol
+    private let updateSlideshowConfigUseCase: UpdateSlideshowConfigUseCaseProtocol
+    private let advanceSlideUseCase: AdvanceSlideUseCaseProtocol
+    private let previousSlideUseCase: PreviousSlideUseCaseProtocol
     private let filmstripHideDuration: Duration
     private var timerTask: Task<Void, Never>?
     private var hideFilmstripTask: Task<Void, Never>?
 
     init(
         slideshow: SlideshowResponse,
-        loadSlideImage: any LoadSlideImageUseCaseProtocol,
-        updateSlideshowConfig: any UpdateSlideshowConfigUseCaseProtocol,
-        advanceSlide: any AdvanceSlideUseCaseProtocol,
+        loadSlideImage: LoadSlideImageUseCaseProtocol,
+        updateSlideshowConfig: UpdateSlideshowConfigUseCaseProtocol,
+        advanceSlide: AdvanceSlideUseCaseProtocol,
+        previousSlide: PreviousSlideUseCaseProtocol,
         filmstripHideDuration: Duration = .seconds(3)
     ) {
         self.slideshow = slideshow
         self.loadSlideImageUseCase = loadSlideImage
         self.updateSlideshowConfigUseCase = updateSlideshowConfig
         self.advanceSlideUseCase = advanceSlide
+        self.previousSlideUseCase = previousSlide
         self.filmstripHideDuration = filmstripHideDuration
     }
 
@@ -87,7 +91,7 @@ final class SlideshowPlayerViewModel {
             currentIndex: currentIndex,
             loop: slideshow.config.loop
         )
-        if let prevIndex = try? advanceSlideUseCase.executePrevious(request) {
+        if let prevIndex = try? previousSlideUseCase.execute(request) {
             currentIndex = prevIndex
             await loadCurrentImage()
         }
@@ -128,8 +132,10 @@ final class SlideshowPlayerViewModel {
             transition: slideshow.config.transition,
             loop: slideshow.config.loop
         )
-        if let updated = try? await updateSlideshowConfigUseCase.execute(request) {
-            slideshow = updated
+        do {
+            slideshow = try await updateSlideshowConfigUseCase.execute(request)
+        } catch {
+            errorMessage = error.localizedDescription
         }
         if isPlaying { play() }
     }
@@ -141,8 +147,10 @@ final class SlideshowPlayerViewModel {
             transition: transition,
             loop: slideshow.config.loop
         )
-        if let updated = try? await updateSlideshowConfigUseCase.execute(request) {
-            slideshow = updated
+        do {
+            slideshow = try await updateSlideshowConfigUseCase.execute(request)
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 

@@ -13,7 +13,4 @@ final class PlaybackDomainService: PlaybackDomainServiceProtocol, Sendable {
         return loop ? totalSlides - 1 : nil
     }
 
-    func applyConfig(_ config: SlideshowConfig, to slideshow: Slideshow) -> Slideshow {
-        slideshow.applying(config: config)
-    }
 }

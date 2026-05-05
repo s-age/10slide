@@ -9,7 +9,7 @@ private enum CreateSlideshowViewModelTestError: Error {
 
 // MARK: - Mock: CreateSlideshowUseCase
 
-final class MockCreateSlideshowUseCase: CreateSlideshowUseCaseProtocol, @unchecked Sendable {
+final class MockCreateSlideshowUseCase: AsyncUseCase, @unchecked Sendable {
     var executeResult: SlideshowResponse = SlideshowResponse(
         id: UUID(), name: "Mock", slides: [], config: .default, createdAt: Date()
     )
@@ -27,7 +27,7 @@ final class MockCreateSlideshowUseCase: CreateSlideshowUseCaseProtocol, @uncheck
 
 // MARK: - Mock: UpdateSlideshowUseCase
 
-final class MockUpdateSlideshowUseCaseForCreate: UpdateSlideshowUseCaseProtocol, @unchecked Sendable {
+final class MockUpdateSlideshowUseCaseForCreate: AsyncUseCase, @unchecked Sendable {
     var executeResult: SlideshowResponse = SlideshowResponse(
         id: UUID(), name: "Mock", slides: [], config: .default, createdAt: Date()
     )
@@ -41,7 +41,7 @@ final class MockUpdateSlideshowUseCaseForCreate: UpdateSlideshowUseCaseProtocol,
 
 // MARK: - Mock: AddDroppedFilesUseCase
 
-final class MockAddDroppedFilesUseCaseForCreate: AddDroppedFilesUseCaseProtocol, @unchecked Sendable {
+final class MockAddDroppedFilesUseCaseForCreate: SyncUseCase, @unchecked Sendable {
     var executeResult: [String] = []
 
     func execute(_ request: AddDroppedFilesRequest) throws -> [String] {

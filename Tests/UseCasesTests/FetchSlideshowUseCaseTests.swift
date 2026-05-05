@@ -26,6 +26,10 @@ final class MockSlideshowDomainServiceForFetch: SlideshowDomainServiceProtocol, 
         Slideshow(id: id, name: name, slides: [], config: .default, createdAt: Date())
     }
 
+    func updateConfig(id: UUID, config: SlideshowConfig) async throws -> Slideshow {
+        Slideshow(id: id, name: "Mock", slides: [], config: config, createdAt: Date())
+    }
+
     func delete(id: UUID) async throws {}
 }
 

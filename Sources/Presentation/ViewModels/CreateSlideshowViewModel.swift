@@ -12,14 +12,14 @@ final class CreateSlideshowViewModel {
     private(set) var errorMessage: String?
     private(set) var editingSlideshow: SlideshowResponse?
 
-    private let createSlideshowUseCase: any CreateSlideshowUseCaseProtocol
-    private let updateSlideshowUseCase: any UpdateSlideshowUseCaseProtocol
-    private let addDroppedFilesUseCase: any AddDroppedFilesUseCaseProtocol
+    private let createSlideshowUseCase: CreateSlideshowUseCaseProtocol
+    private let updateSlideshowUseCase: UpdateSlideshowUseCaseProtocol
+    private let addDroppedFilesUseCase: AddDroppedFilesUseCaseProtocol
 
     init(
-        createSlideshow: any CreateSlideshowUseCaseProtocol,
-        updateSlideshow: any UpdateSlideshowUseCaseProtocol,
-        addDroppedFiles: any AddDroppedFilesUseCaseProtocol
+        createSlideshow: CreateSlideshowUseCaseProtocol,
+        updateSlideshow: UpdateSlideshowUseCaseProtocol,
+        addDroppedFiles: AddDroppedFilesUseCaseProtocol
     ) {
         self.createSlideshowUseCase = createSlideshow
         self.updateSlideshowUseCase = updateSlideshow

@@ -11,11 +11,44 @@ Provides a **stable, uniform API surface** for the Presentation layer. UseCases 
 
 ```
 UseCases/
-├── Protocols/     # *UseCaseProtocol contracts consumed by Presentation
+├── Protocols/     # AsyncUseCase / SyncUseCase base protocols + *UseCaseProtocol typealiases
+├── Decorators/    # Cross-cutting concern decorators (validation, etc.)
 ├── Requests/      # UseCaseRequest protocol + concrete Request structs
 ├── Responses/     # Response structs + Response enums + mapping extensions
 └── *.swift        # Concrete implementations
 ```
+
+## Base protocols and typealiases
+
+All use cases conform to one of two base protocols:
+
+```swift
+// Async use cases (I/O, persistence, network)
+protocol AsyncUseCase<Request, Response>: Sendable {
+    associatedtype Request
+    associatedtype Response
+    func execute(_ request: Request) async throws -> Response
+}
+
+// Sync use cases (pure computation, no I/O)
+protocol SyncUseCase<Request, Response>: Sendable {
+    associatedtype Request
+    associatedtype Response
+    func execute(_ request: Request) throws -> Response
+}
+```
+
+Each use case's public contract is a typealias in `Protocols/`, not a standalone protocol:
+
+```swift
+// Protocols/CreateSlideshowUseCaseProtocol.swift
+typealias CreateSlideshowUseCaseProtocol = any AsyncUseCase<CreateSlideshowRequest, SlideshowResponse>
+
+// Protocols/AdvanceSlideUseCaseProtocol.swift
+typealias AdvanceSlideUseCaseProtocol = any SyncUseCase<AdvanceSlideRequest, Int?>
+```
+
+Presentation and DI layers use the typealias name directly — no `any` prefix (it is already embedded in the typealias).
 
 ## Import Rules
 
@@ -31,13 +64,11 @@ UseCases/
 Every UseCase follows this uniform shape:
 
 ```swift
-// Protocol
-protocol CreateSlideshowUseCaseProtocol: Sendable {
-    func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse
-}
+// Typealias (in Protocols/)
+typealias CreateSlideshowUseCaseProtocol = any AsyncUseCase<CreateSlideshowRequest, SlideshowResponse>
 
-// Implementation
-final class CreateSlideshowUseCase: CreateSlideshowUseCaseProtocol, Sendable {
+// Implementation — conforms to AsyncUseCase directly
+final class CreateSlideshowUseCase: AsyncUseCase, Sendable {
     private let domainService: any SlideshowDomainServiceProtocol
 
     init(domainService: any SlideshowDomainServiceProtocol) {
@@ -45,7 +76,6 @@ final class CreateSlideshowUseCase: CreateSlideshowUseCaseProtocol, Sendable {
     }
 
     func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse {
-        try request.validate()
         let config = SlideshowConfig(
             duration: request.duration.toDomain,
             transition: request.transition.toDomain,
@@ -62,10 +92,24 @@ final class CreateSlideshowUseCase: CreateSlideshowUseCaseProtocol, Sendable {
 ```
 
 Key rules:
-1. Always call `request.validate()` before processing
+1. **Do not** call `request.validate()` in concrete use cases — the `ValidationUseCaseDecorator` handles this transparently in the DI layer
 2. Convert Request enum values to Domain types via `.toDomain`
 3. Convert Domain entities to Response types via `Response(from:)` initializers
 4. Delegate business logic to Domain Services — never implement it here
+5. Each use case has exactly one `execute` method (Command pattern — 1 UseCase = 1 Action)
+
+## Decorator pattern
+
+Cross-cutting concerns (validation, future logging/caching) are handled by decorators in `Decorators/`, not by concrete use cases. The DI container wraps each use case with the appropriate decorator(s).
+
+```swift
+// DI wiring — decorator wraps the concrete use case
+createSlideshow = ValidationAsyncUseCaseDecorator(
+    decoratee: CreateSlideshowUseCase(domainService: domain.slideshowService)
+)
+```
+
+New decorators should follow the same shape as `ValidationAsyncUseCaseDecorator` / `ValidationSyncUseCaseDecorator`.
 
 ## Thin use case — single Domain Service delegation
 
@@ -73,11 +117,10 @@ A use case that delegates directly to one Domain Service method is **not a smell
 
 ```swift
 // Good — thin pass-through by design
-final class FetchLibraryUseCase: FetchLibraryUseCaseProtocol, Sendable {
+final class FetchLibraryUseCase: AsyncUseCase, Sendable {
     private let domainService: any ImageDomainServiceProtocol
 
     func execute(_ request: FetchLibraryRequest) async throws -> [String] {
-        try request.validate()
         return try await domainService.fetchAllIdentifiers()
     }
 }
@@ -94,3 +137,6 @@ final class FetchLibraryUseCase: FetchLibraryUseCaseProtocol, Sendable {
 - Never define a protocol in the same file as its implementation — protocols live in `Protocols/`
 - Never return Domain Entity types to callers — always map to Response types
 - Never accept primitive parameters — always accept a UseCaseRequest struct
+- Never call `request.validate()` in a concrete use case — the decorator handles it
+- Never put multiple `execute` methods in one use case — split into separate use cases
+- Never make a sync use case async — use `SyncUseCase` for pure computation

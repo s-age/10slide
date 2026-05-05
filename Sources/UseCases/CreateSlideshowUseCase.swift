@@ -1,6 +1,6 @@
 import Foundation
 
-final class CreateSlideshowUseCase: CreateSlideshowUseCaseProtocol, Sendable {
+final class CreateSlideshowUseCase: AsyncUseCase, Sendable {
     private let domainService: any SlideshowDomainServiceProtocol
 
     init(domainService: any SlideshowDomainServiceProtocol) {
@@ -8,7 +8,6 @@ final class CreateSlideshowUseCase: CreateSlideshowUseCaseProtocol, Sendable {
     }
 
     func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse {
-        try request.validate()
         let config = SlideshowConfig(
             duration: request.duration.toDomain,
             transition: request.transition.toDomain,

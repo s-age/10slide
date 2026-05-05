@@ -1,6 +1,6 @@
 import Foundation
 
-final class FetchLibraryUseCase: FetchLibraryUseCaseProtocol, Sendable {
+final class FetchLibraryUseCase: AsyncUseCase, Sendable {
     private let domainService: any ImageDomainServiceProtocol
 
     init(domainService: any ImageDomainServiceProtocol) {
@@ -8,7 +8,6 @@ final class FetchLibraryUseCase: FetchLibraryUseCaseProtocol, Sendable {
     }
 
     func execute(_ request: FetchLibraryRequest) async throws -> [String] {
-        try request.validate()
         return try await domainService.fetchAllIdentifiers()
     }
 }

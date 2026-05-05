@@ -1,3 +1,1 @@
-protocol FetchLibraryUseCaseProtocol: Sendable {
-    func execute(_ request: FetchLibraryRequest) async throws -> [String]
-}
+typealias FetchLibraryUseCaseProtocol = any AsyncUseCase<FetchLibraryRequest, [String]>

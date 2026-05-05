@@ -9,7 +9,7 @@ private enum SlideshowLibraryViewModelTestError: Error {
 
 // MARK: - Mock: FetchSlideshowsUseCase
 
-final class MockFetchSlideshowsUseCase: FetchSlideshowsUseCaseProtocol, @unchecked Sendable {
+final class MockFetchSlideshowsUseCase: AsyncUseCase, @unchecked Sendable {
     var executeResult: [SlideshowResponse] = []
     var executeCallCount = 0
     var throwOnExecute = false
@@ -27,7 +27,7 @@ final class MockFetchSlideshowsUseCase: FetchSlideshowsUseCaseProtocol, @uncheck
 
 // MARK: - Mock: DeleteSlideshowUseCase
 
-final class MockDeleteSlideshowUseCaseForLibrary: DeleteSlideshowUseCaseProtocol, @unchecked Sendable {
+final class MockDeleteSlideshowUseCaseForLibrary: AsyncUseCase, @unchecked Sendable {
     var executeCallCount = 0
     var throwOnExecute = false
 

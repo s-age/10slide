@@ -1,6 +1,6 @@
 import Foundation
 
-final class SaveConfigUseCase: SaveConfigUseCaseProtocol, Sendable {
+final class SaveConfigUseCase: AsyncUseCase, Sendable {
     private let domainService: any ConfigDomainServiceProtocol
 
     init(domainService: any ConfigDomainServiceProtocol) {
@@ -8,7 +8,6 @@ final class SaveConfigUseCase: SaveConfigUseCaseProtocol, Sendable {
     }
 
     func execute(_ request: SaveConfigRequest) async throws {
-        try request.validate()
         let config = SlideshowConfig(
             duration: request.duration.toDomain,
             transition: request.transition.toDomain,
