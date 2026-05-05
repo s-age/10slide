@@ -16,8 +16,11 @@ struct LibraryPickerView: View {
     }
 
     @State private var isShowingFilePicker = false
+    @AppStorage("thumbnailSize") private var thumbnailSize: Double = 100
 
-    private let columns = [GridItem(.adaptive(minimum: 100), spacing: 8)]
+    private var columns: [GridItem] {
+        [GridItem(.adaptive(minimum: thumbnailSize), spacing: 8)]
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -38,6 +41,13 @@ struct LibraryPickerView: View {
                             }
                         }
                         .padding()
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        Slider(value: $thumbnailSize, in: 60...180, step: 10)
+                            .frame(width: 120)
+                            .padding(8)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                            .padding(12)
                     }
                 }
             }
