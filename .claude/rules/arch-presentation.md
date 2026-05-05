@@ -6,14 +6,14 @@ paths:
 When creating, editing, or reviewing any file in `Sources/Presentation/`:
 
 - **Layer responsibility**: SwiftUI views own display. ViewModels connect use cases to views. `Presentation` is the only layer that may import `SwiftUI` or `UIKit`.
-- **Import allowlist**: `SwiftUI`, `AppKit`, `Foundation`, `UseCases/Protocols`, `UseCases/Requests`, `UseCases/Responses`, `Errors` — never `Domain`, `Repositories`, `Infrastructure`, `SwiftData`, `Photos`.
+- **Import allowlist**: `SwiftUI`, `AppKit`, `Foundation`, `Observation`, `Synchronization`, `UseCases/Protocols`, `UseCases/Requests`, `UseCases/Responses`, `Errors` — never `Domain`, `Repositories`, `Infrastructure`, `SwiftData`, `Photos`.
 
 ## Directory layout
 
 ```
 Presentation/
-├── Views/         # SwiftUI View types
-└── ViewModels/    # @Observable classes; one per screen
+├── Views/         # SwiftUI View types + Response extension files (*+Presentation.swift)
+└── ViewModels/    # @Observable @MainActor classes; one per screen
 ```
 
 ## .task modifier
@@ -60,6 +60,7 @@ A ViewModel is a **lifecycle adapter**, not a logic container. Keep business log
 // Good — ViewModel is a thin bridge; uses Response types only
 // UseCase typealiases embed `any` — do not add `any` prefix
 @Observable
+@MainActor
 final class SlideshowListViewModel {
     private(set) var slideshows: [SlideshowResponse] = []
     private(set) var isLoading = false
@@ -69,7 +70,6 @@ final class SlideshowListViewModel {
         self.fetchSlideshows = fetchSlideshows
     }
 
-    @MainActor
     func load() async {
         isLoading = true
         defer { isLoading = false }
@@ -83,6 +83,7 @@ final class SlideshowListViewModel {
 
 // Bad — ViewModel holds a repository directly, bypassing the use case layer
 @Observable
+@MainActor
 final class SlideshowListViewModel {
     private let repository: any SlideRepositoryProtocol   // NG: always use use cases
 }
@@ -159,13 +160,43 @@ final class ImageLoadingViewModel {
 }
 ```
 
+## Factory closures for ViewModel creation
+
+When a View needs to create a ViewModel with runtime parameters (e.g., a selected item), inject a factory closure from the DI container rather than constructing the ViewModel directly.
+
+```swift
+struct ContentView: View {
+    private let makeSlideshowPlayerViewModel: @MainActor @Sendable (SlideshowResponse) -> SlideshowPlayerViewModel
+
+    init(makeSlideshowPlayerViewModel: @escaping @MainActor @Sendable (SlideshowResponse) -> SlideshowPlayerViewModel) {
+        self.makeSlideshowPlayerViewModel = makeSlideshowPlayerViewModel
+    }
+}
+```
+
+## Response extensions for display formatting
+
+Display formatting on Response types belongs in `Views/` as `*+Presentation.swift` files. This keeps formatting logic in Presentation without polluting the UseCase layer.
+
+```swift
+// Views/SlideDuration+Presentation.swift
+extension SlideDurationResponse {
+    var displayLabel: String {
+        switch self {
+        case .five: return "5 sec"
+        ...
+        }
+    }
+}
+```
+
 ## Prohibitions
 
 - Never import `Domain/Entities`, `Domain/Services`, `Repositories`, `Infrastructure`, `SwiftData`, or `Photos` — route through use cases via Request/Response types
 - Never add business logic in a View or ViewModel — extract to a use case
 - Never use `Task {}` in `onAppear` when `.task` modifier can replace it
-- Never hold more than one primary use case's output in a single ViewModel — split ViewModels instead
-- Never put display formatting logic in a use case — formatting belongs here
+- Never mix unrelated feature outputs in a single ViewModel — multiple use cases serving one screen's cohesive function are fine; unrelated data flows are not
+- Never put display formatting logic in a use case — formatting belongs here (as Response extensions or ViewModel computed properties)
 - Never call a repository or domain service protocol method directly from a ViewModel
 - Never use `State(initialValue:)` for an externally injected ViewModel — use `let` or `@Bindable var`
 - Never use `.toDomain` computed properties — those are internal to the UseCase layer

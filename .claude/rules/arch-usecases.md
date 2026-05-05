@@ -38,7 +38,7 @@ protocol SyncUseCase<Request, Response>: Sendable {
 }
 ```
 
-Each use case's public contract is a typealias in `Protocols/`, not a standalone protocol:
+Each use case's public contract is a typealias in `Protocols/`, not a standalone protocol. Never replace these typealiases with standalone protocols — the base generic protocols (`AsyncUseCase`, `SyncUseCase`) already provide the contract; per-use-case protocols would duplicate it without benefit.
 
 ```swift
 // Protocols/CreateSlideshowUseCaseProtocol.swift

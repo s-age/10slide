@@ -1,4 +1,4 @@
-final class RepositoryContainer {
+final class RepositoryContainer: Sendable {
     let slideRepository: any SlideRepositoryProtocol
     let slideshowRepository: any SlideshowRepositoryProtocol
     let configRepository: any ConfigRepositoryProtocol
