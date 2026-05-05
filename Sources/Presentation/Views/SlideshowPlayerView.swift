@@ -23,7 +23,7 @@ struct SlideshowPlayerView: View {
 
             if viewModel.showFilmstrip {
                 FilmstripView(
-                    slides: viewModel.slideshow.slides,
+                    slides: viewModel.displayedSlides,
                     currentIndex: viewModel.currentIndex,
                     duration: viewModel.slideshow.config.duration,
                     transition: viewModel.slideshow.config.transition,
@@ -32,11 +32,13 @@ struct SlideshowPlayerView: View {
                     onDurationChange: { duration in Task { await viewModel.updateDuration(duration) } },
                     onTransitionChange: { transition in Task { await viewModel.updateTransition(transition) } },
                     isPlaying: viewModel.isPlaying,
+                    isShuffled: viewModel.isShuffled,
                     onPrevious: { Task { await viewModel.previous() } },
                     onPlayPause: {
                         if viewModel.isPlaying { viewModel.pause() } else { viewModel.play() }
                     },
-                    onNext: { Task { await viewModel.userDidNext() } }
+                    onNext: { Task { await viewModel.userDidNext() } },
+                    onToggleShuffle: { Task { await viewModel.toggleShuffle() } }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .onHover { hovering in

@@ -10,9 +10,11 @@ struct FilmstripView: View {
     let onDurationChange: (SlideDurationResponse) -> Void
     let onTransitionChange: (TransitionTypeResponse) -> Void
     let isPlaying: Bool
+    let isShuffled: Bool
     let onPrevious: () -> Void
     let onPlayPause: () -> Void
     let onNext: () -> Void
+    let onToggleShuffle: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -44,6 +46,10 @@ struct FilmstripView: View {
                 }
                 Button(action: onNext) {
                     Image(systemName: "forward.fill")
+                }
+                Button(action: onToggleShuffle) {
+                    Image(systemName: "shuffle")
+                        .foregroundStyle(isShuffled ? Color.accentColor : .primary)
                 }
             }
             .buttonStyle(.plain)

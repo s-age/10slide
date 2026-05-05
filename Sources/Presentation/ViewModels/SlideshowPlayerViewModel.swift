@@ -9,6 +9,12 @@ final class SlideshowPlayerViewModel {
     private(set) var currentIndex: Int = 0
     private(set) var currentNSImage: NSImage?
     private(set) var isPlaying: Bool = false
+    private(set) var isShuffled: Bool = false
+    private var shuffledSlides: [SlideResponse]?
+
+    var displayedSlides: [SlideResponse] {
+        shuffledSlides ?? slideshow.slides
+    }
     enum FullscreenHintType: Equatable {
         case enter
         case exit
@@ -46,14 +52,29 @@ final class SlideshowPlayerViewModel {
     }
 
     private var currentSlide: SlideResponse? {
-        guard !slideshow.slides.isEmpty, currentIndex < slideshow.slides.count else { return nil }
-        return slideshow.slides[currentIndex]
+        let slides = displayedSlides
+        guard !slides.isEmpty, currentIndex < slides.count else { return nil }
+        return slides[currentIndex]
+    }
+
+    // MARK: - Shuffle
+
+    func toggleShuffle() async {
+        if isShuffled {
+            isShuffled = false
+            shuffledSlides = nil
+        } else {
+            shuffledSlides = slideshow.slides.shuffled()
+            isShuffled = true
+        }
+        currentIndex = 0
+        await loadCurrentImage()
     }
 
     // MARK: - Playback
 
     func play() {
-        guard !slideshow.slides.isEmpty else { return }
+        guard !displayedSlides.isEmpty else { return }
         guard let duration = slideshow.config.duration.seconds else { return }
         isPlaying = true
         timerTask?.cancel()
@@ -86,7 +107,7 @@ final class SlideshowPlayerViewModel {
 
     func next() async {
         let request = AdvanceSlideRequest(
-            totalSlides: slideshow.slides.count,
+            totalSlides: displayedSlides.count,
             currentIndex: currentIndex,
             loop: slideshow.config.loop
         )
@@ -101,7 +122,7 @@ final class SlideshowPlayerViewModel {
 
     func previous() async {
         let request = PreviousSlideRequest(
-            totalSlides: slideshow.slides.count,
+            totalSlides: displayedSlides.count,
             currentIndex: currentIndex,
             loop: slideshow.config.loop
         )
@@ -114,7 +135,7 @@ final class SlideshowPlayerViewModel {
     }
 
     func jumpTo(index: Int) async {
-        guard index >= 0, index < slideshow.slides.count else { return }
+        guard index >= 0, index < displayedSlides.count else { return }
         currentIndex = index
         await loadCurrentImage()
         showFilmstripOverlay()
