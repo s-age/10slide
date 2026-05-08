@@ -46,10 +46,11 @@ The most dangerous bug in concurrent programs is a **data race**. When two threa
 
 ```swift
 // ✅ struct — automatically Sendable if all properties are Sendable
-struct SlideDTO: Sendable {
-    let id: UUID
+// (from Sources/Infrastructure/Image/DTO/ImageDTO.swift)
+struct ImageDTO: Sendable {
     let localIdentifier: String
-    let order: Int
+    let data: Data
+    let creationDate: Date?
 }
 ```
 
@@ -252,7 +253,7 @@ Task.detached {
 |-------------|----------|
 | Image loading directly tied to user action | `.userInitiated` |
 | Background file I/O | `.utility` |
-| Thumbnail prefetching | `.background` |
+| Thumbnail generation | `.userInitiated` |
 
 ---
 

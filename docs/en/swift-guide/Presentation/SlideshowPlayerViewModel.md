@@ -317,10 +317,15 @@ func loadCurrentImage(completion: @escaping (NSImage?) -> Void) {
 With `async/await`:
 
 ```swift
-// New style -- this file's approach
+// New style -- this file's approach (simplified; see Pitfall 2 for the full version with guards)
 func loadCurrentImage() async {
-    let data = try await loadSlideImage.execute(request)
-    currentNSImage = NSImage(data: data)
+    do {
+        let request = LoadSlideImageRequest(localIdentifier: slide.localIdentifier)
+        let data = try await loadSlideImage.execute(request)
+        currentNSImage = NSImage(data: data)
+    } catch {
+        currentNSImage = nil
+    }
 }
 ```
 

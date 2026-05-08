@@ -533,7 +533,8 @@ let config = SlideshowConfig(duration: .five, transition: .fade, loop: true)
 
 // Encode: Swift type → JSON
 let data = try JSONEncoder().encode(config)
-// {"duration":"five","transition":"fade","loop":true}
+// {"duration":"5","transition":"fade","loop":true}
+// ↑ SlideDuration.five has rawValue "5", so the JSON contains "5", not "five"
 
 // Decode: JSON → Swift type
 let restored = try JSONDecoder().decode(SlideshowConfig.self, from: data)
@@ -742,7 +743,7 @@ Here are two pitfalls drawn from issues that actually occurred during the develo
 #### What Happens
 
 When you keep adding methods to entities because "it's convenient," what should be a data container turns into a blob of business logic.
-In practice, `Slideshow` had methods `nextSlideIndex(from:)` and `previousSlideIndex(from:)`, but these could be computed from their arguments alone and did not depend on the entity's own state (`self`). Such methods belong in a Domain Service.
+In practice, `Slideshow` had methods for slide navigation, but these could be computed from their arguments alone and did not depend on the entity's own state (`self`). Such methods belong in a Domain Service.
 
 #### Decision Criteria
 
@@ -759,10 +760,12 @@ struct Slideshow {
     }
 }
 
-// ✅ Move to a Domain Service
-final class PlaybackDomainService {
-    func nextSlideIndex(from currentIndex: Int, totalSlides: Int) -> Int {
-        (currentIndex + 1) % totalSlides
+// ✅ Move to a Domain Service (actual code from PlaybackDomainService.swift)
+final class PlaybackDomainService: PlaybackDomainServiceProtocol, Sendable {
+    func nextIndex(totalSlides: Int, currentIndex: Int, loop: Bool) -> Int? {
+        guard totalSlides > 0 else { return nil }
+        if currentIndex < totalSlides - 1 { return currentIndex + 1 }
+        return loop ? 0 : nil
     }
 }
 ```

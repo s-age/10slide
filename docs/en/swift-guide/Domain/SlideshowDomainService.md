@@ -124,7 +124,7 @@ private let repository: any SlideshowRepositoryProtocol
 ### What Are the `any` Keyword and Existential Types?
 
 `any SlideshowRepositoryProtocol` is called an **existential type**.
-It represents "some type that satisfies `SlideshowRepositoryProtocol`." You don't need to write a specific type name (e.g., `SwiftDataSlideshowRepository`).
+It represents "some type that satisfies `SlideshowRepositoryProtocol`." You don't need to write a specific type name (e.g., `SlideshowRepository`).
 
 Since Swift 5.7, the `any` keyword must be explicitly added to "existential types of protocols" like this. This makes it clear to the reader that "an existential type of a protocol is being used here, not a concrete type."
 
@@ -140,7 +140,7 @@ Declaring with `let` makes it a **constant**. The `repository`, once set, cannot
 
 ```swift
 // NG -- Depends on a concrete type
-private let repository: SwiftDataSlideshowRepository
+private let repository: SlideshowRepository
 
 // OK -- Depends on a protocol
 private let repository: any SlideshowRepositoryProtocol
@@ -163,14 +163,14 @@ init(repository: any SlideshowRepositoryProtocol) {
 ### What Is Dependency Injection?
 
 It is a design pattern where the objects a class needs (= dependencies) are **provided from outside**.
-`SlideshowDomainService` does not create a `SwiftDataSlideshowRepository()` itself.
+`SlideshowDomainService` does not create a `SlideshowRepository()` itself.
 Instead, it receives "something that satisfies the protocol" as an `init` argument.
 
 ### Why Use Dependency Injection?
 
 | Situation | What to Pass |
 |------|---------|
-| Production environment | `SwiftDataSlideshowRepository` (the real DB) |
+| Production environment | `SlideshowRepository` (the real DB) |
 | Test environment | `MockSlideshowRepository` (an in-memory fake implementation) |
 
 Since the caller decides "what to pass," the behavior can be switched without any changes to `SlideshowDomainService` itself.
@@ -180,7 +180,7 @@ Since the caller decides "what to pass," the behavior can be switched without an
 ```swift
 // NG -- Creates a concrete implementation internally
 init() {
-    self.repository = SwiftDataSlideshowRepository()  // The real DB runs even during tests
+    self.repository = SlideshowRepository()  // The real DB runs even during tests
 }
 ```
 

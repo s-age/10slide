@@ -34,8 +34,8 @@ In 10slide, this manifested as a bug where "images loaded from the library were 
 
 ```swift
 // ❌ Assigning children before insert — children are not saved
-let model = SlideshowModel(id: dto.id, name: dto.name)
-model.slides = dto.slides.map { SlideModel(id: $0.id, ...) }  // Children are outside the context
+let model = SlideshowModel(id: id, name: name, ...)
+model.slides = slides.map { SlideModel(id: $0.id, ...) }  // Children are outside the context
 modelContext.insert(model)
 try modelContext.save()
 // → fetchAll() returns model.slides == []  (children are gone!)
@@ -45,10 +45,10 @@ try modelContext.save()
 
 ```swift
 // ✅ Insert parent → insert children → assign relationship
-let model = SlideshowModel(id: dto.id, name: dto.name)
+let model = SlideshowModel(id: id, name: name, ...)
 modelContext.insert(model)  // ① Register parent in context first
 
-let slideModels = dto.slides.map { SlideModel(id: $0.id, ...) }
+let slideModels = slides.map { SlideModel(id: $0.id, ...) }
 slideModels.forEach { modelContext.insert($0) }  // ② Register children in context too
 
 model.slides = slideModels  // ③ Assign while both are in the context
@@ -73,10 +73,12 @@ When you overwrite a `@Relationship` array with a new array, old child objects *
 
 ```swift
 // ❌ Old children remain in the DB (orphan records)
-func update(_ dto: SlideshowDTO) throws {
-    let existing = try fetchExisting(id: dto.id)
-    existing.slides = dto.slides.map { SlideModel(...) }  // Old SlideModels are not deleted
-    try modelContext.save()
+func update(_ slideshow: Slideshow, context: ModelContext) throws {
+    let id = slideshow.id
+    let descriptor = FetchDescriptor<SlideshowModel>(predicate: #Predicate { $0.id == id })
+    let existing = try context.fetch(descriptor).first!
+    existing.slides = slideshow.slides.map { SlideModel(...) }  // Old SlideModels are not deleted
+    try context.save()
 }
 ```
 
@@ -86,27 +88,32 @@ Each repeated save accumulates old `SlideModel` instances, bloating the database
 
 ```swift
 // ✅ Explicitly delete old children before setting new ones
-func save(_ dto: SlideshowDTO) throws {
-    let id = dto.id
-    let descriptor = FetchDescriptor<SlideshowModel>(predicate: #Predicate { $0.id == id })
+// (actual pattern from SlideshowRepository.save)
+func save(_ slideshow: Slideshow) async throws {
+    let id = slideshow.id
+    let slides = slideshow.slides
 
-    if let existing = try modelContext.fetch(descriptor).first {
-        // ① Delete all old children
-        existing.slides.forEach { modelContext.delete($0) }
+    try await store.write { context in
+        let descriptor = FetchDescriptor<SlideshowModel>(predicate: #Predicate { $0.id == id })
 
-        // ② Insert new children
-        let newSlides = dto.slides.map { SlideModel(id: $0.id, ...) }
-        newSlides.forEach { modelContext.insert($0) }
+        if let existing = try context.fetch(descriptor).first {
+            // ① Delete all old children
+            existing.slides.forEach { context.delete($0) }
 
-        // ③ Reassign the relationship
-        existing.slides = newSlides
-    } else {
-        // New creation path
-        let model = SlideshowModel(...)
-        modelContext.insert(model)
-        // ...(set up children in the correct order from Pattern 1)
+            // ② Insert new children
+            let newSlides = slides.map { SlideModel(id: $0.id, ...) }
+            newSlides.forEach { context.insert($0) }
+
+            // ③ Reassign the relationship
+            existing.slides = newSlides
+        } else {
+            // New creation path
+            let model = SlideshowModel(...)
+            context.insert(model)
+            // ...(set up children in the correct order from Pattern 1)
+        }
+        try context.save()
     }
-    try modelContext.save()
 }
 ```
 
@@ -156,7 +163,9 @@ final class SlideshowModel {
 
 ```bash
 # ✅ During development, delete the persistent store and recreate it
-rm ~/Library/Application\ Support/default.store
+# The actual path includes the app's bundle ID subdirectory, e.g.:
+rm -rf ~/Library/Application\ Support/com.example.TenSlide/default.store
+# Check your actual path in Console.app or by searching ~/Library/Application\ Support/
 ```
 
 ### Correct example (after production release)

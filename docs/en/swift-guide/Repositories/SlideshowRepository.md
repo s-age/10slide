@@ -381,7 +381,7 @@ By writing `[self]`, you declare "use `self` as it exists when the closure execu
 
 ```swift
 // Bad: Without [self]
-try await store.fetch(FetchDescriptor<SlideshowModel>()) { in slideshow(from: $0) }
+try await store.fetch(FetchDescriptor<SlideshowModel>()) { slideshow(from: $0) }
 // In Swift 6, you may get errors like "Capture of 'self' with non-sendable type"
 ```
 
@@ -430,7 +430,7 @@ try await store.write { context in
 
 ```swift
 // Without trailing closure (deeper nesting makes it harder to read)
-try await store.write(body: { context in
+try await store.write({ context in
     // ...
     try context.save()
 })
@@ -614,15 +614,18 @@ func save(_ slideshow: Slideshow) async throws {
 
 `Slideshow` conforms to `Sendable`, so it can be passed directly to a closure. However, across SwiftData's actor boundary, passing "raw values" is safer and simpler than accessing through `self` (`SlideshowRepository`). In particular, the `#Predicate` macro captures variables, so passing `Sendable` value types is the reliable approach.
 
-#### What If You Tried to Use `self.slideshow` Directly Without Copying
+#### What If You Tried to Use the Parameter Directly Without Copying
 
 ```swift
-// Bad: Trying to use self inside the closure
-try await store.write { context in
-    // #Predicate may not be able to capture self.slideshow.id
-    let descriptor = FetchDescriptor<SlideshowModel>(
-        predicate: #Predicate { $0.id == self.slideshow.id }  // Possible compile error
-    )
+// Bad: Trying to capture the function parameter directly in the @Sendable closure
+func save(_ slideshow: Slideshow) async throws {
+    try await store.write { context in
+        // #Predicate captures variables — referencing the function parameter directly
+        // may cause issues with @Sendable closure requirements
+        let descriptor = FetchDescriptor<SlideshowModel>(
+            predicate: #Predicate { $0.id == slideshow.id }  // Possible compile error
+        )
+    }
 }
 ```
 

@@ -118,7 +118,7 @@ func fetch<T: PersistentModel, R: Sendable>(
 ```swift
 // NG: A separate function must be written for each type (code duplication)
 func fetchSlides(_ descriptor: FetchDescriptor<SlideModel>) throws -> [Slide] { ... }
-func fetchConfigs(_ descriptor: FetchDescriptor<ConfigModel>) throws -> [Config] { ... }
+func fetchSlideshows(_ descriptor: FetchDescriptor<SlideshowModel>) throws -> [Slideshow] { ... }
 // Functions keep multiplying as models are added...
 ```
 
@@ -162,7 +162,7 @@ try await store.delete(SlideshowModel.self, where: #Predicate { $0.id == id })
 func delete<T: PersistentModel>(_ type: T.Type, where predicate: Predicate<T>) throws
 ```
 
-By using `Predicate<T>`, any condition expression that doesn't match the type causes a compile error. For example, you cannot pass a predicate for `SlideModel` to a deletion of `ConfigModel`.
+By using `Predicate<T>`, any condition expression that doesn't match the type causes a compile error. For example, you cannot pass a predicate for `SlideModel` to a deletion of `SlideshowModel`.
 
 ### What Would Happen Without It
 
@@ -330,20 +330,23 @@ As updates are repeated, orphan records accumulate in the database, bloating sto
 
 ```swift
 // ✅ Explicitly delete old children before inserting and associating new ones
-func save(_ dto: SlideshowDTO) throws {
-    let id = dto.id
-    let descriptor = FetchDescriptor<SlideshowModel>(
-        predicate: #Predicate { $0.id == id }
-    )
-    if let existing = try modelContext.fetch(descriptor).first {
-        existing.slides.forEach { modelContext.delete($0) }     // Delete old children
-        let newSlides = makeSlideModels(from: dto.slides)
-        newSlides.forEach { modelContext.insert($0) }           // Insert new children
-        existing.slides = newSlides                              // Establish relationship
-    } else {
-        // New creation path
+// (actual pattern from SlideshowRepository.save)
+func save(_ slideshow: Slideshow) async throws {
+    let id = slideshow.id
+    let slides = slideshow.slides
+
+    try await store.write { context in
+        let descriptor = FetchDescriptor<SlideshowModel>(predicate: #Predicate { $0.id == id })
+        if let existing = try context.fetch(descriptor).first {
+            existing.slides.forEach { context.delete($0) }          // Delete old children
+            let newSlides = slides.map { SlideModel(id: $0.id, ...) }
+            newSlides.forEach { context.insert($0) }                // Insert new children
+            existing.slides = newSlides                              // Establish relationship
+        } else {
+            // New creation path
+        }
+        try context.save()
     }
-    try modelContext.save()
 }
 ```
 

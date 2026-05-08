@@ -31,9 +31,9 @@ For example, `SlideshowPlayerViewModel` needs "the ability to load slide images.
 // ❌ Without DI — ViewModel creates its own dependencies
 class SlideshowPlayerViewModel {
     private let loader = LoadSlideImageUseCase(
-        domainService: ImageService(
+        domainService: ImageDomainService(
             repository: ImageRepository(
-                store: SwiftDataImageStore()
+                imageDataSource: ImageDataSource()
             )
         )
     )
@@ -42,8 +42,8 @@ class SlideshowPlayerViewModel {
 
 This has serious problems:
 
-- **Untestable** — `SwiftDataImageStore` connects to a real database, so it cannot be swapped out during testing
-- **Changes cascade** — If the initialization of `SwiftDataImageStore` changes, every place that uses it must be updated
+- **Untestable** — `ImageDataSource` connects to a real database, so it cannot be swapped out during testing
+- **Changes cascade** — If the initialization of `ImageDataSource` changes, every place that uses it must be updated
 - **Mixed responsibilities** — The ViewModel knows too much about "how to build things"
 
 With DI, the ViewModel simply "uses what it's given from outside."

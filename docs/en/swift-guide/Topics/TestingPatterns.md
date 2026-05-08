@@ -51,13 +51,14 @@ func testLoad_whenInvalidYAML_throws() async {
 ### When you want to verify the specific error type
 
 ```swift
-// ✅ Verify a specific error type
-func testLoad_whenFileNotFound_throwsConfigError() async {
+// ✅ Verify a specific error type (using actual error types from the codebase)
+func testDelete_whenNotFound_throwsDomainError() async {
+    let unknownID = UUID()
     do {
-        _ = try await sut.load()
-        XCTFail("Expected load() to throw ConfigError.fileNotFound")
-    } catch let error as ConfigError {
-        XCTAssertEqual(error, .fileNotFound)
+        _ = try await sut.delete(id: unknownID)
+        XCTFail("Expected delete() to throw DomainError.slideshowNotFound")
+    } catch let error as DomainError {
+        XCTAssertEqual(error, .slideshowNotFound(unknownID))
     } catch {
         XCTFail("Unexpected error type: \(error)")
     }
@@ -179,10 +180,20 @@ final class SlideshowPlayerViewModelTests: XCTestCase {
 
     override func setUp() {
         mockLoadSlideImage = MockLoadSlideImageUseCase()
+        // ... (other mocks initialized here)
         sut = SlideshowPlayerViewModel(
-            slideshow: testSlideshow,
+            slideshow: Self.makeSlideshow(
+                slides: [
+                    Self.makeSlide(identifier: "a", order: 0),
+                    Self.makeSlide(identifier: "b", order: 1),
+                    Self.makeSlide(identifier: "c", order: 2)
+                ],
+                loop: false
+            ),
             loadSlideImage: mockLoadSlideImage,
-            ...
+            updateSlideshowConfig: mockUpdateSlideshowConfig,
+            advanceSlide: mockAdvanceSlide,
+            previousSlide: mockPreviousSlide,
             filmstripHideDuration: .milliseconds(50)  // Short duration for fast tests
         )
     }
@@ -220,11 +231,12 @@ When a ViewModel has timer-driven features (auto-hide, auto-advance, etc.), test
 @Observable
 @MainActor
 final class SlideshowPlayerViewModel {
-    var showFilmstrip = true
+    private(set) var showFilmstrip = true
 
-    func startAutoHide() {
-        Task {
-            try await Task.sleep(for: .seconds(3))  // Test has to wait 3 seconds
+    private func scheduleHideFilmstrip() {
+        hideFilmstripTask = Task {
+            try? await Task.sleep(for: .seconds(3))  // Test has to wait 3 seconds
+            guard !Task.isCancelled else { return }
             showFilmstrip = false
         }
     }
@@ -233,8 +245,8 @@ final class SlideshowPlayerViewModel {
 
 ```swift
 // ❌ Test is slow
-func testAutoHide() async throws {
-    sut.startAutoHide()
+func testPlay_hidesFilmstripAfterDuration() async throws {
+    sut.play()
     try await Task.sleep(for: .seconds(4))  // Waiting 4 seconds...
     XCTAssertFalse(sut.showFilmstrip)
 }
@@ -244,10 +256,11 @@ func testAutoHide() async throws {
 
 ```swift
 // ✅ Make Duration an init parameter with a default value to preserve production behavior
+// (actual pattern from SlideshowPlayerViewModel)
 @Observable
 @MainActor
 final class SlideshowPlayerViewModel {
-    var showFilmstrip = true
+    private(set) var showFilmstrip = true
     private let filmstripHideDuration: Duration
 
     init(
@@ -257,9 +270,10 @@ final class SlideshowPlayerViewModel {
         self.filmstripHideDuration = filmstripHideDuration
     }
 
-    func startAutoHide() {
-        Task {
-            try await Task.sleep(for: filmstripHideDuration)
+    private func scheduleHideFilmstrip() {
+        hideFilmstripTask = Task {
+            try? await Task.sleep(for: filmstripHideDuration)
+            guard !Task.isCancelled else { return }
             showFilmstrip = false
         }
     }
@@ -268,13 +282,14 @@ final class SlideshowPlayerViewModel {
 
 ```swift
 // ✅ Inject a short Duration in tests — completes quickly
-func testAutoHide() async throws {
+// (actual pattern from SlideshowPlayerViewModelTests)
+func testPlay_hidesFilmstripAfterDuration() async throws {
     sut = SlideshowPlayerViewModel(
         ...,
         filmstripHideDuration: .milliseconds(50)  // Completes in 50ms
     )
 
-    sut.startAutoHide()
+    sut.play()
     try await Task.sleep(for: .milliseconds(100))  // Sufficient wait time
     XCTAssertFalse(sut.showFilmstrip)
 }

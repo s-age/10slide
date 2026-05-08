@@ -42,7 +42,7 @@ Presentation → UseCases → Domain/Services → Repositories → Infrastructur
 
 | Chapter | What You'll Learn |
 |---------|-------------------|
-| [Slide / Slideshow / SlideshowConfig / SlideDuration](Domain/Slide.md) | `struct`, `enum`, `Identifiable`, `Equatable`, `Sendable`, `CaseIterable`, factory methods |
+| [Slide / Slideshow / SlideshowConfig / SlideDuration / TransitionType](Domain/Slide.md) | `struct`, `enum`, `Identifiable`, `Equatable`, `Sendable`, `CaseIterable`, factory methods |
 | [SlideshowDomainService](Domain/SlideshowDomainService.md) | Domain Service pattern, calling Repository protocols |
 
 ### Repositories — Data Access Abstraction
@@ -55,7 +55,7 @@ Presentation → UseCases → Domain/Services → Repositories → Infrastructur
 
 | Chapter | What You'll Learn |
 |---------|-------------------|
-| [Container](DI/Container.md) | DI container, `Sendable` `final class`, cross-layer dependency resolution |
+| [Container](DI/Container.md) | DI container, `final class`, layer-by-layer dependency wiring |
 
 ### Infrastructure — External System Integration
 
