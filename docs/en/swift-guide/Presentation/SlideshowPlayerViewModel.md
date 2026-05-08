@@ -620,10 +620,14 @@ func play() {
     }
 }
 
-// 3. Stop the timer
+// 3. Stop the timer and reset UI state
 func pause() {
+    isPlaying = false
     timerTask?.cancel()
     timerTask = nil
+    hideFilmstripTask?.cancel()
+    hideFilmstripTask = nil
+    showFilmstrip = true
 }
 ```
 
@@ -695,9 +699,9 @@ struct SlideshowPlayerView: View {
     }
 }
 
-// GOOD -- Use @Bindable when bindings like $viewModel.prop are needed
+// GOOD -- Use @Bindable when bindings like $createViewModel.prop are needed
 struct LibraryPickerView: View {
-    @Bindable var viewModel: CreateSlideshowViewModel
+    @Bindable var createViewModel: CreateSlideshowViewModel
 }
 ```
 

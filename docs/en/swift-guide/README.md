@@ -29,7 +29,7 @@ Presentation → UseCases → Domain/Services → Repositories → Infrastructur
 
 | Chapter | What You'll Learn |
 |---------|-------------------|
-| [SlideshowPlayerView](Presentation/SlideshowPlayerView.md) | SwiftUI view composition, `@State`, `ForEach`, `.task`, gesture handling |
+| [SlideshowPlayerView](Presentation/SlideshowPlayerView.md) | SwiftUI view composition, `ZStack`/`HStack`, `.task`, gesture handling, `@ViewBuilder`, transitions |
 | [SlideshowPlayerViewModel](Presentation/SlideshowPlayerViewModel.md) | `@Observable`, `@MainActor`, `async/await`, `Task` management |
 
 ### UseCases — Use Cases

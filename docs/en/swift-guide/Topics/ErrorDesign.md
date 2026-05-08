@@ -171,7 +171,7 @@ func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowRespons
         config: config
     )
     return SlideshowResponse(from: slideshow)
-    // DomainError.slideshowNotFound propagates directly to the caller
+    // DomainError (e.g. .slideshowNotFound) propagates directly without conversion
 }
 ```
 

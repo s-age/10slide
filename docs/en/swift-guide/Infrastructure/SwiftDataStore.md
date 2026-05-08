@@ -31,7 +31,7 @@ actor SwiftDataStore: SwiftDataStoreProtocol {
 }
 ```
 
-This is a simple file of only 22 lines, but it is packed with important Swift concepts. Let's read through them one by one.
+This is a simple file of only 21 lines, but it is packed with important Swift concepts. Let's read through them one by one.
 
 ---
 
@@ -428,4 +428,4 @@ let data: Data = try await withCheckedThrowingContinuation { continuation in
 | `ModelContext` | The "workbench" that handles all SwiftData reads and writes |
 | `throws` | A mechanism for propagating function errors to the caller |
 
-This file is only 22 lines long, but it is packed with the core concepts of modern Swift programming: "thread safety," "type generalization," and "error propagation." Once you understand these concepts, you will be able to read much of the data persistence code written in Swift.
+This file is only 21 lines long, but it is packed with the core concepts of modern Swift programming: "thread safety," "type generalization," and "error propagation." Once you understand these concepts, you will be able to read much of the data persistence code written in Swift.

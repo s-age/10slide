@@ -152,7 +152,6 @@ func loadCurrentImage() async {
 
 ```swift
 // ✅ Snapshot the index before await, then verify after every await
-@MainActor
 func loadCurrentImage() async {
     guard let slide = currentSlide else { currentNSImage = nil; return }
     let expectedIndex = currentIndex  // ① Take a snapshot

@@ -511,11 +511,11 @@ let vm = container.presentation.makeSlideshowPlayerViewModel(slideshow: slidesho
 `@MainActor` methods can also be passed around as closures.
 
 ```swift
-// Expressing the type of makePlayerViewModel as a closure:
+// Expressing the type of makeSlideshowPlayerViewModel as a closure:
 // @MainActor @Sendable (SlideshowResponse) -> SlideshowPlayerViewModel
 
 // Pass only "the method for creating ViewModels" to the View (not the entire container)
-let factory: @MainActor (SlideshowResponse) -> SlideshowPlayerViewModel
+let factory: @MainActor @Sendable (SlideshowResponse) -> SlideshowPlayerViewModel
     = container.presentation.makeSlideshowPlayerViewModel
 ```
 
@@ -544,7 +544,7 @@ In environments with Swift 6's strict concurrency checking enabled, passing a DI
 
 ```
 warning: converting non-Sendable function value to
-'@MainActor @Sendable (Slideshow) -> SlideshowPlayerViewModel' may introduce data races
+'@MainActor @Sendable (SlideshowResponse) -> SlideshowPlayerViewModel' may introduce data races
 ```
 
 In this project, `ContentView` was designed to receive factory methods from `PresentationContainer` as closures, and this warning occurred because `PresentationContainer` was not `Sendable`.

@@ -696,12 +696,9 @@ Using the `.task { }` modifier ensures the task is **automatically cancelled** w
     viewModel.play()
 }
 
-// GOOD -- Cancels the previous task and re-runs whenever currentImage changes
-.task(id: viewModel.currentImage) {
-    guard let data = viewModel.currentImage else { return }
-    decodedImage = await Task.detached(priority: .userInitiated) {
-        NSImage(data: data)
-    }.value
+// GOOD -- Cancels the previous task and re-runs whenever currentIndex changes
+.task(id: viewModel.currentIndex) {
+    await viewModel.loadCurrentImage()
 }
 ```
 

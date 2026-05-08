@@ -384,4 +384,4 @@ final class SlideshowDomainService: SlideshowDomainServiceProtocol, Sendable {
 | Domain Service | Gathers business rules in one place, making "why it behaves this way" clear |
 
 These concepts form the fundamental patterns for writing **safe, changeable, and testable** code in Swift.
-This file is only 46 lines long, but every single line has a reason behind "why it is written that way."
+This file is only 45 lines long, but every single line has a reason behind "why it is written that way."

@@ -58,10 +58,11 @@ func testUpdate_whenNotFound_throwsDomainError() async {
     do {
         _ = try await sut.update(id: unknownID, name: "x", localIdentifiers: ["a"])
         XCTFail("Expected update() to throw DomainError.slideshowNotFound")
-    } catch let error as DomainError {
-        XCTAssertEqual(error, .slideshowNotFound(unknownID))
     } catch {
-        XCTFail("Unexpected error type: \(error)")
+        guard case DomainError.slideshowNotFound(let id) = error else {
+            return XCTFail("Unexpected error type: \(error)")
+        }
+        XCTAssertEqual(id, unknownID)
     }
 }
 ```
