@@ -185,6 +185,8 @@ By grouping them into a Request type:
 - `validate()` lets you write input validation in one place
 - Anyone reading the code can see at a glance "what's needed for this operation"
 
+> **Important**: `validate()` is **not** called inside `execute()` itself. It is called by the `ValidationAsyncUseCaseDecorator` that wraps the use case in the DI container. This means validation is automatically applied to every use case without the use case needing to call `validate()` explicitly. See [DI/Container.md](../DI/Container.md) for how this decorator wrapping works.
+
 ### File: `SlideshowResponse.swift`
 
 ```swift

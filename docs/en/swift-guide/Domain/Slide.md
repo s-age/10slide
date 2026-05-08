@@ -11,6 +11,7 @@
 | `Sources/Domain/Entities/Slide.swift` | Entity | Represents a single slide that makes up a slideshow |
 | `Sources/Domain/Entities/Slideshow.swift` | Entity | Represents an entire slideshow including a collection of slides and its settings |
 | `Sources/Domain/Entities/SlideshowConfig.swift` | Value Object | Represents slideshow playback settings (duration, transition, loop) |
+| `Sources/Domain/Entities/SlideDuration.swift` | Enum Variant Set | Represents slide display durations (5s, 10s, ... 60s, manual) |
 | `Sources/Domain/Entities/TransitionType.swift` | Enum Variant Set | Represents the types of slide transition animations |
 
 These files belong to the **Domain layer**. The Domain layer is where the app's business rules are expressed as pure Swift types. It depends on neither UI nor I/O -- it is, so to speak, the "heart of the app."
@@ -93,6 +94,34 @@ struct SlideshowConfig: Equatable, Sendable, Codable {
     )
 }
 ```
+
+### SlideDuration.swift
+
+```swift
+import Foundation
+
+enum SlideDuration: String, Equatable, Sendable, CaseIterable, Codable {
+    case five = "5"
+    case ten = "10"
+    case fifteen = "15"
+    case thirty = "30"
+    case sixty = "60"
+    case manual
+
+    var seconds: TimeInterval? {
+        switch self {
+        case .five: return 5
+        case .ten: return 10
+        case .fifteen: return 15
+        case .thirty: return 30
+        case .sixty: return 60
+        case .manual: return nil
+        }
+    }
+}
+```
+
+> **Note**: `SlideDuration.seconds` returns `TimeInterval?` (Optional). The `manual` case returns `nil` because manual mode has no fixed duration — the user advances slides manually. This is why code like `config.duration.seconds ?? 0` uses nil-coalescing and `guard let duration = config.duration.seconds else { return }` uses optional binding.
 
 ### TransitionType.swift
 

@@ -126,30 +126,27 @@ With generics, a single `fetch` function handles all models.
 
 ---
 
-## 4. `where` Clause -- Additional Constraints on Generics
+## 4. `T.Type` -- Metatype Parameters
 
 ### Definition
 
-The `where` clause is syntax for adding **additional constraints** to generics.
+`T.Type` is a **metatype** — a value that represents a type itself, not an instance of that type. It lets you pass a type as a function argument.
 
 ### How It Is Used in This File
-
-Take a close look at the `delete` function.
 
 ```swift
 func delete<T: PersistentModel>(_ type: T.Type, where predicate: Predicate<T>) throws
 ```
 
-Here, `where` is used as an argument label, but let's also supplement with an example of the `where` clause as a generic constraint. In Swift, you can write:
+The first parameter `type: T.Type` tells the function **which model type to delete**. The caller passes the type literal (e.g., `SlideshowModel.self`), and the compiler infers `T` from it.
 
 ```swift
-// Example of a where clause on generics (writing the constraint at the end)
-func process<T>(_ items: [T]) where T: Equatable & Hashable {
-    // T must be both Equatable and Hashable
-}
+// Caller (in SlideshowRepository):
+try await store.delete(SlideshowModel.self, where: #Predicate { $0.id == id })
+//                      ↑ T = SlideshowModel is inferred from this
 ```
 
-`<T: PersistentModel>` and `where T: PersistentModel` mean the same thing, but the `where` clause is convenient when combining multiple conditions.
+> **Note**: `where` in this function signature is an **argument label**, not a generic `where` clause. It simply makes the call site read naturally: `delete(SlideshowModel.self, where: somePredicate)`.
 
 ---
 
@@ -364,6 +361,8 @@ try modelContext.save()
 ---
 
 ### Pitfall 3: Do Not Use `.opportunistic` for PHImageManager's deliveryMode
+
+> **Note**: This pitfall relates to `Sources/Infrastructure/Image/ImageDataSource.swift`, not `SwiftDataStore.swift`. It is included here because it is a common Infrastructure-layer gotcha involving SwiftData-adjacent patterns (continuation safety).
 
 #### What Happens
 

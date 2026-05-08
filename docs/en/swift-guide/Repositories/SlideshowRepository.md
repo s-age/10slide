@@ -133,6 +133,24 @@ final class SlideshowRepository: SlideshowRepositoryProtocol { ... }
 
 The Domain and UseCases layers simply say "please fetch the slideshows." They don't need to know where the data is stored -- whether it's SwiftData, a file, or the network. The Repository bridges that gap.
 
+#### About `any SwiftDataStoreProtocol`
+
+```swift
+private let store: any SwiftDataStoreProtocol
+```
+
+The `any` keyword marks this as an **existential type** — "a box that can hold any type conforming to `SwiftDataStoreProtocol`." This allows the Repository to work with any implementation of the store (e.g., a real `SwiftDataStore` in production, or a mock in tests) without knowing the concrete type.
+
+#### About `@Relationship(deleteRule: .cascade)`
+
+The `SlideshowModel` (defined in `Repositories/Models/`) uses:
+
+```swift
+@Relationship(deleteRule: .cascade, inverse: \SlideModel.slideshow) var slides: [SlideModel]
+```
+
+This means: when a `SlideshowModel` is **deleted**, all its child `SlideModel`s are automatically deleted too. That's why the `delete(id:)` method only needs `store.delete(SlideshowModel.self, ...)` without manually deleting children. However, `cascade` does **not** trigger on relationship **reassignment** — that's why `save()` explicitly calls `context.delete($0)` on old slides before assigning new ones.
+
 #### What If the Repository Pattern Weren't Used
 
 ```swift

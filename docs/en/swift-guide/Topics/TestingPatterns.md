@@ -11,7 +11,7 @@ Testing code that uses Swift's async features or SwiftData has several pitfalls 
 | Testing challenge | Symptom | Resolution pattern |
 |-------------------|---------|-------------------|
 | `XCTAssertThrowsError` doesn't work with async | Compile error | `do/catch` + `XCTFail` pattern |
-| `@Model` test fixtures are heavy | `ModelContainer` setup required | Create `@Model` directly without a context |
+| Repository tests need real SwiftData | `ModelContainer` setup required | In-memory `ModelContainer` + real `SwiftDataStore` |
 | Unclear how to test `@ModelActor` | Can't distinguish unit from integration | Use protocol mocks vs in-memory containers |
 | Timer-based ViewModel tests are slow | Must wait for production `Duration` | Parameterize `Duration` for shorter waits |
 
@@ -72,133 +72,106 @@ func testLoad_whenFileNotFound_throwsConfigError() async {
 
 ---
 
-## 2. @Model Instances Can Be Created Without a ModelContext — Lightweight Test Fixtures
+## 2. Repository Tests Use Real SwiftDataStore with In-Memory Containers
 
 ### Problem
 
-Setting up a `ModelContainer` + `ModelContext` for every test that uses `@Model` makes tests heavy. In fact, `@Model` instances can be created and manipulated **without a context**.
+In 10slide, Repositories depend on `SwiftDataStoreProtocol` (a `@ModelActor` actor). How should they be tested? Since the Repository's core logic involves building `FetchDescriptor`s and `#Predicate` expressions — which only work with real SwiftData — **Repository tests are integration tests** that use a real `SwiftDataStore` with an in-memory `ModelContainer`.
 
-### Why does it work?
-
-The `@Model` macro internally generates a backing storage called `_$backingData`. This operates in-memory even without a context. Persistence operations (save/fetch) require a context, but reading and writing properties and assigning relationships work entirely in-memory.
-
-### Incorrect example
+### Actual test pattern (from `SlideshowRepositoryTests`)
 
 ```swift
-// ❌ Setting up ModelContainer for every unit test — overkill
-func setUp() async throws {
-    let schema = Schema([SlideshowModel.self, SlideModel.self])
-    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-    let container = try ModelContainer(for: schema, configurations: [config])
-    let context = ModelContext(container)
-
-    let model = SlideshowModel(id: UUID(), name: "Test")
-    context.insert(model)
-    try context.save()
-    // ... this is integration test setup
-}
-```
-
-### Correct example
-
-```swift
-// ✅ Create @Model fixtures without a context (for unit tests)
-func setUp() {
-    let model = SlideshowModel(id: UUID(), name: "Test")
-    model.slides = [
-        SlideModel(id: UUID(), localIdentifier: "slide-1", order: 0, duration: 3.0),
-        SlideModel(id: UUID(), localIdentifier: "slide-2", order: 1, duration: 5.0),
-    ]
-
-    // Can be passed directly to mock data sources
-    mockDataSource.fetchAllResult = [model]
-}
-```
-
-### When is a ModelContainer needed?
-
-| Test type | ModelContainer | Purpose |
-|-----------|---------------|---------|
-| Unit test (Repository, etc.) | **Not needed** | Just pass fixtures to the mock |
-| Integration test (DataSource, etc.) | **Needed** (in-memory) | Verify actual save/fetch behavior |
-
-### Rules
-
-- In unit tests, create `@Model` instances directly without a context
-- Assigning relationship arrays (`model.slides = [...]`) also works without a context
-- However, inverse relationships (`slide.slideshow`) are only auto-populated within a context — in tests, only verify the direction you explicitly set
-
----
-
-## 3. @ModelActor Testing Strategy — Unit Tests vs Integration Tests
-
-### Problem
-
-How should `@ModelActor`-based data sources be tested? The strategy differs between testing the data source itself and testing the Repository that uses it.
-
-### Integration test: Verify actual persistence with an in-memory ModelContainer
-
-To verify the data source's correctness, you need an actual `ModelContainer`. Use an **in-memory configuration** so that data does not persist between tests.
-
-```swift
-// ✅ Integration test — verify the data source's actual behavior
-final class SlideshowDataSourceTests: XCTestCase {
+final class SlideshowRepositoryTests: XCTestCase {
+    private var sut: SlideshowRepository!
+    private var store: SwiftDataStore!
     private var container: ModelContainer!
-    private var sut: SlideshowDataSource!
 
     override func setUp() async throws {
         let schema = Schema([SlideshowModel.self, SlideModel.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         container = try ModelContainer(for: schema, configurations: [config])
-        sut = SlideshowDataSource(modelContainer: container)
+        store = SwiftDataStore(modelContainer: container)
+        sut = SlideshowRepository(store: store)
     }
 
-    func testSaveAndFetchAll() async throws {
-        let dto = SlideshowDTO(id: UUID(), name: "Test", slides: [])
-        try await sut.save(dto)
-
-        let results = try await sut.fetchAll()
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first?.name, "Test")
+    func testFetchAll_onEmpty_returnsEmptyArray() async throws {
+        let result = try await sut.fetchAll()
+        XCTAssertEqual(result.count, 0)
     }
 }
 ```
 
-### Unit test: Eliminate SwiftData with protocol mocks
+### When to use each approach
 
-In Repository tests, mock the data source protocol to completely eliminate the SwiftData dependency.
+| Test target | Strategy | SwiftData dependency |
+|-------------|----------|---------------------|
+| `SwiftDataStore` (Infrastructure) | Integration — in-memory `ModelContainer` | Real |
+| Repository | Integration — real `SwiftDataStore` + in-memory container | Real |
+| UseCase | Unit test — mock the Repository protocol | None |
+| ViewModel | Unit test — mock the UseCase protocol | None |
+
+### Rules
+
+- Repository tests are **integration tests** — they use a real `SwiftDataStore` because `FetchDescriptor` and `#Predicate` only work with real SwiftData
+- Always use `isStoredInMemoryOnly: true` — on-disk stores leak state between tests
+- Set `sut`, `store`, and `container` to `nil` in `tearDown()` to prevent state leaks
+
+---
+
+## 3. UseCase and ViewModel Testing — Protocol Mocks
+
+### Problem
+
+UseCases depend on Domain Services, and ViewModels depend on UseCases. How do you test them without pulling in the entire dependency chain?
+
+### Pattern: Mock at the protocol boundary
+
+Each layer defines a protocol for its dependencies. In tests, create a `Mock*` class that implements the protocol with configurable return values and call counters.
 
 ```swift
-// ✅ Unit test — mock the data source
-final class MockSlideshowDataSource: SlideshowDataSourceProtocol, @unchecked Sendable {
-    var fetchAllResult: [SlideshowDTO] = []
-    var saveCallCount = 0
+// ✅ Mock for an async use case (from actual test code)
+final class MockLoadSlideImageUseCase: AsyncUseCase, @unchecked Sendable {
+    var executeResult: Data = Data()
+    var executeCallCount = 0
 
-    func fetchAll() async throws -> [SlideshowDTO] {
-        fetchAllResult
-    }
-
-    func save(_ dto: SlideshowDTO) async throws {
-        saveCallCount += 1
+    func execute(_ request: LoadSlideImageRequest) async throws -> Data {
+        executeCallCount += 1
+        return executeResult
     }
 }
+```
 
-final class SlideshowRepositoryTests: XCTestCase {
-    private var mockDataSource: MockSlideshowDataSource!
-    private var sut: SlideshowRepository!
+```swift
+// ✅ Mock for a sync use case
+final class MockAdvanceSlideUseCase: SyncUseCase, @unchecked Sendable {
+    var executeResult: Int? = 1
+    var executeCallCount = 0
+
+    func execute(_ request: AdvanceSlideRequest) throws -> Int? {
+        executeCallCount += 1
+        return executeResult
+    }
+}
+```
+
+### ViewModel tests require `@MainActor`
+
+ViewModels are annotated `@MainActor`, so test classes that create and interact with them must also be `@MainActor`:
+
+```swift
+@MainActor
+final class SlideshowPlayerViewModelTests: XCTestCase {
+    private var mockLoadSlideImage: MockLoadSlideImageUseCase!
+    private var sut: SlideshowPlayerViewModel!
 
     override func setUp() {
-        mockDataSource = MockSlideshowDataSource()
-        sut = SlideshowRepository(dataSource: mockDataSource)
-    }
-
-    func testFetchAll_returnsConvertedEntities() async throws {
-        mockDataSource.fetchAllResult = [
-            SlideshowDTO(id: UUID(), name: "Test", slides: [])
-        ]
-
-        let results = try await sut.fetchAll()
-        XCTAssertEqual(results.count, 1)
+        mockLoadSlideImage = MockLoadSlideImageUseCase()
+        sut = SlideshowPlayerViewModel(
+            slideshow: testSlideshow,
+            loadSlideImage: mockLoadSlideImage,
+            ...
+            filmstripHideDuration: .milliseconds(50)  // Short duration for fast tests
+        )
     }
 }
 ```
@@ -207,16 +180,17 @@ final class SlideshowRepositoryTests: XCTestCase {
 
 | Test target | Test type | SwiftData dependency | Mock target |
 |-------------|----------|---------------------|-------------|
-| DataSource (Infrastructure) | Integration test | In-memory ModelContainer | None |
-| Repository | Unit test | None | DataSource protocol |
-| UseCase | Unit test | None | Repository protocol |
+| `SwiftDataStore` (Infrastructure) | Integration test | In-memory `ModelContainer` | None |
+| Repository | Integration test | In-memory `ModelContainer` + real store | None |
+| UseCase | Unit test | None | Domain Service protocol |
 | ViewModel | Unit test | None | UseCase protocol |
 
 ### Rules
 
-- Always use `isStoredInMemoryOnly: true` in integration tests — on-disk stores leak state between tests
-- Do not mock `@Model` classes directly — mock at the DTO protocol level
-- When sharing the same `ModelContainer` across test methods, reset data at the beginning of each test
+- Mock at the protocol boundary — never mock concrete classes
+- Use `@unchecked Sendable` only on mock types where mutation is controlled by test setup
+- ViewModel test classes must be annotated `@MainActor`
+- Both `AsyncUseCase` and `SyncUseCase` mocks are needed (the codebase uses both)
 
 ---
 
@@ -314,13 +288,14 @@ func testAutoHide() async throws {
 | Pattern | Problem | Solution |
 |---------|---------|----------|
 | `do/catch` + `XCTFail` | `XCTAssertThrowsError` does not support async | `do { try await ...; XCTFail() } catch { }` |
-| Context-free `@Model` | Test fixture setup is heavy | `@Model` can be created without a context |
-| Protocol mock | How to unit test `@ModelActor` | Mock at the DTO protocol level |
-| In-memory ModelContainer | How to integration test `@ModelActor` | `isStoredInMemoryOnly: true` |
+| In-memory `ModelContainer` | Repository tests need real SwiftData | `isStoredInMemoryOnly: true` + real `SwiftDataStore` |
+| Protocol mock | UseCase/ViewModel unit tests | Mock at the protocol boundary with call counters |
+| `@MainActor` test class | ViewModel tests require main actor | Annotate test class with `@MainActor` |
 | Duration parameterization | Timer-based ViewModel tests are slow | `init` parameter + default value |
 
 ### Principles
 
-1. **Do not touch SwiftData in unit tests** — eliminate dependencies with protocol mocks
-2. **Run integration tests in-memory** — prevent disk state from contaminating tests
-3. **Inject Duration for time-dependent tests** — achieve both speed and reliability
+1. **Repository tests are integration tests** — they need real SwiftData because `FetchDescriptor` and `#Predicate` only work with it
+2. **UseCase and ViewModel tests are unit tests** — eliminate dependencies with protocol mocks
+3. **Run integration tests in-memory** — prevent disk state from contaminating tests
+4. **Inject Duration for time-dependent tests** — achieve both speed and reliability

@@ -242,7 +242,7 @@ do {
 
 This single line contains three elements.
 
-**`var body`**: A mutable property (though in practice it's only recomputed, not mutated from outside). It's required because the `App` protocol demands "provide a `body` property."
+**`var body`**: A **computed property** — it has no stored value but is recalculated each time it is accessed. `var` is used because computed properties require `var` in Swift (they cannot be `let`). It's required because the `App` protocol demands "provide a `body` property."
 
 **`Scene`**: A protocol representing an app's screen (such as window groups). Windows, menu bars, and similar elements in macOS apps are types of `Scene`.
 

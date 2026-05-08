@@ -29,20 +29,20 @@ Presentation → UseCases → Domain/Services → Repositories → Infrastructur
 
 | Chapter | What You'll Learn |
 |---------|-------------------|
-| [SlideshowPlayerView](Presentation/SlideshowPlayerView.md) | SwiftUI view composition, `@Bindable`, `@State`, `ForEach`, `.task` |
+| [SlideshowPlayerView](Presentation/SlideshowPlayerView.md) | SwiftUI view composition, `@State`, `ForEach`, `.task`, gesture handling |
 | [SlideshowPlayerViewModel](Presentation/SlideshowPlayerViewModel.md) | `@Observable`, `@MainActor`, `async/await`, `Task` management |
 
 ### UseCases — Use Cases
 
 | Chapter | What You'll Learn |
 |---------|-------------------|
-| [CreateSlideshowUseCase](UseCases/CreateSlideshowUseCase.md) | UseCase pattern, Request/Response, `protocol` and `any` |
+| [CreateSlideshowUseCase](UseCases/CreateSlideshowUseCase.md) | UseCase pattern, Request/Response, `typealias` with `any`, generics |
 
 ### Domain — Business Logic
 
 | Chapter | What You'll Learn |
 |---------|-------------------|
-| [Slide / Slideshow / SlideshowConfig](Domain/Slide.md) | `struct`, `enum`, `Identifiable`, `Equatable`, `Sendable`, `Codable`, factory methods |
+| [Slide / Slideshow / SlideshowConfig / SlideDuration](Domain/Slide.md) | `struct`, `enum`, `Identifiable`, `Equatable`, `Sendable`, `CaseIterable`, factory methods |
 | [SlideshowDomainService](Domain/SlideshowDomainService.md) | Domain Service pattern, calling Repository protocols |
 
 ### Repositories — Data Access Abstraction
@@ -61,7 +61,7 @@ Presentation → UseCases → Domain/Services → Repositories → Infrastructur
 
 | Chapter | What You'll Learn |
 |---------|-------------------|
-| [SwiftDataStore](Infrastructure/SwiftDataStore.md) | `@ModelActor`, generics, `Predicate`, SwiftData CRUD operations |
+| [SwiftDataStore](Infrastructure/SwiftDataStore.md) | `@ModelActor`, generics, `@Sendable` closures, SwiftData operations |
 
 ---
 

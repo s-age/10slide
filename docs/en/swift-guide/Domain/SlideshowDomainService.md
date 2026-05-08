@@ -332,16 +332,17 @@ Here is a pitfall from an issue that actually occurred during the development of
 
 If a Domain Service method only "transforms an entity and returns it" without calling `repository.save()`, callers (UseCases) can forget to save, resulting in bugs.
 
-In this project, `PlaybackDomainService.applyConfig` only returned a `Slideshow` with the modified settings without calling `repository.save()`. On screen, the update appeared to be reflected, but when the app was restarted, the settings had reverted to their original values.
+In an earlier iteration of this project, a Domain Service method only returned a transformed entity without calling `repository.save()`. On screen, the update appeared to be reflected (the ViewModel held the new value in memory), but when the app was restarted, the settings had reverted to their original values.
 
 ```swift
 // ❌ Only transforms and returns (leaves saving to the caller)
-final class PlaybackDomainService {
-    func applyConfig(to slideshow: Slideshow, config: SlideshowConfig) -> Slideshow {
-        slideshow.applying(config: config)
-        // Does not call repository.save()!
-        // → If the caller forgets to save, data is lost on restart
+func updateConfig(id: UUID, config: SlideshowConfig) async throws -> Slideshow {
+    guard let existing = try await repository.fetch(id: id) else {
+        throw DomainError.slideshowNotFound(id)
     }
+    return existing.applying(config: config)
+    // Does not call repository.save()!
+    // → If the caller forgets to save, data is lost on restart
 }
 ```
 

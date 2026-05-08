@@ -14,7 +14,7 @@
 4. [`final class` — Non-Inheritable Class](#4-final-class--non-inheritable-class)
 5. [`private(set)` — Externally Read-Only Properties](#5-privateset--externally-read-only-properties)
 6. [Nested `enum` (FullscreenHintType)](#6-nested-enum-fullscreenhinttype)
-7. [`any Protocol` — Existential Type](#7-any-protocol--existential-type)
+7. [Protocol Typealiases — Existential Types via `typealias`](#7-protocol-typealiases--existential-types-via-typealias)
 8. [`async` / `await` — Asynchronous Processing](#8-async--await--asynchronous-processing)
 9. [`Task { }` / `Task.isCancelled` — Structured Concurrency](#9-task---taskiscancelled--structured-concurrency)
 10. [`Task.sleep(for:)` — Async Sleep](#10-tasksleepfor--async-sleep)
@@ -43,8 +43,12 @@ It enables automatic redrawing of SwiftUI views when ViewModel properties (`isPl
 You would need to fall back to the older `ObservableObject` + `@Published` combination (discussed later).
 
 ```swift
+import AppKit       // NSImage for decoded images
+import Foundation   // UUID, Data, etc.
 import Observation  // <- Without this, @Observable cannot be used
 ```
+
+> **Note**: This ViewModel imports `AppKit` because it holds `NSImage?` directly. The architecture rules explicitly allow `AppKit` in the Presentation layer (`Sources/Presentation/`).
 
 ---
 
@@ -214,39 +218,57 @@ private(set) var fullscreenHint: FullscreenHintType? = nil
 
 ---
 
-## 7. `any Protocol` — Existential Type
+## 7. Protocol Typealiases — Existential Types via `typealias`
 
 ### What It Is
 
-The `any` in `any LoadSlideImageUseCaseProtocol` means "a box that can hold **any type** conforming to this protocol." This is called an **existential type**. Since Swift 5.7, `any` must be written explicitly for existential types.
+An **existential type** (`any Protocol`) means "a box that can hold any type conforming to this protocol." Since Swift 5.7, `any` must be written explicitly. However, in this project, UseCase protocols are defined as **typealiases that already embed `any`**:
+
+```swift
+// Sources/UseCases/Protocols/LoadSlideImageUseCaseProtocol.swift
+typealias LoadSlideImageUseCaseProtocol = any AsyncUseCase<LoadSlideImageRequest, Data>
+```
+
+Because the `any` is already inside the typealias, the ViewModel code does **not** write `any` explicitly:
+
+```swift
+// The actual code — no `any` needed because the typealias includes it
+private let loadSlideImage: LoadSlideImageUseCaseProtocol
+private let updateSlideshowConfig: UpdateSlideshowConfigUseCaseProtocol
+private let advanceSlide: AdvanceSlideUseCaseProtocol
+private let previousSlide: PreviousSlideUseCaseProtocol
+```
 
 ### Why It Is Used Here
 
 The ViewModel needs "image loading functionality" but **does not need to know the specific implementation**. By depending on a protocol (a contract) rather than a concrete type, you can pass in a mock (fake) during testing and a real implementation in production. This is called **dependency injection**.
 
-### Difference Without `any`
-
-Before Swift 5.6, omitting `any` did not cause an error, but since Swift 5.7, adding `any` to existential types is recommended (and will become required in the future). Writing it explicitly communicates to readers that "an existential type, not a concrete type, is being used here."
+### How the Typealias Pattern Works
 
 ```swift
-// The ViewModel does not know the specific implementation class
-private let loadSlideImage: any LoadSlideImageUseCaseProtocol
-private let updateSlideshowConfig: any UpdateSlideshowConfigUseCaseProtocol
-private let advanceSlide: any AdvanceSlideUseCaseProtocol
-private let previousSlide: any PreviousSlideUseCaseProtocol
+// Step 1: Generic protocol defines the shape
+protocol AsyncUseCase<Request, Response>: Sendable {
+    func execute(_ request: Request) async throws -> Response
+}
+
+// Step 2: Typealias binds concrete types AND wraps in `any`
+typealias LoadSlideImageUseCaseProtocol = any AsyncUseCase<LoadSlideImageRequest, Data>
+
+// Step 3: ViewModel uses the typealias directly (no `any` prefix needed)
+private let loadSlideImage: LoadSlideImageUseCaseProtocol
 ```
 
 ```swift
 // Receives "some implementation" from outside via init
 init(
     slideshow: SlideshowResponse,
-    loadSlideImage: any LoadSlideImageUseCaseProtocol,  // <- Existential type
+    loadSlideImage: LoadSlideImageUseCaseProtocol,
     ...
 ) {
     self.loadSlideImage = loadSlideImage
 ```
 
-> **Note**: In this project, UseCase protocol type aliases embed `any` internally, so in the actual code, `any` may be omitted in some places. The compiler resolves this automatically.
+> **Key takeaway**: When you see a `*UseCaseProtocol` property without `any` in this codebase, it is still an existential type — the `any` lives inside the typealias definition.
 
 ---
 
@@ -707,56 +729,41 @@ func loadCurrentImage() async {
 
 ---
 
-### Pitfall 3: Do Not Hold NSImage Directly in the ViewModel
+### Pitfall 3: Synchronous Image Decoding on the Main Thread
 
-It is tempting to add an `NSImage?` property to the ViewModel, but `NSImage` is an `AppKit` type. This project's architecture rules **do not allow `import AppKit` in ViewModels**, so it would trigger a SwiftLint error.
-
-On the other hand, calling `NSImage(data:)` synchronously inside the View's `body` blocks the main thread with image decoding, causing stuttering during slideshow playback.
+When a ViewModel holds image data as `Data?` and the View decodes it synchronously inside `body`, large images cause **UI stuttering** because `NSImage(data:)` runs on the main thread.
 
 ```swift
-// BAD -- Holding an AppKit type in the ViewModel violates architecture rules
-@Observable
-final class SlideshowPlayerViewModel {
-    import AppKit  // <- SwiftLint error!
-    private(set) var currentNSImage: NSImage?
-}
-
 // BAD -- Synchronous decoding in the View body blocks the main thread
 var body: some View {
-    if let data = viewModel.currentImage {
-        Image(nsImage: NSImage(data: data)!)  // <- Causes UI stuttering
+    if let data = viewModel.currentImageData {
+        Image(nsImage: NSImage(data: data)!)  // <- UI stutters on large images
     }
 }
 ```
 
-The correct approach is to **have the ViewModel hold `Data?` and use `.task(id:)` + `Task.detached` on the View side for async decoding**.
+This file's approach is to **decode in a `Task.detached` inside the ViewModel** and store the result as `NSImage?`. The Presentation layer is allowed to import `AppKit`, so holding `NSImage` directly is valid.
 
 ```swift
-// GOOD -- ViewModel holds only Data (no AppKit dependency)
-@Observable
-final class SlideshowPlayerViewModel {
-    private(set) var currentImage: Data?
-}
-
-// GOOD -- View-side async decoding
-struct SlideshowPlayerView: View {
-    @State private var decodedImage: NSImage?
-
-    var body: some View {
-        // Display using decodedImage
-    }
-    .task(id: viewModel.currentImage) {
-        guard let data = viewModel.currentImage else {
-            decodedImage = nil; return
-        }
-        decodedImage = await Task.detached(priority: .userInitiated) {
-            NSImage(data: data)
+// GOOD -- This file's pattern: decode on background thread, store the result
+func loadCurrentImage() async {
+    guard let slide = currentSlide else { currentNSImage = nil; return }
+    let expectedIndex = currentIndex
+    do {
+        let data = try await loadSlideImage.execute(...)
+        guard currentIndex == expectedIndex else { return }
+        let image = await Task.detached(priority: .userInitiated) {
+            NSImage(data: data)  // Heavy decode on background thread
         }.value
+        guard currentIndex == expectedIndex else { return }
+        currentNSImage = image   // View reads this directly
+    } catch {
+        currentNSImage = nil
     }
 }
 ```
 
-**Benefits**: The ViewModel has no AppKit dependency. Decoding runs on a background thread, so the UI does not stutter. `.task(id:)` automatically cancels the previous decode when `data` changes.
+**Benefits**: Decoding runs off the main thread, so the UI remains smooth. The View simply reads `viewModel.currentNSImage` with no additional decoding step. The `expectedIndex` guards ensure only the latest image is displayed (see Pitfall 2).
 
 ---
 
@@ -771,7 +778,7 @@ struct SlideshowPlayerView: View {
 | `final class` | Prohibits inheritance and makes design intent explicit |
 | `private(set)` | Compiler prevents unauthorized external writes |
 | Nested `enum` | Confines the type to its scope and clarifies intent |
-| `any Protocol` | Enables a swappable design independent of concrete implementations |
+| Protocol typealias | Enables a swappable design independent of concrete implementations (`any` is embedded in the typealias) |
 | `async / await` | Writes async code with synchronous-looking syntax |
 | `Task { }` | Creates async contexts and manages task cancellation |
 | `Task.sleep(for:)` | Waits without blocking the thread |

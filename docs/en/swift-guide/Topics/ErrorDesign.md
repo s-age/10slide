@@ -64,25 +64,47 @@ enum DomainError: Error {
 
 Deciding which layer to place error types in caused confusion. Placing `UseCaseError` in `UseCases/Requests/` was semantically unnatural.
 
-### Correct example
+### Actual error types in this project
 
 ```swift
-// ✅ Placed in Sources/Errors/ — accessible from all layers
-// Sources/Errors/SlideshowError.swift
-enum SlideshowError: LocalizedError {
-    case notFound(id: UUID)
-    case emptyName
+// Sources/Errors/DomainError.swift
+enum DomainError: LocalizedError, Sendable {
+    case slideshowNotFound(UUID)
 
     var errorDescription: String? {
         switch self {
-        case .notFound(let id):
-            return "Slideshow not found (ID: \(id))"
+        case .slideshowNotFound(let id):
+            return String(localized: "Slideshow not found: \(id.uuidString)")
+        }
+    }
+}
+
+// Sources/Errors/ValidationError.swift
+enum ValidationError: LocalizedError, Sendable {
+    case emptyName
+    case noIdentifiers
+    case invalidIndex
+    case noSlides
+
+    var errorDescription: String? {
+        switch self {
         case .emptyName:
-            return "Please enter a slideshow name"
+            return String(localized: "Name must not be empty")
+        case .noIdentifiers:
+            return String(localized: "At least one image must be selected")
+        case .invalidIndex:
+            return String(localized: "Slide index is out of range")
+        case .noSlides:
+            return String(localized: "Slideshow has no slides")
         }
     }
 }
 ```
+
+Note three conventions:
+1. **`LocalizedError, Sendable`** — both are required. `Sendable` is needed because errors cross actor boundaries in Swift 6.
+2. **`String(localized:)`** — enables future localization instead of hardcoded strings.
+3. **No argument labels** — `case slideshowNotFound(UUID)`, not `case slideshowNotFound(id: UUID)`.
 
 ### Incorrect example
 
@@ -90,19 +112,19 @@ enum SlideshowError: LocalizedError {
 // ❌ Creating error types per layer — a breeding ground for duplication and dead code
 // Sources/Domain/Services/DomainError.swift
 enum DomainError: Error {
-    case slideshowNotFound(id: UUID)
+    case slideshowNotFound(UUID)
 }
 
 // Sources/UseCases/Requests/UseCaseError.swift
 enum UseCaseError: Error {
-    case slideshowNotFound(id: UUID)  // Copy of DomainError
+    case slideshowNotFound(UUID)  // Copy of DomainError
 }
 ```
 
 ### Rules
 
 - All error enums must be placed in `Sources/Errors/`
-- Create one enum per failure domain (`SlideshowError`, `ConfigError`, etc.)
+- Create one enum per failure domain (`DomainError`, `ValidationError`, etc.)
 - Do not create a monolithic `AppError` — it will bloat over time
 - Do not place business logic or protocols in `Sources/Errors/` — only pure error definitions
 
@@ -124,7 +146,7 @@ func execute(request: CreateSlideshowRequest) async throws -> SlideshowResponse 
     } catch let error as DomainError {
         switch error {
         case .slideshowNotFound(let id):
-            throw UseCaseError.slideshowNotFound(id: id)  // Re-defining the same case
+            throw UseCaseError.slideshowNotFound(id)  // Re-defining the same case
         // ... mapping all other cases as well
         }
     }
@@ -141,7 +163,7 @@ func execute(request: CreateSlideshowRequest) async throws -> SlideshowResponse 
     try request.validate()
     let slideshow = try await slideshowService.create(name: request.name)
     return SlideshowResponse(from: slideshow)
-    // SlideshowError.notFound propagates directly to the caller
+    // DomainError.slideshowNotFound propagates directly to the caller
 }
 ```
 
@@ -159,31 +181,58 @@ The principle "don't leak types across layers" is meant to protect **Entities (b
 
 ## 3. Design Principles for Error Types
 
-### Principle 1: Make all enums conform to LocalizedError
+### Principle 1: Conform to both `LocalizedError` and `Sendable`
 
 ```swift
-// ✅ Conforms to LocalizedError — can display meaningful messages to users
-enum SlideshowError: LocalizedError {
-    case notFound(id: UUID)
+// ✅ Both conformances required
+enum DomainError: LocalizedError, Sendable {
+    case slideshowNotFound(UUID)
 
     var errorDescription: String? {
         switch self {
-        case .notFound(let id):
-            return "Slideshow not found (ID: \(id))"
+        case .slideshowNotFound(let id):
+            return String(localized: "Slideshow not found: \(id.uuidString)")
         }
     }
 }
 ```
 
 ```swift
-// ❌ Conforms only to Error — localizedDescription returns a meaningless generic message
-enum SlideshowError: Error {
-    case notFound(id: UUID)
+// ❌ Missing Sendable — compile error when thrown across actor boundaries in Swift 6
+enum DomainError: LocalizedError {
+    case slideshowNotFound(UUID)
+}
+
+// ❌ Missing LocalizedError — localizedDescription returns a meaningless generic message
+enum DomainError: Error, Sendable {
+    case slideshowNotFound(UUID)
 }
 // error.localizedDescription → "The operation couldn't be completed."
 ```
 
-### Principle 2: No imports other than Foundation
+### Principle 2: Use `String(localized:)` for error messages
+
+```swift
+// ✅ Enables future localization
+var errorDescription: String? {
+    switch self {
+    case .slideshowNotFound(let id):
+        return String(localized: "Slideshow not found: \(id.uuidString)")
+    }
+}
+```
+
+```swift
+// ❌ Hardcoded strings — no localization support
+var errorDescription: String? {
+    switch self {
+    case .slideshowNotFound(let id):
+        return "Slideshow not found (ID: \(id))"
+    }
+}
+```
+
+### Principle 3: No imports other than Foundation
 
 Files in `Sources/Errors/` may **only** import Foundation. Importing other frameworks (SwiftUI, SwiftData, etc.) or types from other layers breaks the "shared leaf layer" premise.
 
@@ -191,9 +240,9 @@ Files in `Sources/Errors/` may **only** import Foundation. Importing other frame
 // ✅ Foundation only
 import Foundation
 
-enum ConfigError: LocalizedError {
-    case fileNotFound(path: String)  // String is a Foundation type
-    case invalidFormat
+enum ValidationError: LocalizedError, Sendable {
+    case emptyName           // No associated value needed
+    case invalidIndex        // Primitive case
 }
 ```
 
@@ -201,42 +250,40 @@ enum ConfigError: LocalizedError {
 // ❌ Importing SwiftData — introduces an Infrastructure dependency into the Errors layer
 import SwiftData
 
-enum DataError: LocalizedError {
+enum DataError: LocalizedError, Sendable {
     case modelNotFound(PersistentIdentifier)  // Using a SwiftData type as an associated value
 }
 ```
 
-### Principle 3: Do not use Entities or DTOs as associated values
+### Principle 4: Do not use Entities or DTOs as associated values
 
 ```swift
-// ✅ Primitive types only
-enum SlideshowError: LocalizedError {
-    case notFound(id: UUID)           // UUID is a Foundation type
-    case nameTooLong(maxLength: Int)  // Int is a primitive
+// ✅ Primitive/Foundation types only
+enum DomainError: LocalizedError, Sendable {
+    case slideshowNotFound(UUID)    // UUID is a Foundation type
 }
 ```
 
 ```swift
 // ❌ Using an Entity as an associated value — creates layer coupling
-enum SlideshowError: LocalizedError {
+enum DomainError: LocalizedError, Sendable {
     case invalidSlideshow(Slideshow)  // Dependency on a Domain Entity
 }
 ```
 
-### Principle 4: One enum per failure domain
+### Principle 5: One enum per failure domain
 
 ```swift
-// ✅ Split by domain
-enum SlideshowError: LocalizedError { /* Slideshow-related errors */ }
-enum ConfigError: LocalizedError { /* Configuration file-related errors */ }
-enum PhotoLibraryError: LocalizedError { /* Photo library-related errors */ }
+// ✅ Split by domain — this project uses:
+enum DomainError: LocalizedError, Sendable { /* Business-rule violations */ }
+enum ValidationError: LocalizedError, Sendable { /* Request validation failures */ }
 ```
 
 ```swift
 // ❌ Cramming everything into one — bloats and becomes unmanageable
-enum AppError: LocalizedError {
+enum AppError: LocalizedError, Sendable {
     case slideshowNotFound
-    case configFileNotFound
+    case emptyName
     case photoAccessDenied
     case networkTimeout
     // ... grows without end
@@ -250,10 +297,11 @@ enum AppError: LocalizedError {
 | Principle | Details |
 |-----------|---------|
 | Placement | `Sources/Errors/` — shared leaf layer |
-| Protocol conformance | All enums conform to `LocalizedError` |
+| Protocol conformance | All enums conform to `LocalizedError, Sendable` |
+| Error messages | Use `String(localized:)` for localization support |
 | Import restriction | `Foundation` only — other frameworks are forbidden |
 | Associated values | Primitive/Foundation types only — Entities/DTOs are forbidden |
-| Granularity | One enum per failure domain — monolithic `AppError` is forbidden |
+| Granularity | One enum per failure domain (`DomainError`, `ValidationError`) — monolithic `AppError` is forbidden |
 | Inter-layer mapping | Not needed — errors use the shared leaf layer types directly |
 | Business logic | Do not place in `Sources/Errors/` — only pure error definitions |
 

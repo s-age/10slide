@@ -9,8 +9,11 @@
 | File | Role |
 |------|------|
 | `Sources/DI/Container.swift` | The "wiring diagram" for the entire app. Creates all layer containers in a fixed order |
-| `Sources/DI/UseCaseContainer.swift` | The use case layer's container. Holds each use case wrapped in a validation decorator |
-| `Sources/DI/PresentationContainer.swift` | The presentation layer's container. Provides factory methods for assembling ViewModels |
+| `Sources/DI/InfrastructureContainer.swift` | Infrastructure layer container. Holds `ModelContainer`, data stores, and data sources |
+| `Sources/DI/RepositoryContainer.swift` | Repository layer container. Holds repository instances injected with infrastructure protocols |
+| `Sources/DI/DomainContainer.swift` | Domain layer container. Holds domain service instances injected with repository protocols |
+| `Sources/DI/UseCaseContainer.swift` | UseCase layer container. Holds each use case wrapped in a validation decorator |
+| `Sources/DI/PresentationContainer.swift` | Presentation layer container. Provides factory methods for assembling ViewModels |
 
 ---
 
@@ -327,6 +330,27 @@ ValidationAsyncUseCaseDecorator (outer — handles validation)
 
 If validation logic were written in each use case class, the same code would be duplicated across all use cases. By separating it as a decorator, the core use case can focus solely on business logic.
 
+#### Two Decorator Variants
+
+The codebase uses two decorator variants depending on whether the use case is asynchronous or synchronous:
+
+| Decorator | Use case type | Example |
+|-----------|--------------|---------|
+| `ValidationAsyncUseCaseDecorator` | `AsyncUseCase` (async/await) | `CreateSlideshowUseCase`, `FetchSlideshowUseCase`, etc. |
+| `ValidationSyncUseCaseDecorator` | `SyncUseCase` (synchronous) | `AdvanceSlideUseCase`, `PreviousSlideUseCase`, `AddDroppedFilesUseCase` |
+
+```swift
+// Async use case — wrapped with ValidationAsyncUseCaseDecorator
+createSlideshow = ValidationAsyncUseCaseDecorator(
+    decoratee: CreateSlideshowUseCase(domainService: domain.slideshowService)
+)
+
+// Sync use case — wrapped with ValidationSyncUseCaseDecorator
+advanceSlide = ValidationSyncUseCaseDecorator(
+    decoratee: AdvanceSlideUseCase(domainService: domain.playbackService)
+)
+```
+
 ---
 
 ## 4. Reading `PresentationContainer.swift`
@@ -505,8 +529,8 @@ In this project, `ContentView` was designed to receive factory methods from `Pre
 ```swift
 // ✅ final class + let only + all properties Sendable → Sendable conformance holds automatically
 final class PresentationContainer: Sendable {
-    private let createSlideshow: any CreateSlideshowUseCaseProtocol  // Sendable
-    private let loadSlideImage: any LoadSlideImageUseCaseProtocol    // Sendable
+    private let createSlideshow: CreateSlideshowUseCaseProtocol  // typealias embeds `any`
+    private let loadSlideImage: LoadSlideImageUseCaseProtocol    // typealias embeds `any`
 
     init(useCases: UseCaseContainer) {
         createSlideshow = useCases.createSlideshow
@@ -584,7 +608,7 @@ final class CreateSlideshowUseCase {
 
 ---
 
-## 5. What You Can Learn from This File -- Summary
+## 6. What You Can Learn from This File -- Summary
 
 | Concept | Keyword | Summary |
 |---------|---------|---------|

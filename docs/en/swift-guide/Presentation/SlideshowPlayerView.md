@@ -542,13 +542,13 @@ private var slideTransition: AnyTransition {
 }
 ```
 
-To **return different transitions from a `switch` statement**, the return type must be unified. Each transition has a different type (`OpacityTransition`, `MoveTransition`, etc.), but since they are all wrapped in `AnyTransition`, they can be returned from a single function/property.
+To **return different transitions from a `switch` statement**, the return type must be unified. The static members `.identity`, `.opacity`, and `.asymmetric(...)` all return `AnyTransition`, which is why it works as the computed property's return type. Without `AnyTransition`, Swift would require each branch to return the exact same concrete type.
 
 `.asymmetric` is a special transition that allows you to set different transitions for insertion and removal. It creates the "slide forward" effect where a slide enters from the right and exits to the left.
 
 ### What Happens Without `AnyTransition`
 
-You would not be able to return different types from each `switch` case, resulting in a compile error. Type erasure is an important pattern in Swift for achieving polymorphism.
+If the computed property declared a more specific return type, Swift would require all branches to return the same concrete type. `AnyTransition` serves as the common return type that unifies all transition variants.
 
 ---
 
