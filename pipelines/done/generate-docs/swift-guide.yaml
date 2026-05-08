@@ -1,0 +1,579 @@
+tasks:
+  - type: script
+    command: mkdir -p docs/swift-guide/App docs/swift-guide/Presentation
+      docs/swift-guide/DI docs/swift-guide/UseCases docs/swift-guide/Domain
+      docs/swift-guide/Repositories docs/swift-guide/Infrastructure
+    done: true
+  - type: agent
+    name: swift-guide-app
+    task: >
+      source: Sources/App/TenSlideApp.swift
+
+      output: docs/swift-guide/App/TenSlideApp.md
+
+
+      Read the source file. Write a beginner-friendly guide in Japanese
+      explaining every Swift concept used in the file.
+
+
+      対象読者: Swiftを学び始めたばかりの人。コードを読んで「なぜこう書くのか？」が分からない人。
+
+
+      ## 書き方のルール
+
+
+      1. ファイルの冒頭にソースファイルのパスと概要を書く
+
+      2. コードを上から順に読みながら、出てくるSwift概念をそれぞれ解説する
+
+      3. 各概念について:
+         - その概念が何であるか（定義）
+         - なぜここで使われているか（目的）
+         - もしこれを使わなかったらどうなるか（対比）
+         - 実際のコードの該当部分を引用する
+      4. 最後に「このファイルで学べること」をまとめる
+
+
+      ## このファイルで解説すべき概念
+
+
+      - `import SwiftUI` / `import SwiftData` — フレームワークのインポート
+
+      - `@main` — アプリのエントリーポイント
+
+      - `struct ... : App` — App プロトコルへの準拠
+
+      - `private let` — アクセス制御と定数
+
+      - `init()` — イニシャライザ
+
+      - `do-catch` / `fatalError` — エラーハンドリング
+
+      - `var body: some Scene` — Scene プロトコルと some キーワード（opaque type）
+
+      - `WindowGroup { }` — ウィンドウの定義
+
+      - `.modelContainer()` — SwiftData のモデルコンテナ修飾子
+
+
+      Markdownで書くこと。コードブロックは ```swift で囲む。
+    model: sonnet
+    allowed_tools:
+      - Read
+      - Write
+    done: true
+  - type: agent
+    name: swift-guide-presentation-view
+    task: >
+      source: Sources/Presentation/Views/SlideshowPlayerView.swift
+
+      output: docs/swift-guide/Presentation/SlideshowPlayerView.md
+
+
+      Read the source file. Write a beginner-friendly guide in Japanese
+      explaining every Swift concept used in the file.
+
+
+      対象読者: Swiftを学び始めたばかりの人。コードを読んで「なぜこう書くのか？」が分からない人。
+
+
+      ## 書き方のルール
+
+
+      1. ファイルの冒頭にソースファイルのパスと概要を書く
+
+      2. コードを上から順に読みながら、出てくるSwift概念をそれぞれ解説する
+
+      3. 各概念について:
+         - その概念が何であるか（定義）
+         - なぜここで使われているか（目的）
+         - もしこれを使わなかったらどうなるか（対比）
+         - 実際のコードの該当部分を引用する
+      4. 最後に「このファイルで学べること」をまとめる
+
+
+      ## このファイルで解説すべき概念
+
+
+      - `struct ... : View` — View プロトコル
+
+      - `let` vs `var` — プロパティの宣言
+
+      - `@escaping` クロージャ — ライフサイクルを超えるクロージャ
+
+      - `var body: some View` — body プロパティと some キーワード
+
+      - `ZStack`, `HStack` — レイアウトコンテナ
+
+      - `.ignoresSafeArea()` — セーフエリア
+
+      - `.frame()`, `.padding()` — レイアウト修飾子
+
+      - `if let` — Optional バインディング
+
+      - `.task { }` — 非同期タスク修飾子（onAppear との違い）
+
+      - `.onKeyPress()` — キーボードイベント
+
+      - `.onTapGesture`, `.simultaneousGesture`, `DragGesture` — ジェスチャー
+
+      - `.animation()` — アニメーション
+
+      - `.transition()` — トランジション
+
+      - `@ViewBuilder` — ビュービルダー属性
+
+      - `AnyTransition` — 型消去されたトランジション
+
+      - `.onReceive(NotificationCenter...)` — 通知の監視
+
+      - `.onHover` — ホバーイベント
+
+      - `Task { await ... }` — クロージャ内での非同期呼び出し
+
+      - `.id()` — ビューの一意識別
+
+
+      Markdownで書くこと。コードブロックは ```swift で囲む。
+    model: sonnet
+    allowed_tools:
+      - Read
+      - Write
+    done: true
+  - type: agent
+    name: swift-guide-presentation-viewmodel
+    task: >
+      source: Sources/Presentation/ViewModels/SlideshowPlayerViewModel.swift
+
+      output: docs/swift-guide/Presentation/SlideshowPlayerViewModel.md
+
+
+      Read the source file. Write a beginner-friendly guide in Japanese
+      explaining every Swift concept used in the file.
+
+
+      対象読者: Swiftを学び始めたばかりの人。コードを読んで「なぜこう書くのか？」が分からない人。
+
+
+      ## 書き方のルール
+
+
+      1. ファイルの冒頭にソースファイルのパスと概要を書く
+
+      2. コードを上から順に読みながら、出てくるSwift概念をそれぞれ解説する
+
+      3. 各概念について:
+         - その概念が何であるか（定義）
+         - なぜここで使われているか（目的）
+         - もしこれを使わなかったらどうなるか（対比）
+         - 実際のコードの該当部分を引用する
+      4. 最後に「このファイルで学べること」をまとめる
+
+
+      ## このファイルで解説すべき概念
+
+
+      - `import Observation` — Observation フレームワーク
+
+      - `@Observable` — 監視可能なクラス（ObservableObject との違い）
+
+      - `@MainActor` — メインアクター（UIスレッド保証）
+
+      - `final class` — 継承禁止のクラス
+
+      - `private(set)` — 読み取り専用プロパティ（外部からは読み取りのみ）
+
+      - `enum` 内の定義（FullscreenHintType）— ネストされた型
+
+      - `Task { }` / `Task.isCancelled` — 構造化された並行処理
+
+      - `async` / `await` — 非同期処理
+
+      - `Task.sleep(for:)` — 非同期スリープ
+
+      - `Task.detached(priority:)` — デタッチドタスク
+
+      - `guard` 文 — 早期リターン
+
+      - `defer { }` — 遅延実行
+
+      - `try` / `do-catch` — エラーハンドリング
+
+      - `any Protocol` — 存在型（Existential type）
+
+      - タイマーパターン（Task ベースのタイマー）
+
+
+      Markdownで書くこと。コードブロックは ```swift で囲む。
+    model: sonnet
+    allowed_tools:
+      - Read
+      - Write
+    done: true
+  - type: agent
+    name: swift-guide-di
+    task: >
+      source_files:
+        - Sources/DI/Container.swift
+        - Sources/DI/PresentationContainer.swift
+        - Sources/DI/UseCaseContainer.swift
+      output: docs/swift-guide/DI/Container.md
+
+
+      Read all three source files. Write a beginner-friendly guide in Japanese
+      explaining the DI (Dependency Injection) pattern and Swift concepts used.
+
+
+      対象読者: Swiftを学び始めたばかりの人。コードを読んで「なぜこう書くのか？」が分からない人。
+
+
+      ## 書き方のルール
+
+
+      1. ファイルの冒頭にソースファイルのパスと概要を書く
+
+      2. コードを上から順に読みながら、出てくるSwift概念をそれぞれ解説する
+
+      3. 各概念について:
+         - その概念が何であるか（定義）
+         - なぜここで使われているか（目的）
+         - もしこれを使わなかったらどうなるか（対比）
+         - 実際のコードの該当部分を引用する
+      4. 最後に「このファイルで学べること」をまとめる
+
+
+      ## このファイルで解説すべき概念
+
+
+      - DI（依存性注入）パターンとは何か — なぜ直接 new しないのか
+
+      - `final class` — コンテナが継承不要である理由
+
+      - `let` プロパティ — 不変な依存関係
+
+      - `init() throws` — 失敗可能なイニシャライザ
+
+      - 依存の初期化順序 — infrastructure → repositories → domain → useCases →
+      presentation
+
+      - `Sendable` プロトコル — スレッドセーフな型
+
+      - `any Protocol` 型 — プロトコル存在型でコンテナに格納
+
+      - ファクトリクロージャ — `@MainActor @Sendable (SlideshowResponse) -> ViewModel` の意味
+
+
+      Markdownで書くこと。コードブロックは ```swift で囲む。
+    model: sonnet
+    allowed_tools:
+      - Read
+      - Write
+    done: true
+  - type: agent
+    name: swift-guide-usecase
+    task: >
+      source_files:
+        - Sources/UseCases/CreateSlideshowUseCase.swift
+        - Sources/UseCases/Protocols/ExecutableUseCase.swift
+        - Sources/UseCases/Requests/CreateSlideshowRequest.swift
+        - Sources/UseCases/Responses/SlideshowResponse.swift
+      output: docs/swift-guide/UseCases/CreateSlideshowUseCase.md
+
+
+      Read all source files. Write a beginner-friendly guide in Japanese
+      explaining the UseCase pattern and Swift concepts used.
+
+
+      対象読者: Swiftを学び始めたばかりの人。コードを読んで「なぜこう書くのか？」が分からない人。
+
+
+      ## 書き方のルール
+
+
+      1. ファイルの冒頭にソースファイルのパスと概要を書く
+
+      2. コードを上から順に読みながら、出てくるSwift概念をそれぞれ解説する
+
+      3. 各概念について:
+         - その概念が何であるか（定義）
+         - なぜここで使われているか（目的）
+         - もしこれを使わなかったらどうなるか（対比）
+         - 実際のコードの該当部分を引用する
+      4. 最後に「このファイルで学べること」をまとめる
+
+
+      ## このファイルで解説すべき概念
+
+
+      - `protocol` と `associatedtype` — ジェネリックなプロトコル
+
+      - `typealias` — 型エイリアス（UseCaseProtocol の定義方法）
+
+      - `final class` + プロトコル準拠 — 具象クラスとプロトコル
+
+      - `Sendable` — 並行処理の安全性
+
+      - `async throws -> Response` — 非同期で失敗可能な関数
+
+      - Request / Response パターン — 入出力を型で表現する
+
+      - `.toDomain` — 計算プロパティによる型変換
+
+
+      Markdownで書くこと。コードブロックは ```swift で囲む。
+    model: sonnet
+    allowed_tools:
+      - Read
+      - Write
+    done: true
+  - type: agent
+    name: swift-guide-entity
+    task: >
+      source_files:
+        - Sources/Domain/Entities/Slide.swift
+        - Sources/Domain/Entities/Slideshow.swift
+        - Sources/Domain/Entities/SlideshowConfig.swift
+        - Sources/Domain/Entities/TransitionType.swift
+      output: docs/swift-guide/Domain/Slide.md
+
+
+      Read all source files. Write a beginner-friendly guide in Japanese
+      explaining Domain Entity patterns and Swift concepts used.
+
+
+      対象読者: Swiftを学び始めたばかりの人。コードを読んで「なぜこう書くのか？」が分からない人。
+
+
+      ## 書き方のルール
+
+
+      1. ファイルの冒頭にソースファイルのパスと概要を書く
+
+      2. コードを上から順に読みながら、出てくるSwift概念をそれぞれ解説する
+
+      3. 各概念について:
+         - その概念が何であるか（定義）
+         - なぜここで使われているか（目的）
+         - もしこれを使わなかったらどうなるか（対比）
+         - 実際のコードの該当部分を引用する
+      4. 最後に「このファイルで学べること」をまとめる
+
+
+      ## このファイルで解説すべき概念
+
+
+      - `struct` vs `class` — 値型と参照型
+
+      - `Identifiable` — 一意な識別子を持つ型
+
+      - `Equatable` — 等値比較
+
+      - `Sendable` — スレッド安全性
+
+      - `Codable` — エンコード/デコード
+
+      - `CaseIterable` — 全ケースの列挙
+
+      - `let` vs `var` — 不変と可変のフィールド
+
+      - `UUID` — 一意な識別子
+
+      - `Optional` (`?`) — 値があるかもしれない型
+
+      - `enum` と `rawValue` — 列挙型と原始値
+
+      - `static let default` — 型のデフォルト値
+
+      - ファクトリメソッド `static func create(...)` — エンティティの生成パターン
+
+      - `func applying(...) -> Self` — イミュータブル更新パターン
+
+
+      Markdownで書くこと。コードブロックは ```swift で囲む。
+    model: sonnet
+    allowed_tools:
+      - Read
+      - Write
+    done: true
+  - type: agent
+    name: swift-guide-domain-service
+    task: >
+      source: Sources/Domain/Services/SlideshowDomainService.swift
+
+      output: docs/swift-guide/Domain/SlideshowDomainService.md
+
+
+      Read the source file. Write a beginner-friendly guide in Japanese
+      explaining Domain Service patterns and Swift concepts used.
+
+
+      対象読者: Swiftを学び始めたばかりの人。コードを読んで「なぜこう書くのか？」が分からない人。
+
+
+      ## 書き方のルール
+
+
+      1. ファイルの冒頭にソースファイルのパスと概要を書く
+
+      2. コードを上から順に読みながら、出てくるSwift概念をそれぞれ解説する
+
+      3. 各概念について:
+         - その概念が何であるか（定義）
+         - なぜここで使われているか（目的）
+         - もしこれを使わなかったらどうなるか（対比）
+         - 実際のコードの該当部分を引用する
+      4. 最後に「このファイルで学べること」をまとめる
+
+
+      ## このファイルで解説すべき概念
+
+
+      - `final class` + プロトコル準拠 + `Sendable` — サービスクラスの宣言
+
+      - `private let repository: any SlideshowRepositoryProtocol` — `any`
+      キーワードと存在型
+
+      - プロトコルベースの依存注入 — 具象クラスではなくプロトコルに依存する理由
+
+      - `async throws` — 非同期で失敗可能な関数
+
+      - `guard let ... else { throw }` — Optional の安全なアンラップとエラー送出
+
+      - ドメインサービスの役割 — ビジネスロジックの置き場所
+
+
+      Markdownで書くこと。コードブロックは ```swift で囲む。
+    model: sonnet
+    allowed_tools:
+      - Read
+      - Write
+    done: true
+  - type: agent
+    name: swift-guide-repository
+    task: >
+      source: Sources/Repositories/Implementations/SlideshowRepository.swift
+
+      output: docs/swift-guide/Repositories/SlideshowRepository.md
+
+
+      Read the source file. Write a beginner-friendly guide in Japanese
+      explaining Repository patterns and Swift concepts used.
+
+
+      対象読者: Swiftを学び始めたばかりの人。コードを読んで「なぜこう書くのか？」が分からない人。
+
+
+      ## 書き方のルール
+
+
+      1. ファイルの冒頭にソースファイルのパスと概要を書く
+
+      2. コードを上から順に読みながら、出てくるSwift概念をそれぞれ解説する
+
+      3. 各概念について:
+         - その概念が何であるか（定義）
+         - なぜここで使われているか（目的）
+         - もしこれを使わなかったらどうなるか（対比）
+         - 実際のコードの該当部分を引用する
+      4. 最後に「このファイルで学べること」をまとめる
+
+
+      ## このファイルで解説すべき概念
+
+
+      - `import SwiftData` — SwiftData フレームワーク
+
+      - `FetchDescriptor<T>` — ジェネリクスを使ったフェッチ記述子
+
+      - `#Predicate { }` — マクロによる述語式
+
+      - `$0` — クロージャの省略引数名
+
+      - `[self]` キャプチャリスト — クロージャのキャプチャ
+
+      - `.map { }`, `.sorted { }`, `.first` — コレクション操作
+
+      - トレイリングクロージャ構文 — 関数の最後の引数がクロージャの場合
+
+      - `context.insert()`, `context.delete()`, `context.save()` — SwiftData の
+      CRUD
+
+      - Repository パターン — データアクセスを抽象化する理由
+
+
+      Markdownで書くこと。コードブロックは ```swift で囲む。
+    model: sonnet
+    allowed_tools:
+      - Read
+      - Write
+    done: true
+  - type: agent
+    name: swift-guide-infrastructure
+    task: >
+      source: Sources/Infrastructure/SwiftData/SwiftDataStore.swift
+
+      output: docs/swift-guide/Infrastructure/SwiftDataStore.md
+
+
+      Read the source file. Write a beginner-friendly guide in Japanese
+      explaining Infrastructure patterns and Swift concepts used.
+
+
+      対象読者: Swiftを学び始めたばかりの人。コードを読んで「なぜこう書くのか？」が分からない人。
+
+
+      ## 書き方のルール
+
+
+      1. ファイルの冒頭にソースファイルのパスと概要を書く
+
+      2. コードを上から順に読みながら、出てくるSwift概念をそれぞれ解説する
+
+      3. 各概念について:
+         - その概念が何であるか（定義）
+         - なぜここで使われているか（目的）
+         - もしこれを使わなかったらどうなるか（対比）
+         - 実際のコードの該当部分を引用する
+      4. 最後に「このファイルで学べること」をまとめる
+
+
+      ## このファイルで解説すべき概念
+
+
+      - `@ModelActor` — SwiftData のモデルアクターマクロ
+
+      - `actor` — Swift のアクター（class との違い、スレッド安全性）
+
+      - ジェネリクス `<T: PersistentModel, R: Sendable>` — 型パラメータと制約
+
+      - `where` 句 — ジェネリクスの制約条件
+
+      - `Predicate<T>` — 型安全な述語
+
+      - `@Sendable` クロージャ — 並行処理で安全なクロージャ
+
+      - `ModelContext` — SwiftData のデータ操作コンテキスト
+
+      - `throws` — 関数のエラー伝播
+
+
+      Markdownで書くこと。コードブロックは ```swift で囲む。
+    model: sonnet
+    allowed_tools:
+      - Read
+      - Write
+    done: true
+  - type: agent
+    name: swift-guide-committer
+    task: >
+      Run `git status` to see what changed. Stage all docs/swift-guide/ files
+      and commit
+
+      with the message: "docs(swift-guide): add beginner-friendly Swift concept
+      guides for representative source files".
+
+      If there is nothing to commit, stop.
+    model: haiku
+    allowed_tools:
+      - Bash
+    done: true
