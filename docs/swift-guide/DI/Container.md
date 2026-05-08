@@ -481,6 +481,109 @@ let factory: @MainActor (SlideshowResponse) -> SlideshowPlayerViewModel
 
 ---
 
+## 5. 実践で学んだ落とし穴
+
+このプロジェクトの開発中に実際に遭遇した問題を紹介します。DI コンテナの設計で「なんとなく動くけど正しくない」パターンを避けるために知っておくべきポイントです。
+
+---
+
+### 落とし穴 1: DI コンテナを `Sendable` にする方法
+
+#### 何が起きるか
+
+Swift 6 の厳格な並行性チェックが有効な環境で、DI コンテナのメソッド参照を `@Sendable` クロージャとして渡すと、コンテナが `Sendable` でない場合にコンパイラ警告が出ます。
+
+```
+warning: converting non-Sendable function value to
+'@MainActor @Sendable (Slideshow) -> SlideshowPlayerViewModel' may introduce data races
+```
+
+実際にこのプロジェクトでは、`ContentView` が `PresentationContainer` のファクトリメソッドをクロージャとして受け取る設計になっており、`PresentationContainer` が `Sendable` でなかったためにこの警告が発生しました。
+
+#### 正しい書き方
+
+```swift
+// ✅ final class + let のみ + 全プロパティが Sendable → 自動的に Sendable 準拠が成立
+final class PresentationContainer: Sendable {
+    private let createSlideshow: any CreateSlideshowUseCaseProtocol  // Sendable
+    private let loadSlideImage: any LoadSlideImageUseCaseProtocol    // Sendable
+
+    init(useCases: UseCaseContainer) {
+        createSlideshow = useCases.createSlideshow
+        loadSlideImage = useCases.loadSlideImage
+    }
+}
+```
+
+`Sendable` が成立する3条件を覚えておきましょう。
+
+1. `final class` であること（サブクラスが状態を追加できない）
+2. 全プロパティが `let` であること（変更されない）
+3. 全プロパティの型が `Sendable` であること（連鎖して安全）
+
+#### やってはいけない書き方
+
+```swift
+// ❌ var プロパティがあると Sendable にできない
+final class PresentationContainer: Sendable {
+    private var createSlideshow: any CreateSlideshowUseCaseProtocol  // コンパイルエラー！
+}
+
+// ❌ @unchecked Sendable でごまかす — コンパイラの保護を捨ててしまう
+final class PresentationContainer: @unchecked Sendable {
+    private var createSlideshow: any CreateSlideshowUseCaseProtocol
+    // データ競合の危険が残ったまま…
+}
+```
+
+**ポイント**: `@unchecked Sendable` や `nonisolated(unsafe)` で警告を黙らせるのは最終手段です。まずコンテナ自体を正しく `Sendable` にできないか検討しましょう。
+
+---
+
+### 落とし穴 2: レイヤーの直線的な依存関係を守る
+
+#### 何が起きるか
+
+「UseCase から Repository を直接呼べば簡単なのに」と思い、Domain Service を飛ばしてしまうと、**レイヤースキップ**が発生します。このプロジェクトでは Clean Architecture の V 字型ではなく、**厳密な直線フロー**を採用しています。
+
+```
+Presentation → UseCases → Domain Services → Repositories → Infrastructure
+```
+
+レイヤーを飛ばすと、SwiftLint のカスタムルールがエラーを出します。しかしそれ以上に、ビジネスロジックの置き場所が分散し、「同じ処理をあちこちで書く」状態に陥ります。
+
+#### 正しい書き方
+
+```swift
+// ✅ UseCase は DomainService だけを呼ぶ（Repository は呼ばない）
+final class CreateSlideshowUseCase {
+    private let domainService: SlideshowServiceProtocol
+
+    func execute(request: CreateSlideshowRequest) async throws -> SlideshowResponse {
+        let entity = try await domainService.create(name: request.name)
+        return SlideshowResponse(entity)
+    }
+}
+```
+
+#### やってはいけない書き方
+
+```swift
+// ❌ UseCase が Repository を直接呼んでいる（レイヤースキップ）
+final class CreateSlideshowUseCase {
+    private let repository: SlideshowRepositoryProtocol  // Domain Service を飛ばしている！
+
+    func execute(request: CreateSlideshowRequest) async throws -> SlideshowResponse {
+        let entity = try await repository.save(...)
+        return SlideshowResponse(entity)
+    }
+}
+```
+
+**ポイント**: 「1つのことしかしないから Domain Service を省略しよう」と思っても、各レイヤーは必ず隣接するレイヤーだけを呼ぶルールを守りましょう。こうすることで、Repository のオーケストレーション（複数の操作をまとめる処理）が常に Domain Service に集まり、一貫性のある設計が維持されます。
+
+---
+
 ## 5. このファイルで学べること まとめ
 
 | 概念 | キーワード | 一言まとめ |

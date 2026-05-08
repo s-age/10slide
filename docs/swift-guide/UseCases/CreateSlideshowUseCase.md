@@ -333,6 +333,97 @@ UseCase の最後の行 `return SlideshowResponse(from: slideshow)` がこれを
 | Request / Response パターン | 入力・出力を専用の型でカプセル化し、層間の依存を最小限に抑える |
 | `.toDomain` / `init(from:)` | 層をまたぐ型変換を計算プロパティとイニシャライザで整理する |
 
+---
+
+## 実践で学んだ落とし穴
+
+このプロジェクトの開発中に実際に起きた問題から、UseCase 層の落とし穴を紹介します。
+
+---
+
+### 落とし穴 1: Swift 6 では Request を `protocol + struct` で定義する
+
+#### 何が起きるか
+
+オブジェクト指向の経験がある人は、共通の `validate()` メソッドを基底クラスで定義し、各 Request をサブクラスとして実装したくなります。しかし Swift 6 の Strict Concurrency では、非 `final` クラスは `Sendable` に準拠できません。`@unchecked Sendable` はこのプロジェクトのルールで禁止されています。
+
+```swift
+// ❌ 基底クラスで共通インターフェースを定義する（Swift 6 ではコンパイルエラー）
+class UseCaseRequest: Sendable {  // エラー: 非 final クラスは Sendable になれない
+    func validate() throws { }
+}
+
+class CreateSlideshowRequest: UseCaseRequest {
+    let name: String
+    // ...
+    override func validate() throws {
+        guard !name.isEmpty else { throw ValidationError.emptyName }
+    }
+}
+```
+
+```swift
+// ✅ protocol + struct で定義する（Sendable が自動合成される）
+protocol UseCaseRequest: Sendable {
+    func validate() throws
+}
+
+struct CreateSlideshowRequest: UseCaseRequest {
+    let name: String
+    let localIdentifiers: [String]
+    // ... すべてのプロパティが Sendable なら、struct は自動的に Sendable
+
+    func validate() throws {
+        guard !name.trimmingCharacters(in: .whitespaces).isEmpty else {
+            throw ValidationError.emptyName
+        }
+    }
+}
+```
+
+`struct` はすべてのストアドプロパティが `Sendable` であれば、コンパイラが自動的に `Sendable` を合成してくれます。クラス継承に頼らず、プロトコルで共通インターフェースを定義するのが Swift 6 の正しいアプローチです。
+
+---
+
+### 落とし穴 2: `typealias` に `any` が埋め込まれているのに二重に書かない
+
+#### 何が起きるか
+
+このプロジェクトでは UseCase のプロトコル型を `typealias` で定義しています。
+
+```swift
+typealias CreateSlideshowUseCaseProtocol = any AsyncUseCase<CreateSlideshowRequest, SlideshowResponse>
+//                                         ^^^ ← ここに any が埋め込まれている
+```
+
+Swift では通常、プロトコル型を使うときに `any` を付けます。しかしこの `typealias` はすでに `any` を含んでいるため、使用箇所でさらに `any` を付けるとコンパイルエラーになります。
+
+```swift
+// ❌ typealias の中にすでに any があるのに、さらに any を付ける
+let createSlideshow: any CreateSlideshowUseCaseProtocol
+// コンパイルエラー: redundant 'any' in type
+
+// ❌ concrete クラスを typealias（existential 型）に準拠させようとする
+final class CreateSlideshowUseCase: CreateSlideshowUseCaseProtocol { ... }
+// コンパイルエラー: 存在型には準拠できない
+```
+
+```swift
+// ✅ typealias をそのまま使う（any は不要）
+let createSlideshow: CreateSlideshowUseCaseProtocol
+
+// ✅ concrete クラスは元のプロトコル（AsyncUseCase）に準拠させる
+final class CreateSlideshowUseCase: AsyncUseCase, Sendable {
+    func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse {
+        // ...
+    }
+}
+```
+
+**覚えておくこと:** `typealias` の定義を確認してから使う。`any` が含まれている `typealias` は、そのまま型として書けばよい。
+
+---
+
 ### UseCase が担う役割のまとめ
 
 ```

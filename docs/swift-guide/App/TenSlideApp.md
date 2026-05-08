@@ -348,6 +348,60 @@ WindowGroup { ... }
 
 ---
 
+## 実践で学んだ落とし穴
+
+このプロジェクトの開発中に発見した、macOS の SwiftUI 開発で知っておくべきポイントです。
+
+---
+
+### 落とし穴 1: macOS で `.navigationTitle()` がウィンドウタイトルになる
+
+#### 何が起きるか
+
+macOS では、`WindowGroup` 内のルートビューに `.navigationTitle()` を付けると、その文字列が**ウィンドウのタイトルバー**に表示されます。`NavigationStack` や `NavigationSplitView` がなくても機能します。
+
+これは iOS 開発の経験だけでは気づきにくい挙動です。iOS では `.navigationTitle()` はナビゲーションバーに表示されるだけで、ウィンドウタイトルという概念がありません。
+
+#### 正しい書き方
+
+```swift
+// ✅ .navigationTitle() でウィンドウタイトルを制御する（NavigationStack は不要）
+var body: some Scene {
+    WindowGroup {
+        if let slideshow = currentSlideshow {
+            SlideshowPlayerView(slideshow: slideshow)
+                .navigationTitle(slideshow.name)   // → タイトルバーにスライドショー名が表示される
+        } else {
+            HomeView()
+                .navigationTitle("")               // → タイトルバーのテキストを非表示にする
+        }
+    }
+}
+```
+
+`if`/`else` の各分岐に `.navigationTitle()` を付けることで、アプリの状態に応じてウィンドウタイトルを動的に切り替えられます。
+
+#### やってはいけない書き方
+
+```swift
+// ❌ NSViewRepresentable を使ってウィンドウタイトルを設定しようとする — 過剰に複雑
+struct WindowTitleSetter: NSViewRepresentable {
+    let title: String
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            view.window?.title = title  // タイミングによっては window が nil
+        }
+        return view
+    }
+    // ...
+}
+```
+
+**ポイント**: macOS の SwiftUI では `.navigationTitle()` がウィンドウタイトルを設定する正式な方法です。`NSViewRepresentable` で `window?.title` を直接操作する必要はありません。
+
+---
+
 ## このファイルで学べること
 
 | 概念 | キーワード | 一言まとめ |

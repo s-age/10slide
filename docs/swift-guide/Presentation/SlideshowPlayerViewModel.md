@@ -23,7 +23,8 @@
 13. [`defer { }` — 遅延実行](#13-defer---遅延実行)
 14. [`try` / `do-catch` — エラーハンドリング](#14-try--do-catch--エラーハンドリング)
 15. [Task ベースのタイマーパターン](#15-task-ベースのタイマーパターン)
-16. [このファイルで学べること — まとめ](#16-このファイルで学べること--まとめ)
+16. [実践で学んだ落とし穴](#16-実践で学んだ落とし穴)
+17. [このファイルで学べること — まとめ](#17-このファイルで学べること--まとめ)
 
 ---
 
@@ -620,7 +621,146 @@ private func showHint(_ type: FullscreenHintType) {
 
 ---
 
-## 16. このファイルで学べること — まとめ
+## 16. 実践で学んだ落とし穴
+
+このファイルに関連する実際の開発で遭遇した落とし穴を紹介します。
+
+### 落とし穴 1: @Observable ViewModel を @State で注入するアンチパターン
+
+`@Observable` クラスを View に渡すとき、`@State(initialValue:)` で受け取ると**初回の値だけが保存され、以降 DI コンテナが新しいインスタンスを渡しても無視されます**。`@State` は「この View が所有する値」を意味するため、SwiftUI が内部でキャッシュしてしまうのです。
+
+```swift
+// ❌ BAD — 2回目以降に渡されたインスタンスが無視される
+struct SlideshowPlayerView: View {
+    @State private var viewModel: SlideshowPlayerViewModel
+    init(viewModel: SlideshowPlayerViewModel) {
+        self._viewModel = State(initialValue: viewModel)
+    }
+}
+```
+
+`@Observable` はプロパティへのアクセスを自動追跡するので、`@State` なしでも View は再描画されます。外部から注入する場合は `let`（読み取り専用）か `@Bindable`（双方向バインディング `$vm.prop` が必要な場合）を使います。
+
+```swift
+// ✅ GOOD — 読み取り専用ならシンプルに let
+struct SlideshowPlayerView: View {
+    let viewModel: SlideshowPlayerViewModel
+    init(viewModel: SlideshowPlayerViewModel) {
+        self.viewModel = viewModel
+    }
+}
+
+// ✅ GOOD — $viewModel.prop のようなバインディングが必要なら @Bindable
+struct LibraryPickerView: View {
+    @Bindable var viewModel: CreateSlideshowViewModel
+}
+```
+
+**覚え方**: `@State` = View が自分で作って所有する値。外から注入する `@Observable` には使わない。
+
+---
+
+### 落とし穴 2: 非同期メソッドのインデックス競合
+
+View の `.task(id:)` は `id` が変わると**前のタスクを自動キャンセル**します。しかし、同じ処理を ViewModel のメソッドに移すと、この自動キャンセルは失われます。ユーザーが素早く「次へ」を連打すると、古い画像ロードが新しいものより後に完了し、**表示が1枚前のスライドに巻き戻る**ことがあります。
+
+```swift
+// ❌ BAD — 2回の await の間に currentIndex が変わると古い画像で上書きされる
+func loadCurrentImage() async {
+    guard let slide = currentSlide else { return }
+    do {
+        let data = try await loadSlideImage.execute(...)
+        // ↑ この await 中に next() が呼ばれて currentIndex が進んでいるかもしれない
+        let image = await Task.detached(priority: .userInitiated) {
+            NSImage(data: data)
+        }.value
+        currentNSImage = image  // ← 古いスライドの画像で上書き！
+    } catch { ... }
+}
+```
+
+対策は、**await の前にインデックスをスナップショット**し、**各 await の後でインデックスが変わっていないか確認**することです。
+
+```swift
+// ✅ GOOD — スナップショットとガードで「最新の呼び出しだけが勝つ」を保証
+func loadCurrentImage() async {
+    guard let slide = currentSlide else { currentNSImage = nil; return }
+    let expectedIndex = currentIndex                        // スナップショット
+
+    do {
+        let data = try await loadSlideImage.execute(...)
+        guard currentIndex == expectedIndex else { return } // ガード①
+
+        let image = await Task.detached(priority: .userInitiated) {
+            NSImage(data: data)
+        }.value
+        guard currentIndex == expectedIndex else { return } // ガード②
+
+        currentNSImage = image
+    } catch {
+        currentNSImage = nil
+    }
+}
+```
+
+**ポイント**: `await` のたびに「まだ自分が最新か？」を確認する。`.task(id:)` の自動キャンセルに頼れない場面では、このスナップショット＋ガードパターンが必須です。
+
+---
+
+### 落とし穴 3: ViewModel で NSImage を直接保持しない
+
+ViewModel に `NSImage?` プロパティを持たせたくなりますが、`NSImage` は `AppKit` の型です。このプロジェクトのアーキテクチャルールでは **ViewModel に `import AppKit` を許可していない**ため、SwiftLint エラーになります。
+
+かといって View の `body` 内で `NSImage(data:)` を同期的に呼ぶと、画像デコードでメインスレッドがブロックされ、スライドショー再生中にカクつきます。
+
+```swift
+// ❌ BAD — ViewModel に AppKit の型を持たせるとアーキテクチャ違反
+@Observable
+final class SlideshowPlayerViewModel {
+    import AppKit  // ← SwiftLint エラー！
+    private(set) var currentNSImage: NSImage?
+}
+
+// ❌ BAD — View の body 内で同期デコードするとメインスレッドがブロックされる
+var body: some View {
+    if let data = viewModel.currentImage {
+        Image(nsImage: NSImage(data: data)!)  // ← UI がカクつく
+    }
+}
+```
+
+正解は、**ViewModel は `Data?` を保持し、View 側で `.task(id:)` + `Task.detached` を使って非同期デコード**する方法です。
+
+```swift
+// ✅ GOOD — ViewModel は Data だけを保持（AppKit 不要）
+@Observable
+final class SlideshowPlayerViewModel {
+    private(set) var currentImage: Data?
+}
+
+// ✅ GOOD — View 側で非同期デコード
+struct SlideshowPlayerView: View {
+    @State private var decodedImage: NSImage?
+
+    var body: some View {
+        // decodedImage を使って表示
+    }
+    .task(id: viewModel.currentImage) {
+        guard let data = viewModel.currentImage else {
+            decodedImage = nil; return
+        }
+        decodedImage = await Task.detached(priority: .userInitiated) {
+            NSImage(data: data)
+        }.value
+    }
+}
+```
+
+**メリット**: ViewModel は AppKit に依存しない。デコードはバックグラウンドで行われるため UI がカクつかない。`.task(id:)` により `data` が変わると前のデコードが自動キャンセルされる。
+
+---
+
+## 17. このファイルで学べること — まとめ
 
 `SlideshowPlayerViewModel.swift` は、現代の Swift が持つ機能を組み合わせて「安全で読みやすい非同期 UI コントローラー」を作る手本です。
 

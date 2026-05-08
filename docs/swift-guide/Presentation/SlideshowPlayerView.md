@@ -27,7 +27,8 @@
 17. [.onHover — ホバーイベント](#17-onhover--ホバーイベント)
 18. [Task { await … } — クロージャ内での非同期呼び出し](#18-task--await---クロージャ内での非同期呼び出し)
 19. [.id() — ビューの一意識別](#19-id--ビューの一意識別)
-20. [このファイルで学べること — まとめ](#20-このファイルで学べること--まとめ)
+20. [実践で学んだ落とし穴](#20-実践で学んだ落とし穴)
+21. [このファイルで学べること — まとめ](#21-このファイルで学べること--まとめ)
 
 ---
 
@@ -671,7 +672,136 @@ slideImage
 
 ---
 
-## 20. このファイルで学べること — まとめ
+## 20. 実践で学んだ落とし穴
+
+このファイルに関連する実際の開発で遭遇した落とし穴を紹介します。
+
+### 落とし穴 1: `.task {}` と `Task {}` の使い分け
+
+`.onAppear` の中で `Task {}` を作ると、**View が消えてもタスクがキャンセルされません**。画面遷移後も裏で処理が動き続け、すでに存在しない ViewModel に書き込もうとする危険があります。
+
+```swift
+// ❌ BAD — View が消えてもタスクが走り続ける
+.onAppear {
+    Task { await viewModel.loadCurrentImage() }
+}
+```
+
+`.task { }` 修飾子を使えば、View が非表示になったときに**自動でキャンセル**されます。値の変化に応じて再実行したい場合は `.task(id:)` を使います。
+
+```swift
+// ✅ GOOD — View 消滅時に自動キャンセル
+.task {
+    await viewModel.loadCurrentImage()
+    viewModel.play()
+}
+
+// ✅ GOOD — currentImage が変わるたびに前のタスクをキャンセルして再実行
+.task(id: viewModel.currentImage) {
+    guard let data = viewModel.currentImage else { return }
+    decodedImage = await Task.detached(priority: .userInitiated) {
+        NSImage(data: data)
+    }.value
+}
+```
+
+**使い分けの目安**:
+| 状況 | 使うもの |
+|------|---------|
+| View 表示時のデータ読み込み | `.task { }` |
+| 値が変わるたびに再実行したい処理 | `.task(id: value) { }` |
+| ボタン押下など短時間で完了する操作 | `Task { await ... }` |
+| View のライフサイクルと無関係な処理（ログ送信など） | `Task { }` |
+
+**注意**: `.task` のキャンセルは**協調的**です。非同期処理の中で `Task.isCancelled` をチェックするか、キャンセル可能な API（`Task.sleep` など）を使わないと、実際には処理が止まりません。
+
+---
+
+### 落とし穴 2: LazyVGrid で正方形サムネイルが崩れる
+
+フィルムストリップなどでサムネイルを正方形に表示したいとき、2つのよくある間違いがあります。
+
+```swift
+// ❌ BAD① — scaledToFill は画像のレイアウトサイズが枠を超え、
+//           重なったボタンのヒットテストが壊れる
+Image(nsImage: nsImage)
+    .resizable()
+    .scaledToFill()
+    .frame(width: 80, height: 80)
+
+// ❌ BAD② — LazyVGrid は高さを無限に提案するため、
+//           .fill では正方形にならない
+Image(nsImage: nsImage)
+    .resizable()
+    .aspectRatio(1, contentMode: .fill)
+```
+
+正解は、**まず幅を確定させてから `aspectRatio(1, contentMode: .fit)` で高さ = 幅にする**方法です。
+
+```swift
+// ✅ GOOD — 幅を先に確定し、アスペクト比で正方形にする
+ZStack {
+    Color.gray.opacity(0.15)           // レターボックス背景
+    if let nsImage = image {
+        Image(nsImage: nsImage)
+            .resizable()
+            .scaledToFit()             // 枠内に収まる
+    }
+}
+.frame(maxWidth: .infinity)            // 列幅いっぱいに広げる
+.aspectRatio(1, contentMode: .fit)     // 高さ = 幅 → 正方形
+.clipShape(RoundedRectangle(cornerRadius: 6))
+```
+
+**ポイント**: `scaledToFill()` はレイアウトサイズがはみ出すため、上に重ねたボタンが押せなくなることがある。`scaledToFit()` + レターボックス背景の組み合わせが安全です。
+
+---
+
+### 落とし穴 3: 兄弟ビュー間のアクション連携
+
+例えば「ライブラリパネルの編集ボタンを押したら、作成中のフォームに未保存データがあるか確認する」という処理。兄弟ビュー同士が直接やりとりしたくなりますが、**兄弟ビューが互いの ViewModel にアクセスするのはアンチパターン**です。
+
+```swift
+// ❌ BAD — 兄弟ビューが別の兄弟の ViewModel を直接参照
+struct SlideshowLibraryPanel: View {
+    let createViewModel: CreateSlideshowViewModel  // ← 本来別の兄弟が持つ ViewModel
+    func onEditTapped() {
+        if createViewModel.hasUnsavedWork { ... }  // ← 責務が曖昧になる
+    }
+}
+```
+
+正解は、**親ビューをコーディネーターとして使い、クロージャで連携する**方法です。
+
+```swift
+// ✅ GOOD — 親ビュー（HomeView）がコーディネーター役
+struct HomeView: View {
+    let createViewModel: CreateSlideshowViewModel
+
+    var body: some View {
+        HStack {
+            SlideshowLibraryPanel(
+                onEdit: { slideshow in handleEdit(slideshow) }  // クロージャで通知
+            )
+            LibraryPickerView(viewModel: createViewModel)
+        }
+    }
+
+    private func handleEdit(_ slideshow: SlideshowResponse) {
+        if createViewModel.hasUnsavedWork {
+            pendingEditSlideshow = slideshow   // 確認ダイアログを表示
+        } else {
+            applyEdit(slideshow)              // 直接適用
+        }
+    }
+}
+```
+
+**なぜ親ビューか**: 親ビューは両方の兄弟ビューの ViewModel を持っているため、ガードロジック（「未保存の作業がある？」）を置く自然な場所です。兄弟ビューはクロージャで「何かが起きた」と親に伝えるだけで、相手の存在を知る必要がありません。
+
+---
+
+## 21. このファイルで学べること — まとめ
 
 | 概念 | 学べること |
 |------|-----------|

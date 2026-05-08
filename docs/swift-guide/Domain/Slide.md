@@ -701,6 +701,94 @@ func updating(name: String, localIdentifiers: [String]) -> Slideshow {
 
 ---
 
+## 実践で学んだ落とし穴
+
+このプロジェクトの開発中に実際に起きた問題から、2 つの落とし穴を紹介します。
+
+---
+
+### 落とし穴 1: エンティティにビジネスロジックを詰め込まない
+
+#### 何が起きるか
+
+エンティティに「便利だから」とメソッドを追加していくと、データの器であるべき型がビジネスロジックの塊になります。
+実際に `Slideshow` には `nextSlideIndex(from:)` と `previousSlideIndex(from:)` というメソッドがありましたが、これらは引数だけで計算でき、エンティティ自身の状態（`self`）に依存していませんでした。こうしたメソッドは Domain Service に属するべきです。
+
+#### 判断基準
+
+- メソッドが `self` のストアドプロパティを使っている → エンティティに置いてよい（例: `applying(config:)`）
+- メソッドが引数だけで結果を計算できる → Domain Service に移すべき
+
+```swift
+// ❌ エンティティに置くべきでないメソッド（self の状態を使わない）
+struct Slideshow {
+    func nextSlideIndex(from currentIndex: Int) -> Int {
+        // currentIndex と slides.count だけで計算できるが、
+        // 再生ロジックは PlaybackDomainService の責務
+        (currentIndex + 1) % slides.count
+    }
+}
+
+// ✅ Domain Service に移す
+final class PlaybackDomainService {
+    func nextSlideIndex(from currentIndex: Int, totalSlides: Int) -> Int {
+        (currentIndex + 1) % totalSlides
+    }
+}
+```
+
+エンティティは **純粋なデータの器** に保ち、振る舞いは Domain Service に置くことで、責務が明確になりテストもしやすくなります。
+
+---
+
+### 落とし穴 2: 固定の選択肢は `enum` で表現する
+
+#### 何が起きるか
+
+「Domain 層は `struct` で書く」というルールを厳密に解釈しすぎて、固定の選択肢まで `struct` + `static let` で書いてしまうことがあります。しかし Swift の `enum` も値型なので、Domain 層のルール（値型であること）に違反しません。
+
+```swift
+// ❌ struct + static let で表現（switch の網羅チェックが効かない）
+struct TransitionType: Equatable, Sendable {
+    let rawValue: String
+    static let none = TransitionType(rawValue: "none")
+    static let fade = TransitionType(rawValue: "fade")
+    static let slide = TransitionType(rawValue: "slide")
+    static let dissolve = TransitionType(rawValue: "dissolve")
+}
+
+// この書き方だと、switch 文で全ケースを列挙しても
+// コンパイラが「漏れ」を検出できない
+switch transition {
+case .none: ...
+case .fade: ...
+// .slide と .dissolve を忘れてもコンパイルが通ってしまう
+default: break  // ← default が必須になり、漏れに気づけない
+}
+```
+
+```swift
+// ✅ enum なら switch の網羅チェックが効く
+enum TransitionType: String, Equatable, Sendable, CaseIterable, Codable {
+    case none
+    case fade
+    case slide
+    case dissolve
+}
+
+switch transition {
+case .none: ...
+case .fade: ...
+// .slide と .dissolve を書かないとコンパイルエラーになる ← 安全！
+}
+```
+
+**選び方の目安:**
+- **選択肢が固定で増減しない** → `enum`（コンパイラの網羅チェックが使える）
+- **将来的に拡張される可能性がある** → `struct` またはプロトコル
+
+---
+
 ## まとめ: このファイル群で学べること
 
 ### Swift 言語の基礎

@@ -280,6 +280,139 @@ func fetch(...) -> [R]? {
 
 ---
 
+## 9. 実践で学んだ落とし穴
+
+SwiftData と Photos フレームワークを使った開発で実際に遭遇した問題を紹介します。どれも「コンパイルは通るのに実行時に壊れる」タイプのバグなので、事前に知っておくことが重要です。
+
+---
+
+### 落とし穴 1: SwiftData の親子挿入順序
+
+#### 何が起きるか
+
+`@ModelActor` の中で、親モデルの `@Relationship` プロパティに子モデルを代入してから `modelContext.insert()` すると、**子モデルがデータベースに保存されません**。`modelContext.save()` はエラーを投げず成功するのに、後で取得すると子のリレーションシップが空になっています。
+
+このプロジェクトでは、ライブラリから読み込んだスライドショーの画像が全く表示されないバグとして発覚しました。新規作成したスライドショーは正常に動いていたため、発見が遅れました。
+
+#### 正しい書き方
+
+```swift
+// ✅ 親を insert → 子を insert → リレーションシップを設定 → save
+let model = SlideshowModel(...)
+modelContext.insert(model)                          // 1. 親を先にコンテキストに登録
+let slideModels = dto.slides.map { SlideModel(...) }
+slideModels.forEach { modelContext.insert($0) }     // 2. 子も個別にコンテキストに登録
+model.slides = slideModels                          // 3. 両方がコンテキストに入った状態で関連付け
+try modelContext.save()                             // 4. 保存
+```
+
+#### やってはいけない書き方
+
+```swift
+// ❌ 子がコンテキストに入る前にリレーションシップを設定 — 子が消失する
+let model = SlideshowModel(...)
+model.slides = dto.slides.map { SlideModel(...) }   // 子はまだコンテキスト未登録！
+modelContext.insert(model)                           // 親だけ登録される
+try modelContext.save()
+// → save() は成功するが、後で取得すると model.slides == []
+```
+
+**ポイント**: `save()` がエラーなく成功しても、リレーションシップが正しく保存されたとは限りません。「親を insert → 子を insert → 関連付け」の順序を必ず守りましょう。
+
+---
+
+### 落とし穴 2: リレーションシップ再代入時の孤児レコード
+
+#### 何が起きるか
+
+`@Relationship` の配列プロパティに新しい子オブジェクトの配列を代入すると、**古い子オブジェクトがデータベースに残り続けます**。`deleteRule: .cascade` は親モデル自体が削除されたときにしか発動せず、配列の上書きでは機能しません。
+
+更新を繰り返すたびにデータベースに孤児レコードが蓄積し、ストレージを圧迫します。
+
+#### 正しい書き方
+
+```swift
+// ✅ 古い子を明示的に削除してから、新しい子を挿入・関連付け
+func save(_ dto: SlideshowDTO) throws {
+    let id = dto.id
+    let descriptor = FetchDescriptor<SlideshowModel>(
+        predicate: #Predicate { $0.id == id }
+    )
+    if let existing = try modelContext.fetch(descriptor).first {
+        existing.slides.forEach { modelContext.delete($0) }     // 古い子を削除
+        let newSlides = makeSlideModels(from: dto.slides)
+        newSlides.forEach { modelContext.insert($0) }           // 新しい子を挿入
+        existing.slides = newSlides                              // 関連付け
+    } else {
+        // 新規作成パス
+    }
+    try modelContext.save()
+}
+```
+
+#### やってはいけない書き方
+
+```swift
+// ❌ 配列をそのまま上書き — 古い子レコードが孤児として残る
+existing.slides = newSlides
+try modelContext.save()
+// → 古い SlideModel が DB に残り続け、ストレージが肥大化する
+```
+
+**ポイント**: `deleteRule: .cascade` はあくまで「親が消えたとき」に子を道連れにする機能です。「子の入れ替え」は開発者が明示的に古い子を `delete()` する必要があります。
+
+---
+
+### 落とし穴 3: PHImageManager の deliveryMode に `.opportunistic` を使わない
+
+#### 何が起きるか
+
+`PHImageManager` を Swift Concurrency の `withCheckedThrowingContinuation` でラップするとき、`deliveryMode = .opportunistic` を使うと**コールバックが2回呼ばれます**（1回目は低品質プレビュー、2回目が本画像）。`continuation.resume()` が2回実行されるため、Swift ランタイムがクラッシュを引き起こします。
+
+かといって、1回目のコールバックを `if isDegraded { return }` でスキップすると、2回目が失敗した場合に `resume()` が永久に呼ばれず、タスクがハングしてメモリリークします。
+
+#### 正しい書き方
+
+```swift
+// ✅ .highQualityFormat を使えばコールバックは必ず1回だけ
+let options = PHImageRequestOptions()
+options.deliveryMode = .highQualityFormat  // 1回だけコールバックが呼ばれることが保証される
+
+let data: Data = try await withCheckedThrowingContinuation { continuation in
+    PHImageManager.default().requestImageDataAndOrientation(
+        for: asset, options: options
+    ) { data, _, _, _ in
+        if let data {
+            continuation.resume(returning: data)
+        } else {
+            continuation.resume(throwing: ImageDataSourceError.dataUnavailable)
+        }
+    }
+}
+```
+
+#### やってはいけない書き方
+
+```swift
+// ❌ .opportunistic はコールバックが2回来る → continuation が2回 resume されてクラッシュ
+let options = PHImageRequestOptions()
+options.deliveryMode = .opportunistic
+
+let data: Data = try await withCheckedThrowingContinuation { continuation in
+    PHImageManager.default().requestImageDataAndOrientation(
+        for: asset, options: options
+    ) { data, _, _, _ in
+        if let data {
+            continuation.resume(returning: data)  // 2回目でクラッシュ！
+        }
+    }
+}
+```
+
+**ポイント**: `withCheckedThrowingContinuation` は `resume()` が**正確に1回**呼ばれることを前提としています。コールバックが複数回呼ばれる API をラップするときは、1回だけ呼ばれるオプションを選ぶか、`AsyncStream` を使いましょう。
+
+---
+
 ## このファイルで学べること まとめ
 
 | 概念 | 一言まとめ |

@@ -322,6 +322,53 @@ func update(id: UUID, name: String, localIdentifiers: [String]) async throws -> 
 
 ---
 
+## 実践で学んだ落とし穴
+
+このプロジェクトの開発中に実際に起きた問題から、Domain Service の落とし穴を紹介します。
+
+---
+
+### 落とし穴 1: Domain Service は「変換して返す」だけでなく「永続化まで完了する」
+
+#### 何が起きるか
+
+Domain Service のメソッドが「エンティティを変換して返すだけ」で、`repository.save()` を呼ばない設計にすると、呼び出し元（UseCase）が保存を忘れるという事故が起きます。
+
+実際にこのプロジェクトでは、`PlaybackDomainService.applyConfig` が設定を変更した `Slideshow` を返すだけで `repository.save()` を呼んでいませんでした。画面上は更新が反映されて見えますが、アプリを再起動すると設定が元に戻っていたのです。
+
+```swift
+// ❌ 変換だけして返す（保存は呼び出し元に委ねる）
+final class PlaybackDomainService {
+    func applyConfig(to slideshow: Slideshow, config: SlideshowConfig) -> Slideshow {
+        slideshow.applying(config: config)
+        // repository.save() を呼んでいない！
+        // → 呼び出し元が save を忘れると、再起動時にデータが消える
+    }
+}
+```
+
+```swift
+// ✅ 取得→変換→保存→返却を 1 つのメソッドで完結させる
+final class SlideshowDomainService: SlideshowDomainServiceProtocol, Sendable {
+    func updateConfig(id: UUID, config: SlideshowConfig) async throws -> Slideshow {
+        guard let existing = try await repository.fetch(id: id) else {
+            throw DomainError.slideshowNotFound(id)
+        }
+        let updated = existing.applying(config: config)  // 変換
+        try await repository.save(updated)                // 永続化
+        return updated                                    // 返却
+    }
+}
+```
+
+#### 覚えておくこと
+
+- Domain Service が永続的な状態を変更するメソッドは、**取得 → 変換 → 保存 → 返却** の全ステップを 1 つのメソッドに閉じ込める
+- `applyX` / `withX` / `applying(...)` という名前のメソッドを見たら、「これは保存まで含んでいるか？」を確認する
+- 純粋な変換メソッドなのか、永続化まで行うメソッドなのか、名前で区別できるようにする
+
+---
+
 ## このファイルで学べること まとめ
 
 | 概念 | 要点 |
