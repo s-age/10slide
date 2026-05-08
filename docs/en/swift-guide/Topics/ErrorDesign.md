@@ -138,10 +138,9 @@ Previously, the approach was to "convert Domain errors to `UseCaseError` at the 
 
 ```swift
 // Previous approach — converting DomainError → UseCaseError within the UseCase
-func execute(request: CreateSlideshowRequest) async throws -> SlideshowResponse {
+func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse {
     do {
-        try request.validate()
-        let slideshow = try await slideshowService.create(name: request.name)
+        let slideshow = try await domainService.create(name: request.name, localIdentifiers: request.localIdentifiers, config: ...)
         return SlideshowResponse(from: slideshow)
     } catch let error as DomainError {
         switch error {
@@ -159,9 +158,18 @@ Errors are thrown directly using enums from `Sources/Errors/`. No inter-layer ma
 
 ```swift
 // ✅ Current approach — errors use the Sources/Errors/ types as-is
-func execute(request: CreateSlideshowRequest) async throws -> SlideshowResponse {
-    try request.validate()
-    let slideshow = try await slideshowService.create(name: request.name)
+func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse {
+    // Note: validate() is handled by ValidationAsyncUseCaseDecorator in the DI layer
+    let config = SlideshowConfig(
+        duration: request.duration.toDomain,
+        transition: request.transition.toDomain,
+        loop: request.loop
+    )
+    let slideshow = try await domainService.create(
+        name: request.name,
+        localIdentifiers: request.localIdentifiers,
+        config: config
+    )
     return SlideshowResponse(from: slideshow)
     // DomainError.slideshowNotFound propagates directly to the caller
 }

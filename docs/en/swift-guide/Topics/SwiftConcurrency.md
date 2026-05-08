@@ -57,8 +57,8 @@ struct ImageDTO: Sendable {
 ```swift
 // ✅ final class — Sendable with let-only properties
 final class PresentationContainer: Sendable {
-    private let createSlideshow: any CreateSlideshowUseCaseProtocol  // Sendable protocol
-    private let loadSlideImage: any LoadSlideImageUseCaseProtocol
+    private let createSlideshow: CreateSlideshowUseCaseProtocol  // typealias embeds `any`
+    private let loadSlideImage: LoadSlideImageUseCaseProtocol
 }
 ```
 

@@ -511,16 +511,15 @@ Code written inside a `defer { }` block is **guaranteed to execute last, no matt
 
 ```swift
 // Typical defer usage in other ViewModels (e.g. SlideshowLibraryViewModel)
-func load() async {
+func loadLibrary() async {
     isLoading = true
     defer { isLoading = false }  // Always resets to false no matter how we return
     do {
-        slideshows = try await fetchSlideshows.execute(...)
+        slideshows = try await fetchSlideshows.execute(FetchSlideshowsRequest())
     } catch {
-        // Even if we return here, defer still executes
-        return
+        errorMessage = error.localizedDescription
+        // Even though we don't return here, defer still executes when the function ends
     }
-    // defer executes on normal completion too
 }
 ```
 

@@ -52,11 +52,12 @@ func testLoad_whenInvalidYAML_throws() async {
 
 ```swift
 // ✅ Verify a specific error type (using actual error types from the codebase)
-func testDelete_whenNotFound_throwsDomainError() async {
+// SlideshowDomainService.update throws DomainError.slideshowNotFound when the ID doesn't exist
+func testUpdate_whenNotFound_throwsDomainError() async {
     let unknownID = UUID()
     do {
-        _ = try await sut.delete(id: unknownID)
-        XCTFail("Expected delete() to throw DomainError.slideshowNotFound")
+        _ = try await sut.update(id: unknownID, name: "x", localIdentifiers: ["a"])
+        XCTFail("Expected update() to throw DomainError.slideshowNotFound")
     } catch let error as DomainError {
         XCTAssertEqual(error, .slideshowNotFound(unknownID))
     } catch {

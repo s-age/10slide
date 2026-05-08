@@ -277,14 +277,18 @@ In this codebase, which has Swift 6's strict concurrency checking enabled, passi
 When using a Swift protocol as a type, adding the `any` keyword makes it a **protocol existential type**. It's a box that can store "some type that conforms to this protocol."
 
 ```swift
-// Protocol definition
-protocol CreateSlideshowUseCaseProtocol: Sendable {
-    func execute(request: CreateSlideshowRequest) async throws -> SlideshowResponse
+// Base protocol with generics (in ExecutableUseCase.swift)
+protocol AsyncUseCase<Request, Response>: Sendable {
+    associatedtype Request
+    associatedtype Response
+    func execute(_ request: Request) async throws -> Response
 }
 
-// Stored as an existential type with any
+// Typealias pins the generic parameters (in Protocols/CreateSlideshowUseCaseProtocol.swift)
+typealias CreateSlideshowUseCaseProtocol = any AsyncUseCase<CreateSlideshowRequest, SlideshowResponse>
+
+// Stored in the container — `any` is already embedded in the typealias, so no prefix needed
 let createSlideshow: CreateSlideshowUseCaseProtocol
-//                   ↑ This is actually shorthand for `any CreateSlideshowUseCaseProtocol` (typealias)
 ```
 
 #### Why Is It Used Here?
@@ -603,12 +607,21 @@ Skipping layers triggers an error from SwiftLint's custom rules. But more import
 
 ```swift
 // ✅ UseCase only calls DomainService (does not call Repository)
-final class CreateSlideshowUseCase {
-    private let domainService: SlideshowServiceProtocol
+final class CreateSlideshowUseCase: AsyncUseCase, Sendable {
+    private let domainService: any SlideshowDomainServiceProtocol
 
-    func execute(request: CreateSlideshowRequest) async throws -> SlideshowResponse {
-        let entity = try await domainService.create(name: request.name)
-        return SlideshowResponse(entity)
+    func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse {
+        let config = SlideshowConfig(
+            duration: request.duration.toDomain,
+            transition: request.transition.toDomain,
+            loop: request.loop
+        )
+        let slideshow = try await domainService.create(
+            name: request.name,
+            localIdentifiers: request.localIdentifiers,
+            config: config
+        )
+        return SlideshowResponse(from: slideshow)
     }
 }
 ```

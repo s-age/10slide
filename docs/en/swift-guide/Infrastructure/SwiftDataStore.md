@@ -104,7 +104,7 @@ actor SwiftDataStore: SwiftDataStoreProtocol { ... }
 
 ### Why It Is Used Here
 
-The `fetch` function is used for various models, such as "fetching slides" and "fetching settings." With generics, there is no need to rewrite the function for each type.
+The `fetch` function is used for various models, such as "fetching slideshows" and "fetching slides." With generics, there is no need to rewrite the function for each type.
 
 ```swift
 func fetch<T: PersistentModel, R: Sendable>(
