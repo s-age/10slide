@@ -108,7 +108,7 @@ final class SlideshowRepository: SlideshowRepositoryProtocol {
 
 ---
 
-### 1. Repository パターン — データアクセスを抽象化する理由
+### 1. Repository パターン -- データアクセスを抽象化する理由
 
 #### 定義
 
@@ -117,7 +117,7 @@ final class SlideshowRepository: SlideshowRepositoryProtocol {
 このアプリでは `SlideshowRepositoryProtocol` というプロトコルが「何ができるか（インターフェース）」を定義し、`SlideshowRepository` がその実装を担当します。
 
 ```swift
-// プロトコル（Protocols/ 層に定義）― 「何ができるか」だけを宣言
+// Protocol (defined in the Protocols/ layer) -- declares only "what can be done"
 protocol SlideshowRepositoryProtocol: Sendable {
     func fetchAll() async throws -> [Slideshow]
     func fetch(id: UUID) async throws -> Slideshow?
@@ -125,24 +125,42 @@ protocol SlideshowRepositoryProtocol: Sendable {
     func delete(id: UUID) async throws
 }
 
-// 実装（Implementations/ 層）― 「どうやってやるか」を定義
+// Implementation (in the Implementations/ layer) -- defines "how it's done"
 final class SlideshowRepository: SlideshowRepositoryProtocol { ... }
 ```
 
 #### なぜここで使われているか
 
-Domain 層・UseCases 層は「スライドショーを取得してほしい」とだけ伝えます。データがどこに保存されているか（SwiftData なのか、ファイルなのか、ネットワークなのか）を知る必要はありません。Repository がその橋渡しをします。
+Domain 層・UseCases 層は「スライドショーを取得してほしい」とだけ伝えます。データがどこに保存されているか -- SwiftData なのか、ファイルなのか、ネットワークなのか -- を知る必要はありません。Repository がその橋渡しをします。
+
+#### `any SwiftDataStoreProtocol` について
+
+```swift
+private let store: any SwiftDataStoreProtocol
+```
+
+`any` キーワードはこれが **存在型（existential type）** であることを示します。つまり「`SwiftDataStoreProtocol` に準拠する任意の型を入れられる箱」です。これにより、Repository は具体的な型を知らなくても、ストアのどんな実装（本番の `SwiftDataStore` やテスト用のモックなど）とも連携できます。
+
+#### `@Relationship(deleteRule: .cascade)` について
+
+`SlideshowModel`（`Repositories/Models/` に定義）は以下を使用しています:
+
+```swift
+@Relationship(deleteRule: .cascade, inverse: \SlideModel.slideshow) var slides: [SlideModel]
+```
+
+これは、`SlideshowModel` が**削除**されると、その子である `SlideModel` もすべて自動的に削除されることを意味します。そのため `delete(id:)` メソッドは子を手動で削除せずに `store.delete(SlideshowModel.self, ...)` を呼ぶだけで済みます。ただし、`cascade` はリレーションの**再代入**時には発動しません。そのため `save()` では新しいスライドを代入する前に `context.delete($0)` で古いスライドを明示的に削除しています。
 
 #### もし Repository パターンを使わなかったら
 
 ```swift
-// ❌ UseCase が SwiftData を直接操作する
+// Bad: UseCase directly manipulates SwiftData
 final class FetchSlideshowsUseCase {
-    private let context: ModelContext  // ← SwiftData の知識が UseCase に漏れる
+    private let context: ModelContext  // SwiftData knowledge leaks into the UseCase
 
     func execute() throws -> [Slideshow] {
         let models = try context.fetch(FetchDescriptor<SlideshowModel>())
-        // ... 変換ロジックも UseCase 内に書かれてしまう
+        // ... conversion logic ends up inside the UseCase too
     }
 }
 ```
@@ -155,12 +173,12 @@ final class FetchSlideshowsUseCase {
 
 ```swift
 final class SlideshowRepository: SlideshowRepositoryProtocol {
-    // ← プロトコルに準拠することで、上位層はプロトコル越しにしか触れない
+    // By conforming to the protocol, upper layers can only access it through the protocol
 ```
 
 ---
 
-### 2. `import SwiftData` — SwiftData フレームワーク
+### 2. `import SwiftData` -- SwiftData フレームワーク
 
 #### 定義
 
@@ -173,7 +191,7 @@ final class SlideshowRepository: SlideshowRepositoryProtocol {
 #### もし import しなかったら
 
 ```swift
-// ❌ import なしだと FetchDescriptor や #Predicate がコンパイルエラーになる
+// Bad: Without the import, FetchDescriptor and #Predicate cause compile errors
 FetchDescriptor<SlideshowModel>()  // error: cannot find type 'FetchDescriptor'
 ```
 
@@ -181,14 +199,14 @@ FetchDescriptor<SlideshowModel>()  // error: cannot find type 'FetchDescriptor'
 
 ```swift
 import Foundation
-import SwiftData   // ← SlideshowModel, FetchDescriptor, #Predicate を使うために必要
+import SwiftData   // Needed to use SlideshowModel, FetchDescriptor, and #Predicate
 ```
 
 > **ポイント**: SwiftData の `import` は Repository 層にのみ許可されています。Domain や UseCase では禁止されています。これにより「上位層は永続化の詳細を知らなくていい」というルールが守られます。
 
 ---
 
-### 3. `FetchDescriptor<T>` — ジェネリクスを使ったフェッチ記述子
+### 3. `FetchDescriptor<T>` -- ジェネリクスを使ったフェッチ記述子
 
 #### 定義
 
@@ -201,37 +219,37 @@ import SwiftData   // ← SlideshowModel, FetchDescriptor, #Predicate を使う�
 SwiftData はどのモデルを取得するかをコンパイル時に知る必要があります。`FetchDescriptor<SlideshowModel>` と書くことで「`SlideshowModel` を取り出すためのクエリ設定」を型安全に作れます。
 
 ```swift
-// 引数なし ― すべてのスライドショーを取得
+// No arguments -- fetch all slideshows
 FetchDescriptor<SlideshowModel>()
 
-// predicate 付き ― 条件に一致するものだけ取得
+// With a predicate -- fetch only those matching the condition
 FetchDescriptor<SlideshowModel>(predicate: #Predicate { $0.id == id })
 ```
 
 #### もし型引数（`<T>`）がなかったら
 
 ```swift
-// ❌ ジェネリクスなし（架空の例）
+// Bad: Without generics (hypothetical example)
 FetchDescriptor(modelType: SlideshowModel.self)
-// → 戻り値が [Any] になるため、コンパイラが型を検証できない
-//   実行時エラーになるまで間違いに気づけない
+// The return type would be [Any], so the compiler can't verify types
+// You wouldn't notice mistakes until a runtime error occurs
 ```
 
 #### 該当コード
 
 ```swift
-// fetchAll: 全件取得
+// fetchAll: Fetch all records
 try await store.fetch(FetchDescriptor<SlideshowModel>()) { ... }
 //                               ^^^^^^^^^^^^^^^^
-//                         ジェネリクスで取得対象の型を指定
+//                         Generics specifies the type to fetch
 
-// fetch(id:): 条件付き取得
+// fetch(id:): Conditional fetch
 FetchDescriptor<SlideshowModel>(predicate: #Predicate { $0.id == id })
 ```
 
 ---
 
-### 4. `#Predicate { }` — マクロによる述語式
+### 4. `#Predicate { }` -- マクロによる述語式
 
 #### 定義
 
@@ -242,7 +260,7 @@ FetchDescriptor<SlideshowModel>(predicate: #Predicate { $0.id == id })
 特定の `id` を持つスライドショーだけを取得したいときに使います。`#Predicate { $0.id == id }` は「`id` プロパティが変数 `id` と等しいレコード」という条件を表します。
 
 ```swift
-// id が一致するスライドショーだけを取得する条件
+// Condition to fetch only slideshows with a matching id
 #Predicate { $0.id == id }
 ```
 
@@ -251,38 +269,38 @@ FetchDescriptor<SlideshowModel>(predicate: #Predicate { $0.id == id })
 #### もし `#Predicate` を使わなかったら
 
 ```swift
-// ❌ 文字列で SQL を書く（古い CoreData の書き方）
+// Bad: Writing SQL as a string (the old CoreData approach)
 NSPredicate(format: "id == %@", id as CVarArg)
-// → 文字列なので IDE の補完が効かない
-// → タイポしても実行時まで気づけない
-// → "id" が実際のプロパティ名かどうかコンパイラが検証できない
+// IDE autocompletion doesn't work because it's a string
+// Typos aren't caught until runtime
+// The compiler can't verify whether "id" is an actual property name
 ```
 
 #### 該当コード
 
 ```swift
-// fetch(id:) — 特定 ID だけ取得
+// fetch(id:) -- fetch only a specific ID
 FetchDescriptor<SlideshowModel>(predicate: #Predicate { $0.id == id })
 //                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
-//                                         Swift コードとして書かれた型安全なクエリ
+//                                         A type-safe query written as Swift code
 
-// delete(id:) — 特定 ID だけ削除
+// delete(id:) -- delete only a specific ID
 store.delete(SlideshowModel.self, where: #Predicate { $0.id == id })
 ```
 
 ---
 
-### 5. `$0` — クロージャの省略引数名
+### 5. `$0` -- クロージャの省略引数名
 
 #### 定義
 
-クロージャ（無名関数）の引数には名前を付けることができますが、`$0`・`$1`・`$2`… という**省略形**でも参照できます。`$0` は「1 番目の引数」を意味します。
+クロージャ（無名関数）の引数には名前を付けることができますが、`$0`・`$1`・`$2`... という**省略形**でも参照できます。`$0` は「1 番目の引数」を意味します。
 
 ```swift
-// 名前あり（冗長だが分かりやすい）
+// With a named parameter (verbose but clear)
 { model in slideshow(from: model) }
 
-// $0 を使った省略形（コンパクト）
+// Using $0 shorthand (compact)
 { slideshow(from: $0) }
 ```
 
@@ -291,13 +309,13 @@ store.delete(SlideshowModel.self, where: #Predicate { $0.id == id })
 `#Predicate { }` や `.map { }` などでは、クロージャの引数が明らかなため、`$0` で簡潔に書けます。
 
 ```swift
-// $0 = FetchDescriptor が返す SlideshowModel の各要素
+// $0 = each SlideshowModel element returned by FetchDescriptor
 { [self] in slideshow(from: $0) }
 
-// $0 = slides 配列の各 Slide 要素
+// $0 = each Slide element in the slides array
 slides.map {
     SlideModel(
-        id: $0.id,              // Slide の id
+        id: $0.id,              // Slide's id
         localIdentifier: $0.localIdentifier,
         order: $0.order,
         duration: $0.duration,
@@ -309,7 +327,7 @@ slides.map {
 #### もし `$0` を使わなかったら
 
 ```swift
-// ❌ 引数名を明示するとやや冗長になる
+// Explicit argument name is slightly more verbose
 slides.map { slide in
     SlideModel(
         id: slide.id,
@@ -319,29 +337,29 @@ slides.map { slide in
         title: slide.title
     )
 }
-// 動作は同じ。引数名 slide の方が文脈によっては読みやすい場合もある
+// The behavior is the same. The named argument slide may be more readable depending on context
 ```
 
 #### 該当コード
 
 ```swift
-// #Predicate 内
+// Inside #Predicate
 #Predicate { $0.id == id }
-//           ^^ 取得対象の SlideshowModel インスタンス
+//           ^^ The SlideshowModel instance being fetched
 
-// map 内（save）
+// Inside map (save)
 slides.map {
     SlideModel(id: $0.id, ...)
-//             ^^ slides 配列の各 Slide 要素
+//             ^^ Each Slide element in the slides array
 
-// sorted 内（slideshow(from:)）
+// Inside sorted (slideshow(from:))
 model.slides.sorted { $0.order < $1.order }
-//                    ^^         ^^ 比較する 2 つの SlideModel
+//                    ^^         ^^ The two SlideModel instances being compared
 ```
 
 ---
 
-### 6. `[self]` キャプチャリスト — クロージャのキャプチャ
+### 6. `[self]` キャプチャリスト -- クロージャのキャプチャ
 
 #### 定義
 
@@ -350,7 +368,7 @@ model.slides.sorted { $0.order < $1.order }
 ```swift
 { [self] in slideshow(from: $0) }
 //^^^^^^^
-// "self（このクラスのインスタンス）を値としてキャプチャする"
+// "Capture self (this class's instance) by value"
 ```
 
 #### なぜここで使われているか
@@ -362,9 +380,9 @@ model.slides.sorted { $0.order < $1.order }
 #### もし `[self]` を書かなかったら
 
 ```swift
-// ❌ [self] なし
-try await store.fetch(FetchDescriptor<SlideshowModel>()) { in slideshow(from: $0) }
-// Swift 6 では "Capture of 'self' with non-sendable type" などのエラーが出る場合がある
+// Bad: Without [self]
+try await store.fetch(FetchDescriptor<SlideshowModel>()) { slideshow(from: $0) }
+// In Swift 6, you may get errors like "Capture of 'self' with non-sendable type"
 ```
 
 `[weak self]` ではなく `[self]` を使っているのは、Repository クラスが長期間生きており、クロージャ実行中に破棄されることがないためです。
@@ -375,23 +393,23 @@ try await store.fetch(FetchDescriptor<SlideshowModel>()) { in slideshow(from: $0
 func fetchAll() async throws -> [Slideshow] {
     try await store.fetch(FetchDescriptor<SlideshowModel>()) { [self] in slideshow(from: $0) }
     //                                                         ^^^^^^
-    //                    self（SlideshowRepository）を明示的にキャプチャ
+    //                    Explicitly captures self (SlideshowRepository)
 }
 ```
 
 ---
 
-### 7. トレイリングクロージャ構文 — 関数の最後の引数がクロージャの場合
+### 7. トレイリングクロージャ構文 -- 関数の最後の引数がクロージャの場合
 
 #### 定義
 
 Swift では、関数の**最後の引数がクロージャ**の場合、`()` の外にクロージャを書ける「トレイリングクロージャ構文」が使えます。
 
 ```swift
-// 通常の呼び出し（ラベルあり）
+// Standard call (with label)
 store.fetch(FetchDescriptor<SlideshowModel>(), transform: { [self] in slideshow(from: $0) })
 
-// トレイリングクロージャ構文（最後の引数を () の外に書く）
+// Trailing closure syntax (write the last argument outside the ())
 store.fetch(FetchDescriptor<SlideshowModel>()) { [self] in slideshow(from: $0) }
 ```
 
@@ -400,19 +418,19 @@ store.fetch(FetchDescriptor<SlideshowModel>()) { [self] in slideshow(from: $0) }
 クロージャが長くなるとき、`()` の外に書くとコードの構造が読みやすくなります。
 
 ```swift
-// store.write のトレイリングクロージャ（複数行）
+// Trailing closure for store.write (multi-line)
 try await store.write { context in
-    // ... 複数行のコード ...
+    // ... multiple lines of code ...
     try context.save()
 }
-// ↑ { } が "store.write の引数" であることを示しつつ、インデントも自然
+// The { } indicates "this is the argument to store.write" while keeping indentation natural
 ```
 
 #### もしトレイリングクロージャ構文を使わなかったら
 
 ```swift
-// ❌ 引数ラベルあり（ネストが深くなると読みにくい）
-try await store.write(body: { context in
+// Without trailing closure (deeper nesting makes it harder to read)
+try await store.write({ context in
     // ...
     try context.save()
 })
@@ -421,12 +439,12 @@ try await store.write(body: { context in
 #### 該当コード
 
 ```swift
-// 1 行で収まる場合
+// When it fits on a single line
 try await store.fetch(FetchDescriptor<SlideshowModel>()) { [self] in slideshow(from: $0) }
 //                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-//                                                      () の外にクロージャを書いている
+//                                                      The closure is written outside the ()
 
-// 複数行にまたがる場合
+// When it spans multiple lines
 try await store.write { context in
     // ...
 }
@@ -434,7 +452,7 @@ try await store.write { context in
 
 ---
 
-### 8. `.map { }`, `.sorted { }`, `.first` — コレクション操作
+### 8. `.map { }`, `.sorted { }`, `.first` -- コレクション操作
 
 #### 定義
 
@@ -449,63 +467,63 @@ Swift の配列（`Array`）には、要素を変換・絞り込み・集計す�
 
 #### なぜここで使われているか
 
-**`.map { }`** — `Slide`（エンティティ）を `SlideModel`（SwiftData モデル）に変換、またはその逆の変換をするとき。
+**`.map { }`** -- `Slide`（エンティティ）を `SlideModel`（SwiftData モデル）に変換、またはその逆の変換をするとき。
 
 ```swift
-// Slide エンティティ → SlideModel へ変換（save 時）
+// Slide entity -> SlideModel conversion (during save)
 let newSlides = slides.map {
     SlideModel(id: $0.id, localIdentifier: $0.localIdentifier, ...)
 }
 
-// SlideModel → Slide エンティティへ変換（slideshow(from:) 内）
+// SlideModel -> Slide entity conversion (inside slideshow(from:))
 .map { Slide(id: $0.id, localIdentifier: $0.localIdentifier, ...) }
 ```
 
-**`.sorted { }`** — スライドを `order` 順（表示順）で並べ替えるとき。データベースは取り出し順を保証しないため、明示的に並べます。
+**`.sorted { }`** -- スライドを `order` 順（表示順）で並べ替えるとき。データベースは取り出し順を保証しないため、明示的に並べます。
 
 ```swift
 model.slides.sorted { $0.order < $1.order }
-//           ^^^^^^^ order が小さい順（昇順）に並べ替え
+//           ^^^^^^^ Sort in ascending order by order
 ```
 
-**`.first`** — `FetchDescriptor` の結果から最初の 1 件だけ取得するとき。`fetch` の戻り値は配列なので、`.first` で Optional（`nil` の可能性あり）の単一要素を取り出します。
+**`.first`** -- `FetchDescriptor` の結果から最初の 1 件だけ取得するとき。`fetch` の戻り値は配列なので、`.first` で Optional（`nil` の可能性あり）の単一要素を取り出します。
 
 ```swift
 try await store.fetch(...) { ... }.first
-//                               ^^^^^^ 配列の先頭要素。見つからなければ nil
+//                               ^^^^^^ The first element of the array. nil if not found
 ```
 
 #### もし `.map { }` を使わなかったら
 
 ```swift
-// ❌ for ループで手動変換
+// Manual conversion with a for loop
 var newSlides: [SlideModel] = []
 for slide in slides {
     let model = SlideModel(id: slide.id, localIdentifier: slide.localIdentifier, ...)
     newSlides.append(model)
 }
-// 動作は同じだが、「配列を別の型の配列に変換する」意図が .map より読み取りにくい
+// The behavior is the same, but the intent of "converting an array to an array of another type" is less clear than with .map
 ```
 
 #### 該当コード
 
 ```swift
-// slideshow(from:) 内 — .sorted と .map をチェーン
+// Inside slideshow(from:) -- chaining .sorted and .map
 let slides = model.slides
-    .sorted { $0.order < $1.order }   // 1. order 順に並べ替え
-    .map { Slide(id: $0.id, ...) }    // 2. SlideModel → Slide エンティティへ変換
+    .sorted { $0.order < $1.order }   // 1. Sort by order
+    .map { Slide(id: $0.id, ...) }    // 2. Convert SlideModel -> Slide entity
 
-// fetch(id:) — .first で Optional の 1 件を取得
+// fetch(id:) -- get a single Optional result with .first
 } { [self] in slideshow(from: $0) }.first
 
-// save 内 — .forEach で各要素に対して insert/delete
+// Inside save -- .forEach for batch insert/delete
 existing.slides.forEach { context.delete($0) }
 newSlides.forEach { context.insert($0) }
 ```
 
 ---
 
-### 9. `context.insert()`, `context.delete()`, `context.save()` — SwiftData の CRUD
+### 9. `context.insert()`, `context.delete()`, `context.save()` -- SwiftData の CRUD
 
 #### 定義
 
@@ -524,30 +542,30 @@ SwiftData の `ModelContext`（変数名 `context`）は「データベースへ
 
 ```swift
 try await store.write { context in
-    // 既存レコードがあれば更新、なければ新規作成（Upsert パターン）
+    // If an existing record is found, update it; otherwise, create a new one (Upsert pattern)
     if let existing = try context.fetch(descriptor).first {
-        existing.name = name          // 1. プロパティを更新
-        existing.slides.forEach { context.delete($0) }   // 2. 古いスライドを削除
-        newSlides.forEach { context.insert($0) }         // 3. 新しいスライドを追加
+        existing.name = name          // 1. Update properties
+        existing.slides.forEach { context.delete($0) }   // 2. Delete old slides
+        newSlides.forEach { context.insert($0) }         // 3. Add new slides
         existing.slides = newSlides
     } else {
         let model = SlideshowModel(...)
-        context.insert(model)         // 1. 新規レコードを追加
+        context.insert(model)         // 1. Add a new record
         newSlides.forEach { context.insert($0) }
         model.slides = newSlides
     }
-    try context.save()               // ← ここで初めてディスクに書き込む
+    try context.save()               // This is where data is actually written to disk
 }
 ```
 
 #### もし `save()` を呼ばなかったら
 
 ```swift
-// ❌ save() を忘れると変更がディスクに反映されない
+// Bad: If you forget save(), changes aren't persisted to disk
 try await store.write { context in
     context.insert(model)
-    // try context.save() ← 忘れた！
-    // アプリを再起動するとデータが消える
+    // try context.save() -- forgot!
+    // Data disappears when the app is restarted
 }
 ```
 
@@ -556,16 +574,16 @@ try await store.write { context in
 ```swift
 try await store.write { context in
     // ...
-    existing.slides.forEach { context.delete($0) }  // 古いスライドを削除
-    newSlides.forEach { context.insert($0) }         // 新しいスライドを追加
+    existing.slides.forEach { context.delete($0) }  // Delete old slides
+    newSlides.forEach { context.insert($0) }         // Add new slides
     // ...
-    try context.save()  // ← 変更をディスクに確定。エラーなら throw
+    try context.save()  // Commit changes to disk. Throws on error
 }
 ```
 
 ---
 
-### 10. `save()` 前の変数コピー — クロージャへの安全な値の渡し方
+### 10. `save()` 前の変数コピー -- クロージャへの安全な値の渡し方
 
 #### 定義
 
@@ -575,17 +593,17 @@ try await store.write { context in
 
 ```swift
 func save(_ slideshow: Slideshow) async throws {
-    // クロージャに渡す前に値をコピー
+    // Copy values before passing to the closure
     let id = slideshow.id
     let name = slideshow.name
     let createdAt = slideshow.createdAt
     let durationRawValue = slideshow.config.duration.rawValue
     let transitionRawValue = slideshow.config.transition.rawValue
     let loop = slideshow.config.loop
-    let slides = slideshow.slides    // ← ここまでがコピー
+    let slides = slideshow.slides    // Everything above is a copy
 
     try await store.write { context in
-        // クロージャ内では self ではなくコピーした値を使う
+        // Inside the closure, use the copied values instead of self
         let descriptor = FetchDescriptor<SlideshowModel>(predicate: #Predicate { $0.id == id })
         // ...
     }
@@ -596,15 +614,18 @@ func save(_ slideshow: Slideshow) async throws {
 
 `Slideshow` は `Sendable` に準拠しているので、クロージャに直接渡せます。しかし SwiftData のアクター境界では、`self`（`SlideshowRepository`）を通じたアクセスよりも「生の値」を渡した方が安全かつシンプルです。特に `#Predicate` マクロは変数をキャプチャするため、`Sendable` な値型を渡すのが確実です。
 
-#### もしコピーせずに `self.slideshow` を直接使おうとしたら
+#### もしコピーせずに関数パラメータを直接使おうとしたら
 
 ```swift
-// ❌ クロージャ内で self を使おうとする
-try await store.write { context in
-    // #Predicate は self.slideshow.id をキャプチャできない場合がある
-    let descriptor = FetchDescriptor<SlideshowModel>(
-        predicate: #Predicate { $0.id == self.slideshow.id }  // コンパイルエラーの可能性
-    )
+// Bad: Trying to capture the function parameter directly in the @Sendable closure
+func save(_ slideshow: Slideshow) async throws {
+    try await store.write { context in
+        // #Predicate captures variables — referencing the function parameter directly
+        // may cause issues with @Sendable closure requirements
+        let descriptor = FetchDescriptor<SlideshowModel>(
+            predicate: #Predicate { $0.id == slideshow.id }  // Possible compile error
+        )
+    }
 }
 ```
 
@@ -612,14 +633,14 @@ try await store.write { context in
 
 ```swift
 func save(_ slideshow: Slideshow) async throws {
-    let id = slideshow.id                            // ← 値型（UUID）をコピー
-    let name = slideshow.name                        // ← 値型（String）をコピー
-    let durationRawValue = slideshow.config.duration.rawValue   // ← 値型をコピー
-    // ... 全プロパティをコピー
+    let id = slideshow.id                            // Copy a value type (UUID)
+    let name = slideshow.name                        // Copy a value type (String)
+    let durationRawValue = slideshow.config.duration.rawValue   // Copy a value type
+    // ... copy all properties
 
     try await store.write { context in
-        // クロージャ内では全てコピーした値型を使用
-        #Predicate { $0.id == id }                   // ← コピーした id を使用
+        // Inside the closure, all copied value types are used
+        #Predicate { $0.id == id }                   // Uses the copied id
     }
 }
 ```
@@ -642,7 +663,7 @@ func save(_ slideshow: Slideshow) async throws {
 
 | メソッド | 用途 |
 |---|---|
-| `.map { }` | 型変換。`SlideModel` ↔ `Slide` の変換に使用 |
+| `.map { }` | 型変換。`SlideModel` と `Slide` の変換に使用 |
 | `.sorted { }` | 並べ替え。`order` プロパティ順にスライドを整列 |
 | `.first` | 先頭要素を Optional で取得。ID 検索の結果 1 件取り出しに使用 |
 | `.forEach { }` | 副作用を伴う繰り返し。`insert` / `delete` の一括適用に使用 |
@@ -659,22 +680,22 @@ func save(_ slideshow: Slideshow) async throws {
 
 ### Repository パターンの 3 原則
 
-1. **上位層はエンティティしか知らない** — `SlideshowModel`（SwiftData の内部型）は Repository の外に一切出さない
-2. **変換はすべて Repository の中** — `@Model ↔ Entity` の変換ロジックを一箇所に集約する
-3. **実装はプロトコルで隠す** — 呼び出し側は `SlideshowRepositoryProtocol` を通じてのみ操作し、SwiftData の詳細を知らなくていい
+1. **上位層はエンティティしか知らない** -- `SlideshowModel`（SwiftData の内部型）は Repository の外に一切出さない
+2. **変換はすべて Repository の中** -- `@Model <-> Entity` の変換ロジックを一箇所に集約する
+3. **実装はプロトコルで隠す** -- 呼び出し側は `SlideshowRepositoryProtocol` を通じてのみ操作し、SwiftData の詳細を知らなくていい
 
 ### アーキテクチャ上の位置づけ
 
 ```
 Presentation
-    ↓
-UseCases  ← "スライドショーを保存して" と Repository プロトコルに依頼
-    ↓
+    |
+UseCases  <- Requests "save the slideshow" through the Repository protocol
+    |
 Domain/Services
-    ↓
-Repositories  ← ← ← ← ここが SlideshowRepository の場所
-    ↓
-Infrastructure（SwiftData の ModelContext）
+    |
+Repositories  <- <- <- <- This is where SlideshowRepository lives
+    |
+Infrastructure (SwiftData's ModelContext)
 ```
 
 Repository 層は「上への約束（エンティティを返す）」と「下への依頼（SwiftData で保存する）」の橋渡し役です。

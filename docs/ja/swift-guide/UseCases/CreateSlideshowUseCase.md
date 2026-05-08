@@ -15,7 +15,7 @@
 
 ---
 
-## 1. プロトコルと `associatedtype` — 「型の形」を決める
+## 1. プロトコルと `associatedtype` -- 「型の形」を決める
 
 ### ファイル: `ExecutableUseCase.swift`
 
@@ -39,14 +39,14 @@ protocol AsyncUseCase<Request, Response>: Sendable {
 プロトコルの「型のプレースホルダー」です。「このプロトコルに準拠するときに、具体的な型を決めてね」という意味です。
 
 ```swift
-// プロトコル側：Request と Response は「後で決める」
+// Protocol side: Request and Response are "to be determined later"
 protocol AsyncUseCase<Request, Response> {
     associatedtype Request
     associatedtype Response
     func execute(_ request: Request) async throws -> Response
 }
 
-// 実装側：ここで「Request = CreateSlideshowRequest」と確定する
+// Implementation side: Here "Request = CreateSlideshowRequest" is finalized
 final class CreateSlideshowUseCase: AsyncUseCase {
     func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse {
         // ...
@@ -61,7 +61,7 @@ final class CreateSlideshowUseCase: AsyncUseCase {
 
 ---
 
-## 2. `typealias` — 型に「別名」をつける
+## 2. `typealias` -- 型に「別名」をつける
 
 このプロジェクトでは、UseCase の公開インターフェースを `Protocols/` フォルダに `typealias` として定義します。
 
@@ -82,16 +82,16 @@ typealias CreateSlideshowUseCaseProtocol = any AsyncUseCase<CreateSlideshowReque
 DI（依存性注入）のコードや ViewModel のコードに、長い型名が何度も登場します。型を変更するときも、すべての箇所を書き直す必要があります。
 
 ```swift
-// 別名なしの場合（読みにくい）
+// Without an alias (hard to read)
 init(useCase: any AsyncUseCase<CreateSlideshowRequest, SlideshowResponse>) { ... }
 
-// 別名ありの場合（意図が伝わる）
+// With an alias (conveys intent)
 init(useCase: CreateSlideshowUseCaseProtocol) { ... }
 ```
 
 ---
 
-## 3. `final class` とプロトコル準拠 — 「約束を守る具体的な実装」
+## 3. `final class` とプロトコル準拠 -- 「約束を守る具体的な実装」
 
 ### ファイル: `CreateSlideshowUseCase.swift`
 
@@ -123,7 +123,7 @@ UseCase は `domainService` という依存オブジェクトを保持するた�
 「このクラスを継承できない」という宣言です。
 
 **使わなかったら？**  
-他のクラスが `CreateSlideshowUseCase` を継承して `execute` を上書きできてしまいます。UseCase はシンプルな 1 操作 = 1 クラスの設計なので、継承によって複雑になるのを防ぎます。また `final` があるとコンパイラが最適化しやすくなります。
+他のクラスが `CreateSlideshowUseCase` を継承して `execute` を上書きできてしまいます。UseCase は 1 操作 = 1 クラスの設計なので、`final` によって継承による複雑さを防ぎます。また、コンパイラが最適化しやすくなります。
 
 ### プロトコル準拠（`: AsyncUseCase`）
 
@@ -131,7 +131,7 @@ UseCase は `domainService` という依存オブジェクトを保持するた�
 
 ---
 
-## 4. `Sendable` — 並行処理でも安全に使える
+## 4. `Sendable` -- 並行処理でも安全に使える
 
 ```swift
 final class CreateSlideshowUseCase: AsyncUseCase, Sendable {
@@ -150,7 +150,7 @@ Swift 6 のコンパイラが「この型を非同期タスクに渡すのは危
 
 ---
 
-## 5. Request / Response パターン — 入出力を型で表現する
+## 5. Request / Response パターン -- 入出力を型で表現する
 
 ### ファイル: `CreateSlideshowRequest.swift`
 
@@ -181,9 +181,11 @@ Request は「この操作に必要な情報のかたまり」です。ただの
 `execute(name: String, identifiers: [String], duration: ..., transition: ..., loop: Bool)` のように、引数が 5 個以上の長いメソッドになります。引数の順番を間違えやすく、後から項目を追加するたびに呼び出し側のコードをすべて変更する必要があります。
 
 Request 型にまとめることで：
-- 引数の追加・変更が型の定義変更だけで済む
-- `validate()` で入力チェックをまとめて書ける
+- 項目の追加・変更が型の定義変更だけで済む
+- `validate()` で入力チェックを一箇所にまとめて書ける
 - コードを読む人が「この操作に何が必要か」を一目で把握できる
+
+> **重要**: `validate()` は `execute()` の内部では呼び出されて**いません**。DI コンテナで UseCase をラップする `ValidationAsyncUseCaseDecorator` によって呼び出されます。これにより、UseCase が明示的に `validate()` を呼ぶ必要なく、すべての UseCase にバリデーションが自動的に適用されます。このデコレータのラップの仕組みについては [DI/Container.md](../DI/Container.md) を参照してください。
 
 ### ファイル: `SlideshowResponse.swift`
 
@@ -209,7 +211,7 @@ Response 型を「緩衝材」として挟むことで：
 
 ---
 
-## 6. `async throws -> Response` — 非同期で失敗できる関数
+## 6. `async throws -> Response` -- 非同期で失敗できる関数
 
 ```swift
 func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse {
@@ -227,32 +229,32 @@ func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowRespons
 }
 ```
 
-### `async` — 非同期処理
+### `async` -- 非同期処理
 
-`async` をつけた関数は「途中で他のタスクに処理を譲れる」関数です。スライドショーの保存はディスクや写真ライブラリへのアクセスを伴うので、完了まで時間がかかります。その間、アプリが固まらないよう `async` を使います。
+`async` をつけた関数は「途中で他のタスクに処理を譲れる」関数です。スライドショーの作成はディスクや写真ライブラリへのアクセスを伴うので、完了まで時間がかかります。その間、アプリが固まらないよう `async` を使います。
 
 ```swift
-// 呼び出し側では await をつける
+// The calling side uses await
 let response = try await useCase.execute(request)
-// ↑ ここで一時停止し、完了したら次の行へ進む
+// Execution pauses here and resumes on the next line when complete
 ```
 
 **使わなかったら？**  
 同期処理（`async` なし）にすると、保存が完了するまでアプリ全体が固まります。ユーザーはその間、画面操作ができなくなります。
 
-### `throws` — 失敗を通知できる
+### `throws` -- 失敗を通知できる
 
 `throws` をつけた関数はエラーを「投げる（throw）」ことができます。呼び出す側は `try` をつけて呼び出し、エラーを `catch` で受け取れます。
 
 ```swift
-// 呼び出し側の例
+// Example calling code
 do {
     let response = try await useCase.execute(request)
-    // 成功した場合の処理
+    // Handle success
 } catch ValidationError.emptyName {
-    // 名前が空だった場合の処理
+    // Handle empty name
 } catch {
-    // その他のエラーの処理
+    // Handle other errors
 }
 ```
 
@@ -261,11 +263,11 @@ do {
 
 ---
 
-## 7. `.toDomain` — 計算プロパティによる型変換
+## 7. `.toDomain` -- 計算プロパティによる型変換
 
 ```swift
 let config = SlideshowConfig(
-    duration: request.duration.toDomain,  // Response 型 → Domain 型
+    duration: request.duration.toDomain,  // Response type -> Domain type
     transition: request.transition.toDomain,
     loop: request.loop
 )
@@ -276,7 +278,7 @@ let config = SlideshowConfig(
 `var` で定義し、呼び出されるたびに値を計算して返すプロパティです。引数を取らないメソッドの代わりに、「この型をある型に変換した値」を自然な書き方で取得できます。
 
 ```swift
-// ResponseMapping.swift より
+// From ResponseMapping.swift
 extension SlideDurationResponse {
     var toDomain: SlideDuration {
         switch self {
@@ -298,12 +300,12 @@ extension SlideDurationResponse {
 **使わなかったら？**  
 Presentation 層が Domain 層の型を直接使うことになり、層の分離が崩れます。Domain の型を変更したとき、画面のコードまで変更が波及してしまいます。
 
-### `init(from:)` — 逆方向の変換
+### `init(from:)` -- 逆方向の変換
 
-Domain → Response の変換は `init(from:)` で行います。
+Domain -> Response の変換は `init(from:)` で行います。
 
 ```swift
-// ResponseMapping.swift より
+// From ResponseMapping.swift
 extension SlideshowResponse {
     init(from entity: Slideshow) {
         self.init(
@@ -348,8 +350,8 @@ UseCase の最後の行 `return SlideshowResponse(from: slideshow)` がこれを
 オブジェクト指向の経験がある人は、共通の `validate()` メソッドを基底クラスで定義し、各 Request をサブクラスとして実装したくなります。しかし Swift 6 の Strict Concurrency では、非 `final` クラスは `Sendable` に準拠できません。`@unchecked Sendable` はこのプロジェクトのルールで禁止されています。
 
 ```swift
-// ❌ 基底クラスで共通インターフェースを定義する（Swift 6 ではコンパイルエラー）
-class UseCaseRequest: Sendable {  // エラー: 非 final クラスは Sendable になれない
+// Bad: Defining a common interface with a base class (compile error in Swift 6)
+class UseCaseRequest: Sendable {  // Error: non-final class cannot be Sendable
     func validate() throws { }
 }
 
@@ -363,7 +365,7 @@ class CreateSlideshowRequest: UseCaseRequest {
 ```
 
 ```swift
-// ✅ protocol + struct で定義する（Sendable が自動合成される）
+// Good: Define with protocol + struct (Sendable is automatically synthesized)
 protocol UseCaseRequest: Sendable {
     func validate() throws
 }
@@ -371,7 +373,7 @@ protocol UseCaseRequest: Sendable {
 struct CreateSlideshowRequest: UseCaseRequest {
     let name: String
     let localIdentifiers: [String]
-    // ... すべてのプロパティが Sendable なら、struct は自動的に Sendable
+    // ... if all properties are Sendable, the struct is automatically Sendable
 
     func validate() throws {
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty else {
@@ -393,26 +395,26 @@ struct CreateSlideshowRequest: UseCaseRequest {
 
 ```swift
 typealias CreateSlideshowUseCaseProtocol = any AsyncUseCase<CreateSlideshowRequest, SlideshowResponse>
-//                                         ^^^ ← ここに any が埋め込まれている
+//                                         ^^^ any is embedded here
 ```
 
 Swift では通常、プロトコル型を使うときに `any` を付けます。しかしこの `typealias` はすでに `any` を含んでいるため、使用箇所でさらに `any` を付けるとコンパイルエラーになります。
 
 ```swift
-// ❌ typealias の中にすでに any があるのに、さらに any を付ける
+// Bad: Adding any even though the typealias already contains any
 let createSlideshow: any CreateSlideshowUseCaseProtocol
-// コンパイルエラー: redundant 'any' in type
+// Compile error: redundant 'any' in type
 
-// ❌ concrete クラスを typealias（existential 型）に準拠させようとする
+// Bad: Trying to conform a concrete class to the typealias (an existential type)
 final class CreateSlideshowUseCase: CreateSlideshowUseCaseProtocol { ... }
-// コンパイルエラー: 存在型には準拠できない
+// Compile error: cannot conform to an existential type
 ```
 
 ```swift
-// ✅ typealias をそのまま使う（any は不要）
+// Good: Use the typealias as-is (no any needed)
 let createSlideshow: CreateSlideshowUseCaseProtocol
 
-// ✅ concrete クラスは元のプロトコル（AsyncUseCase）に準拠させる
+// Good: Conform the concrete class to the original protocol (AsyncUseCase)
 final class CreateSlideshowUseCase: AsyncUseCase, Sendable {
     func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse {
         // ...
@@ -420,21 +422,21 @@ final class CreateSlideshowUseCase: AsyncUseCase, Sendable {
 }
 ```
 
-**覚えておくこと:** `typealias` の定義を確認してから使う。`any` が含まれている `typealias` は、そのまま型として書けばよい。
+**覚えておくこと:** `typealias` の定義を確認してから使うこと。`any` が含まれている `typealias` は、そのまま型として使えます。
 
 ---
 
 ### UseCase が担う役割のまとめ
 
 ```
-Presentation 層          UseCase 層                Domain 層
-─────────────────────────────────────────────────────────────
-CreateSlideshowRequest ──→ execute() ──→ SlideshowConfig
-（画面から受け取った入力）    ↓ toDomain 変換           ↓
-                         domainService.create() を呼ぶ
-                              ↓
-SlideshowResponse ←────── SlideshowResponse(from:)
-（画面に返す出力）             ↑ Domain エンティティを変換
+Presentation Layer       UseCase Layer             Domain Layer
+-------------------------------------------------------------
+CreateSlideshowRequest --> execute() --> SlideshowConfig
+(input received from UI)    | toDomain conversion      |
+                         Calls domainService.create()
+                              |
+SlideshowResponse <-------- SlideshowResponse(from:)
+(output returned to UI)      ^ Converts the Domain entity
 ```
 
-UseCase は「入力の翻訳 → Domain への委譲 → 出力の翻訳」だけを担当します。ビジネスロジック（「スライドショーをどう作るか」）は Domain Service が持ちます。UseCase はその橋渡しです。
+UseCase は「入力の翻訳 -> Domain への委譲 -> 出力の翻訳」だけを担当します。ビジネスロジック（「スライドショーをどう作るか」）は Domain Service が持ちます。UseCase はその橋渡しにすぎません。

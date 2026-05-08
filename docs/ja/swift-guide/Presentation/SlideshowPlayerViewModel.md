@@ -14,7 +14,7 @@
 4. [`final class` — 継承禁止のクラス](#4-final-class--継承禁止のクラス)
 5. [`private(set)` — 外部読み取り専用プロパティ](#5-privateset--外部読み取り専用プロパティ)
 6. [ネストされた `enum`（FullscreenHintType）](#6-ネストされた-enumfullscreenhinttype)
-7. [`any Protocol` — 存在型（Existential type）](#7-any-protocol--存在型existential-type)
+7. [プロトコル型エイリアス — `typealias` による存在型](#7-プロトコル型エイリアス--typealias-による存在型)
 8. [`async` / `await` — 非同期処理](#8-async--await--非同期処理)
 9. [`Task { }` / `Task.isCancelled` — 構造化された並行処理](#9-task---taskiscancelled--構造化された並行処理)
 10. [`Task.sleep(for:)` — 非同期スリープ](#10-tasksleepfor--非同期スリープ)
@@ -43,8 +43,12 @@ ViewModel のプロパティ（`isPlaying`、`currentNSImage` など）が変わ
 古い `ObservableObject` + `@Published` の組み合わせを使うことになります（後述）。
 
 ```swift
-import Observation  // ← これがないと @Observable が使えない
+import AppKit       // NSImage for decoded images
+import Foundation   // UUID, Data, etc.
+import Observation  // <- Without this, @Observable cannot be used
 ```
+
+> **注**: この ViewModel は `NSImage?` を直接保持しているため `AppKit` をインポートしています。アーキテクチャルールでは Presentation レイヤー（`Sources/Presentation/`）での `AppKit` の使用を明示的に許可しています。
 
 ---
 
@@ -70,26 +74,26 @@ import Observation  // ← これがないと @Observable が使えない
 ### もし使わなかったら
 
 ```swift
-// 旧スタイル（ObservableObject）
+// Old style (ObservableObject)
 class SlideshowPlayerViewModel: ObservableObject {
     @Published private(set) var isPlaying: Bool = false
     @Published private(set) var currentNSImage: NSImage?
-    // ... 全プロパティに @Published が必要
+    // ... @Published required on every property
 }
 ```
 
 ```swift
-// 新スタイル（@Observable）— このファイルの書き方
+// New style (@Observable) -- this file's approach
 @Observable
 final class SlideshowPlayerViewModel {
     private(set) var isPlaying: Bool = false
     private(set) var currentNSImage: NSImage?
-    // @Published は不要
+    // @Published is not needed
 }
 ```
 
 ```swift
-// ファイル内の該当部分
+// The relevant section in this file
 @Observable
 @MainActor
 final class SlideshowPlayerViewModel {
@@ -113,7 +117,7 @@ SwiftUI の View は**必ずメインスレッドから更新しなければな�
 
 ```swift
 @Observable
-@MainActor  // ← クラス全体をメインスレッドに縛る
+@MainActor  // <- Constrains the entire class to the main thread
 final class SlideshowPlayerViewModel {
 ```
 
@@ -137,7 +141,7 @@ final class SlideshowPlayerViewModel {
 `final` なし (`class SlideshowPlayerViewModel`) でも動作しますが、「このクラスを継承してはいけない」という設計上のルールがコードから見えなくなります。
 
 ```swift
-final class SlideshowPlayerViewModel {  // final = 継承禁止
+final class SlideshowPlayerViewModel {  // final = no inheritance allowed
 ```
 
 ---
@@ -163,10 +167,10 @@ View は `isPlaying` や `currentNSImage` の値を**表示のために読む**�
 `var isPlaying: Bool = false` にすると、View から `viewModel.isPlaying = true` と書けてしまい、ViewModel のロジックをバイパスしたバグが生まれやすくなります。
 
 ```swift
-private(set) var slideshow: SlideshowResponse   // 外から読める・外から書けない
+private(set) var slideshow: SlideshowResponse   // Readable from outside, not writable
 private(set) var currentIndex: Int = 0
 private(set) var isPlaying: Bool = false
-private var shuffledSlides: [SlideResponse]?    // 外から読めない・書けない
+private var shuffledSlides: [SlideResponse]?    // Not readable or writable from outside
 ```
 
 ---
@@ -179,8 +183,8 @@ private var shuffledSlides: [SlideResponse]?    // 外から読めない・書�
 
 ```swift
 enum FullscreenHintType: Equatable {
-    case enter   // フルスクリーンに入るヒント
-    case exit    // フルスクリーンから出るヒント
+    case enter   // Hint to enter fullscreen
+    case exit    // Hint to exit fullscreen
 }
 ```
 
@@ -195,15 +199,15 @@ enum FullscreenHintType: Equatable {
 ### もし enum を使わなかったら
 
 ```swift
-// Bad: 文字列で種類を表すと、タイポが実行時エラーになる
-var fullscreenHint: String? = "enter"   // "entter" と書いても気づけない
+// Bad: Representing kinds with strings means typos become runtime errors
+var fullscreenHint: String? = "enter"   // "entter" wouldn't be caught
 
-// Good: enum なら存在しない値はコンパイルエラー
+// Good: With enum, non-existent values cause compile errors
 var fullscreenHint: FullscreenHintType? = .enter
 ```
 
 ```swift
-// クラス内にネストされた enum
+// An enum nested inside the class
 enum FullscreenHintType: Equatable {
     case enter
     case exit
@@ -214,39 +218,69 @@ private(set) var fullscreenHint: FullscreenHintType? = nil
 
 ---
 
-## 7. `any Protocol` — 存在型（Existential type）
+## 7. プロトコル型エイリアス — `typealias` による存在型
 
 ### 何であるか
 
-`any LoadSlideImageUseCaseProtocol` の `any` は「このプロトコルに準拠する**何らかの型**を入れられる箱」を意味します。これを**存在型**（Existential type）と呼びます。Swift 5.7 以降、存在型には `any` を明示的に書く必要があります。
+**存在型**（`any Protocol`）は「このプロトコルに準拠する何らかの型を入れられる箱」を意味します。Swift 5.7 以降、`any` を明示的に書く必要があります。ただし、このプロジェクトでは UseCase プロトコルが**すでに `any` を埋め込んだ型エイリアス**として定義されています。
+
+```swift
+// Sources/UseCases/Protocols/LoadSlideImageUseCaseProtocol.swift
+typealias LoadSlideImageUseCaseProtocol = any AsyncUseCase<LoadSlideImageRequest, Data>
+```
+
+`any` が型エイリアスの中に含まれているため、ViewModel のコードでは `any` を**明示的に書きません**。
+
+```swift
+// The actual code — no `any` needed because the typealias includes it
+private let loadSlideImage: LoadSlideImageUseCaseProtocol
+private let updateSlideshowConfig: UpdateSlideshowConfigUseCaseProtocol
+private let advanceSlide: AdvanceSlideUseCaseProtocol
+private let previousSlide: PreviousSlideUseCaseProtocol
+```
 
 ### なぜここで使われているか
 
 ViewModel は「画像をロードする処理」が必要ですが、その**具体的な実装は知らなくてよい**という設計です。テスト時にはモック（偽物）を、本番時には実際の実装を渡せるよう、具体的な型ではなくプロトコル（約束事）に依存しています。これを**依存性注入**（Dependency Injection）と言います。
 
-### `any` なしとの違い
+### 型エイリアスパターンの仕組み
 
-Swift 5.6 以前は `any` を書かなくてもエラーになりませんでしたが、Swift 5.7 以降は存在型に `any` を付けることが推奨（将来は必須）になりました。明示的に書くことで「ここは具体型ではなく存在型を使っている」と読み手に伝わります。
+このコードベースでは、I/O 操作用の `AsyncUseCase` と純粋な計算用の `SyncUseCase` の二つの基底プロトコルを定義しています。
 
 ```swift
-// ViewModel は具体的な実装クラスを知らない
-private let loadSlideImage: any LoadSlideImageUseCaseProtocol
-private let updateSlideshowConfig: any UpdateSlideshowConfigUseCaseProtocol
-private let advanceSlide: any AdvanceSlideUseCaseProtocol
-private let previousSlide: any PreviousSlideUseCaseProtocol
+// Step 1: Two generic protocols define the shape
+protocol AsyncUseCase<Request, Response>: Sendable {
+    func execute(_ request: Request) async throws -> Response
+}
+
+protocol SyncUseCase<Request, Response>: Sendable {
+    func execute(_ request: Request) throws -> Response
+}
+
+// Step 2: Typealiases bind concrete types AND wrap in `any`
+typealias LoadSlideImageUseCaseProtocol = any AsyncUseCase<LoadSlideImageRequest, Data>
+typealias AdvanceSlideUseCaseProtocol   = any SyncUseCase<AdvanceSlideRequest, Int?>
+typealias PreviousSlideUseCaseProtocol  = any SyncUseCase<PreviousSlideRequest, Int?>
+
+// Step 3: ViewModel uses the typealiases directly (no `any` prefix needed)
+private let loadSlideImage: LoadSlideImageUseCaseProtocol  // async — called with await
+private let advanceSlide: AdvanceSlideUseCaseProtocol      // sync — called without await
+private let previousSlide: PreviousSlideUseCaseProtocol    // sync — called without await
 ```
 
+これが、`next()` と `previous()` が `try?`（`await` なし）で `execute()` を呼ぶ一方、`loadCurrentImage()` は `try await` を使う理由です。
+
 ```swift
-// init で外から「何らかの実装」を受け取る
+// Receives "some implementation" from outside via init
 init(
     slideshow: SlideshowResponse,
-    loadSlideImage: any LoadSlideImageUseCaseProtocol,  // ← 存在型
+    loadSlideImage: LoadSlideImageUseCaseProtocol,
     ...
 ) {
     self.loadSlideImage = loadSlideImage
 ```
 
-> **注**: このプロジェクトでは UseCase プロトコルの型エイリアスが `any` を内包しているため、実際のコード上では `any` を省略して書いている箇所があります。コンパイラが自動で解決します。
+> **ポイント**: このコードベースで `*UseCaseProtocol` プロパティに `any` が付いていなくても、それは依然として存在型です。`any` は型エイリアスの定義の中に含まれています。
 
 ---
 
@@ -267,7 +301,7 @@ init(
 昔ながらのコールバック（クロージャ）で書くと：
 
 ```swift
-// 旧スタイル（コールバック）
+// Old style (callbacks)
 func loadCurrentImage(completion: @escaping (NSImage?) -> Void) {
     loadSlideImage.execute(request) { result in
         switch result {
@@ -283,17 +317,22 @@ func loadCurrentImage(completion: @escaping (NSImage?) -> Void) {
 `async/await` を使うと：
 
 ```swift
-// 新スタイル — このファイルの書き方
+// New style -- this file's approach (simplified; see Pitfall 2 for the full version with guards)
 func loadCurrentImage() async {
-    let data = try await loadSlideImage.execute(request)
-    currentNSImage = NSImage(data: data)
+    do {
+        let request = LoadSlideImageRequest(localIdentifier: slide.localIdentifier)
+        let data = try await loadSlideImage.execute(request)
+        currentNSImage = NSImage(data: data)
+    } catch {
+        currentNSImage = nil
+    }
 }
 ```
 
 コールバックのネスト（いわゆる「コールバック地獄」）がなくなり、上から下へ読める直線的なコードになります。
 
 ```swift
-// async 関数の例
+// Examples of async functions
 func toggleShuffle() async { ... }
 func next() async { ... }
 func loadCurrentImage() async { ... }
@@ -315,19 +354,26 @@ func loadCurrentImage() async { ... }
 
 ```swift
 func play() {
-    ...
-    timerTask?.cancel()       // 前のタイマーがあればキャンセル
-    timerTask = Task {        // 新しいタイマータスクを作成・保存
-        while !Task.isCancelled, isPlaying {   // キャンセルされていない間ループ
+    guard !displayedSlides.isEmpty else { return }
+    guard let duration = slideshow.config.duration.seconds else { return }
+    isPlaying = true              // Set state BEFORE cancelling old task
+    timerTask?.cancel()           // Cancel the previous timer if any
+    timerTask = Task {            // Create and save a new timer task
+        while !Task.isCancelled, isPlaying {   // Loop while not cancelled
             do {
                 try await Task.sleep(for: .seconds(duration))
             } catch {
-                break         // sleep がキャンセルされたら抜ける
+                break            // Break if sleep is cancelled
             }
             guard !Task.isCancelled, isPlaying else { break }
             await next()
         }
     }
+    if !enterHintShown, !isSpriteMode {
+        enterHintShown = true
+        showHint(.enter)
+    }
+    showFilmstripOverlay()
 }
 ```
 
@@ -367,9 +413,9 @@ try await Task.sleep(for: .seconds(duration))
 
 ```swift
 do {
-    try await Task.sleep(for: .seconds(duration))  // キャンセルで CancellationError
+    try await Task.sleep(for: .seconds(duration))  // Throws CancellationError on cancel
 } catch {
-    break   // エラー（キャンセル）をキャッチして while ループを抜ける
+    break   // Catch the error (cancellation) and exit the while loop
 }
 ```
 
@@ -387,8 +433,8 @@ do {
 
 ```swift
 let image = await Task.detached(priority: .userInitiated) {
-    NSImage(data: data)   // バックグラウンドで重い処理
-}.value                   // 完了を await で待ち、結果を取り出す
+    NSImage(data: data)   // Heavy work on a background thread
+}.value                   // Await completion and extract the result
 ```
 
 ### `priority: .userInitiated` の意味
@@ -398,10 +444,10 @@ let image = await Task.detached(priority: .userInitiated) {
 ### 通常の `Task` との比較
 
 ```swift
-// 通常の Task — MainActor 内で呼ぶと MainActor のまま動く（UI スレッド占有）
+// Regular Task -- when called from within MainActor, it stays on MainActor (occupying the UI thread)
 Task { NSImage(data: data) }
 
-// Task.detached — MainActor から切り離してバックグラウンドで動く
+// Task.detached -- detaches from MainActor and runs in the background
 Task.detached(priority: .userInitiated) { NSImage(data: data) }
 ```
 
@@ -418,23 +464,23 @@ Task.detached(priority: .userInitiated) { NSImage(data: data) }
 「前提条件を満たしていなければ処理を続けない」という早期リターンパターンを書くためです。
 
 ```swift
-// guard を使った書き方（このファイル）
+// guard-based style (this file)
 func play() {
     guard !displayedSlides.isEmpty else { return }
     guard let duration = slideshow.config.duration.seconds else { return }
-    // ここに来たら: スライドがある & duration が取れた、が保証されている
+    // Reaching here guarantees: slides exist & duration was obtained
     isPlaying = true
     ...
 }
 ```
 
 ```swift
-// if を使った書き方（比較）
+// if-based style (for comparison)
 func play() {
     if !displayedSlides.isEmpty {
         if let duration = slideshow.config.duration.seconds {
             isPlaying = true
-            ...  // ← ネストが深くなる
+            ...  // <- Nesting gets deeper
         }
     }
 }
@@ -443,12 +489,12 @@ func play() {
 `guard` を使うとネストが浅くなり、「正常系のコード」が左端に揃って読みやすくなります。また、`guard let` でアンラップした変数（`duration`）は `else` ブロックの外でそのまま使えます。
 
 ```swift
-// guard let — Optional のアンラップと早期リターンを同時に
+// guard let -- combines Optional unwrapping with early return
 guard let slide = currentSlide else {
     currentNSImage = nil
     return
 }
-// ここから下は slide が nil でないことが保証されている
+// From here on, slide is guaranteed to be non-nil
 ```
 
 ---
@@ -459,22 +505,21 @@ guard let slide = currentSlide else {
 
 `defer { }` ブロックに書いたコードは「この関数が**どんな理由で終了しても**必ず最後に実行される」ことが保証されます。`return`、`throw`、正常終了、どれで終わっても実行されます。
 
-### なぜここで使われているか
+### なぜここで取り上げるか
 
-このファイルでは `loadCurrentImage()` 内で参照されるパターンが応用されていますが、典型的な使い方として `isLoading` フラグのリセットがあります（アーキテクチャルールのサンプルに記載）。
+`defer` はこのファイルでは直接使われていませんが、このコードベースの他の ViewModel で頻繁に使われる関連パターンです。典型的なユースケースは `isLoading` フラグのリセットです。
 
 ```swift
-// defer の典型的な使い方（参考）
-func load() async {
+// Typical defer usage in other ViewModels (e.g. SlideshowLibraryViewModel)
+func loadLibrary() async {
     isLoading = true
-    defer { isLoading = false }  // どんな理由で return されても必ず false に戻る
+    defer { isLoading = false }  // Always resets to false no matter how we return
     do {
-        slideshows = try await fetchSlideshows.execute(...)
+        slideshows = try await fetchSlideshows.execute(FetchSlideshowsRequest())
     } catch {
-        // ここで return しても defer が実行される
-        return
+        errorMessage = error.localizedDescription
+        // Even though we don't return here, defer still executes when the function ends
     }
-    // 正常終了でも defer が実行される
 }
 ```
 
@@ -486,10 +531,10 @@ func load() async {
     do {
         slideshows = try await fetchSlideshows.execute(...)
     } catch {
-        isLoading = false   // ← catch にも書く必要がある（書き忘れリスク）
+        isLoading = false   // <- Must also write it in the catch block (risk of forgetting)
         return
     }
-    isLoading = false       // ← 正常終了にも書く必要がある（重複・漏れリスク）
+    isLoading = false       // <- Must also write it for normal completion (duplication and omission risk)
 }
 ```
 
@@ -515,9 +560,9 @@ UseCase の `execute()` は `throws`（エラーを投げる可能性がある�
 func updateDuration(_ duration: SlideDurationResponse) async {
     let request = UpdateSlideshowConfigRequest(...)
     do {
-        slideshow = try await updateSlideshowConfig.execute(request)  // エラーが投げられるかも
+        slideshow = try await updateSlideshowConfig.execute(request)  // May throw an error
     } catch {
-        errorMessage = error.localizedDescription  // エラーをユーザーに表示
+        errorMessage = error.localizedDescription  // Display the error to the user
     }
     if isPlaying { play() }
 }
@@ -528,8 +573,8 @@ func updateDuration(_ duration: SlideDurationResponse) async {
 `try?` を使うと、エラーが発生した場合に `nil` を返し、エラーを無視します。
 
 ```swift
-// Validation failure は「UI がこの状態を防ぐべきだったバグ」なので
-// エラー詳細は不要 → try? で Optional にして if let でアンラップ
+// Validation failure is "a bug that the UI should have prevented,"
+// so error details are unnecessary -> use try? to convert to Optional and unwrap with if let
 if let nextIndex = try? advanceSlide.execute(request) {
     currentIndex = nextIndex
     await loadCurrentImage()
@@ -542,7 +587,7 @@ if let nextIndex = try? advanceSlide.execute(request) {
 
 ```swift
 try? await Task.sleep(for: .seconds(3))
-// ↑ キャンセルエラーは無視していい（タスクが終わればよい）ので try? で簡略化
+// The cancellation error can be safely ignored (we just need the task to end), so try? simplifies it
 ```
 
 ---
@@ -556,12 +601,12 @@ try? await Task.sleep(for: .seconds(3))
 ### パターンの全体像
 
 ```swift
-// 1. タスクへの参照を保持する変数
+// 1. Variables to hold references to tasks
 private var timerTask: Task<Void, Never>?
 private var hideFilmstripTask: Task<Void, Never>?
 private var hideHintTask: Task<Void, Never>?
 
-// 2. タイマーを開始する（古いタスクがあればキャンセルしてから）
+// 2. Start the timer (cancel any existing task first)
 func play() {
     timerTask?.cancel()
     timerTask = Task {
@@ -575,15 +620,19 @@ func play() {
     }
 }
 
-// 3. タイマーを止める
+// 3. Stop the timer and reset UI state
 func pause() {
+    isPlaying = false
     timerTask?.cancel()
     timerTask = nil
+    hideFilmstripTask?.cancel()
+    hideFilmstripTask = nil
+    showFilmstrip = true
 }
 ```
 
 ```swift
-// 単発の遅延実行タイマー（フィルムストリップを N 秒後に隠す）
+// One-shot delayed execution timer (hide the filmstrip after N seconds)
 private func scheduleHideFilmstrip() {
     hideFilmstripTask = Task {
         try? await Task.sleep(for: filmstripHideDuration)
@@ -605,11 +654,11 @@ private func scheduleHideFilmstrip() {
 ### 「古いタスクをキャンセルしてから新しいタスクを作る」パターン
 
 ```swift
-// showHint の例
+// showHint example
 private func showHint(_ type: FullscreenHintType) {
-    hideHintTask?.cancel()       // 前のヒント非表示タスクをキャンセル
-    fullscreenHint = type        // すぐにヒントを表示
-    hideHintTask = Task {        // 3秒後に非表示にする新タスクを作成
+    hideHintTask?.cancel()       // Cancel the previous hide-hint task
+    fullscreenHint = type        // Show the hint immediately
+    hideHintTask = Task {        // Create a new task to hide it after 3 seconds
         try? await Task.sleep(for: .seconds(3))
         guard !Task.isCancelled else { return }
         fullscreenHint = nil
@@ -630,7 +679,7 @@ private func showHint(_ type: FullscreenHintType) {
 `@Observable` クラスを View に渡すとき、`@State(initialValue:)` で受け取ると**初回の値だけが保存され、以降 DI コンテナが新しいインスタンスを渡しても無視されます**。`@State` は「この View が所有する値」を意味するため、SwiftUI が内部でキャッシュしてしまうのです。
 
 ```swift
-// ❌ BAD — 2回目以降に渡されたインスタンスが無視される
+// BAD -- Instances passed on the second call onward are ignored
 struct SlideshowPlayerView: View {
     @State private var viewModel: SlideshowPlayerViewModel
     init(viewModel: SlideshowPlayerViewModel) {
@@ -642,7 +691,7 @@ struct SlideshowPlayerView: View {
 `@Observable` はプロパティへのアクセスを自動追跡するので、`@State` なしでも View は再描画されます。外部から注入する場合は `let`（読み取り専用）か `@Bindable`（双方向バインディング `$vm.prop` が必要な場合）を使います。
 
 ```swift
-// ✅ GOOD — 読み取り専用ならシンプルに let
+// GOOD -- For read-only, simply use let
 struct SlideshowPlayerView: View {
     let viewModel: SlideshowPlayerViewModel
     init(viewModel: SlideshowPlayerViewModel) {
@@ -650,9 +699,9 @@ struct SlideshowPlayerView: View {
     }
 }
 
-// ✅ GOOD — $viewModel.prop のようなバインディングが必要なら @Bindable
+// GOOD -- Use @Bindable when bindings like $createViewModel.prop are needed
 struct LibraryPickerView: View {
-    @Bindable var viewModel: CreateSlideshowViewModel
+    @Bindable var createViewModel: CreateSlideshowViewModel
 }
 ```
 
@@ -665,16 +714,16 @@ struct LibraryPickerView: View {
 View の `.task(id:)` は `id` が変わると**前のタスクを自動キャンセル**します。しかし、同じ処理を ViewModel のメソッドに移すと、この自動キャンセルは失われます。ユーザーが素早く「次へ」を連打すると、古い画像ロードが新しいものより後に完了し、**表示が1枚前のスライドに巻き戻る**ことがあります。
 
 ```swift
-// ❌ BAD — 2回の await の間に currentIndex が変わると古い画像で上書きされる
+// BAD -- If currentIndex changes between the two awaits, the old image overwrites the new one
 func loadCurrentImage() async {
     guard let slide = currentSlide else { return }
     do {
         let data = try await loadSlideImage.execute(...)
-        // ↑ この await 中に next() が呼ばれて currentIndex が進んでいるかもしれない
+        // During this await, next() may have been called and currentIndex may have advanced
         let image = await Task.detached(priority: .userInitiated) {
             NSImage(data: data)
         }.value
-        currentNSImage = image  // ← 古いスライドの画像で上書き！
+        currentNSImage = image  // <- Overwrites with the old slide's image!
     } catch { ... }
 }
 ```
@@ -682,19 +731,19 @@ func loadCurrentImage() async {
 対策は、**await の前にインデックスをスナップショット**し、**各 await の後でインデックスが変わっていないか確認**することです。
 
 ```swift
-// ✅ GOOD — スナップショットとガードで「最新の呼び出しだけが勝つ」を保証
+// GOOD -- Snapshot and guard ensure "only the latest call wins"
 func loadCurrentImage() async {
     guard let slide = currentSlide else { currentNSImage = nil; return }
-    let expectedIndex = currentIndex                        // スナップショット
+    let expectedIndex = currentIndex                        // Snapshot
 
     do {
         let data = try await loadSlideImage.execute(...)
-        guard currentIndex == expectedIndex else { return } // ガード①
+        guard currentIndex == expectedIndex else { return } // Guard 1
 
         let image = await Task.detached(priority: .userInitiated) {
             NSImage(data: data)
         }.value
-        guard currentIndex == expectedIndex else { return } // ガード②
+        guard currentIndex == expectedIndex else { return } // Guard 2
 
         currentNSImage = image
     } catch {
@@ -707,56 +756,41 @@ func loadCurrentImage() async {
 
 ---
 
-### 落とし穴 3: ViewModel で NSImage を直接保持しない
+### 落とし穴 3: メインスレッドでの同期的な画像デコード
 
-ViewModel に `NSImage?` プロパティを持たせたくなりますが、`NSImage` は `AppKit` の型です。このプロジェクトのアーキテクチャルールでは **ViewModel に `import AppKit` を許可していない**ため、SwiftLint エラーになります。
-
-かといって View の `body` 内で `NSImage(data:)` を同期的に呼ぶと、画像デコードでメインスレッドがブロックされ、スライドショー再生中にカクつきます。
+ViewModel が画像データを `Data?` として保持し、View が `body` 内で同期的にデコードすると、大きな画像の場合 `NSImage(data:)` がメインスレッドで実行されるため **UI がカクつきます**。
 
 ```swift
-// ❌ BAD — ViewModel に AppKit の型を持たせるとアーキテクチャ違反
-@Observable
-final class SlideshowPlayerViewModel {
-    import AppKit  // ← SwiftLint エラー！
-    private(set) var currentNSImage: NSImage?
-}
-
-// ❌ BAD — View の body 内で同期デコードするとメインスレッドがブロックされる
+// BAD -- Synchronous decoding in the View body blocks the main thread
 var body: some View {
-    if let data = viewModel.currentImage {
-        Image(nsImage: NSImage(data: data)!)  // ← UI がカクつく
+    if let data = viewModel.currentImageData {
+        Image(nsImage: NSImage(data: data)!)  // <- UI stutters on large images
     }
 }
 ```
 
-正解は、**ViewModel は `Data?` を保持し、View 側で `.task(id:)` + `Task.detached` を使って非同期デコード**する方法です。
+このファイルのアプローチは、**ViewModel 内で `Task.detached` を使ってデコード**し、結果を `NSImage?` として保持する方法です。Presentation レイヤーでは `AppKit` のインポートが許可されているため、`NSImage` を直接保持することは問題ありません。
 
 ```swift
-// ✅ GOOD — ViewModel は Data だけを保持（AppKit 不要）
-@Observable
-final class SlideshowPlayerViewModel {
-    private(set) var currentImage: Data?
-}
-
-// ✅ GOOD — View 側で非同期デコード
-struct SlideshowPlayerView: View {
-    @State private var decodedImage: NSImage?
-
-    var body: some View {
-        // decodedImage を使って表示
-    }
-    .task(id: viewModel.currentImage) {
-        guard let data = viewModel.currentImage else {
-            decodedImage = nil; return
-        }
-        decodedImage = await Task.detached(priority: .userInitiated) {
-            NSImage(data: data)
+// GOOD -- This file's pattern: decode on background thread, store the result
+func loadCurrentImage() async {
+    guard let slide = currentSlide else { currentNSImage = nil; return }
+    let expectedIndex = currentIndex
+    do {
+        let data = try await loadSlideImage.execute(...)
+        guard currentIndex == expectedIndex else { return }
+        let image = await Task.detached(priority: .userInitiated) {
+            NSImage(data: data)  // Heavy decode on background thread
         }.value
+        guard currentIndex == expectedIndex else { return }
+        currentNSImage = image   // View reads this directly
+    } catch {
+        currentNSImage = nil
     }
 }
 ```
 
-**メリット**: ViewModel は AppKit に依存しない。デコードはバックグラウンドで行われるため UI がカクつかない。`.task(id:)` により `data` が変わると前のデコードが自動キャンセルされる。
+**メリット**: デコードはメインスレッド外で実行されるため UI がスムーズに動作します。View は追加のデコード処理なしに `viewModel.currentNSImage` を読むだけです。`expectedIndex` ガードにより最新の画像だけが表示されます（落とし穴 2 を参照）。
 
 ---
 
@@ -771,7 +805,7 @@ struct SlideshowPlayerView: View {
 | `final class` | 継承を禁止し設計の意図を明示 |
 | `private(set)` | 外部からの不正な書き換えをコンパイラが防止 |
 | ネスト `enum` | 型をスコープ内に閉じ込め意図を明確化 |
-| `any Protocol` | 具体実装に依存せず差し替え可能な設計 |
+| プロトコル型エイリアス | 具体実装に依存せず差し替え可能な設計（`any` は型エイリアスに埋め込み） |
 | `async / await` | 非同期処理を同期的な見た目で記述 |
 | `Task { }` | 非同期文脈の作成とタスクのキャンセル管理 |
 | `Task.sleep(for:)` | スレッドをブロックしない待機 |

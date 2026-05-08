@@ -4,7 +4,7 @@
 
 ## このファイルは何をしているのか
 
-`SwiftDataStore` は、アプリのデータをディスクに保存・取得・削除する「窓口」です。  
+`SwiftDataStore` は、アプリのデータをディスクに保存・取得・削除する「窓口」です。
 SwiftData というAppleのフレームワークを使い、複数のスレッドから安全に呼び出せるように設計されています。
 
 ```swift
@@ -31,11 +31,11 @@ actor SwiftDataStore: SwiftDataStoreProtocol {
 }
 ```
 
-全部で22行のシンプルなファイルですが、Swiftの重要な概念が凝縮されています。順番に読み解いていきましょう。
+全部で21行のシンプルなファイルですが、Swiftの重要な概念が凝縮されています。順番に読み解いていきましょう。
 
 ---
 
-## 1. `actor` — スレッド安全な「番人」
+## 1. `actor` -- スレッド安全な「番人」
 
 ### 定義
 
@@ -48,23 +48,23 @@ actor SwiftDataStore: SwiftDataStoreProtocol {
 ### もし使わなかったら
 
 ```swift
-// NG: 普通のクラスでは複数スレッドが同時にアクセスすると破綻する
+// NG: With a plain class, concurrent access from multiple threads can break things
 final class SwiftDataStore {
     var count = 0
-    func increment() { count += 1 }  // 2つのスレッドが同時に呼ぶとカウントが壊れる
+    func increment() { count += 1 }  // If two threads call this at the same time, the count gets corrupted
 }
 ```
 
 `class` では開発者が自分でロックの管理をしなければならず、ミスが起きやすいです。`actor` はコンパイラが自動で排他制御を保証してくれます。
 
 ```swift
-// OK: actor にするだけで Swift コンパイラが安全性を保証する
+// OK: Just making it an actor lets the Swift compiler guarantee safety
 actor SwiftDataStore { ... }
 ```
 
 ---
 
-## 2. `@ModelActor` — SwiftData 専用のマクロ
+## 2. `@ModelActor` -- SwiftData 専用のマクロ
 
 ### 定義
 
@@ -77,23 +77,23 @@ SwiftData の `ModelContext`（後述）はスレッドに紐付いています�
 ### もし使わなかったら
 
 ```swift
-// NG: Mutex で ModelContext を包んでも SwiftData はスレッド安全にならない
+// NG: Wrapping ModelContext in a Mutex does not make SwiftData thread-safe
 final class SwiftDataStore {
-    private let context: Mutex<ModelContext>  // これは誤ったアプローチ
+    private let context: Mutex<ModelContext>  // This is the wrong approach
 }
 ```
 
 `ModelContext` は「1スレッドにつき1つ」という制約があるため、`Mutex` で囲んでも解決になりません。`@ModelActor` がそのアクターのスレッドに固定することで初めて安全になります。
 
 ```swift
-// OK: @ModelActor が modelContext の生成・固定を自動化してくれる
+// OK: @ModelActor automates the creation and pinning of modelContext
 @ModelActor
 actor SwiftDataStore: SwiftDataStoreProtocol { ... }
 ```
 
 ---
 
-## 3. ジェネリクス `<T: PersistentModel, R: Sendable>` — 型を「変数」にする
+## 3. ジェネリクス `<T: PersistentModel, R: Sendable>` -- 型を「変数」にする
 
 ### 定義
 
@@ -104,7 +104,7 @@ actor SwiftDataStore: SwiftDataStoreProtocol { ... }
 
 ### なぜここで使われているか
 
-`fetch` 関数は「スライドを取得する」「設定を取得する」など、さまざまなモデルで使われます。ジェネリクスを使えば、型ごとに関数を書き直す必要がなくなります。
+`fetch` 関数は「スライドショーを取得する」「スライドを取得する」など、さまざまなモデルで使われます。ジェネリクスを使えば、型ごとに関数を書き直す必要がなくなります。
 
 ```swift
 func fetch<T: PersistentModel, R: Sendable>(
@@ -116,44 +116,41 @@ func fetch<T: PersistentModel, R: Sendable>(
 ### もし使わなかったら
 
 ```swift
-// NG: 型ごとに関数を書かなければならない（コードの重複）
+// NG: A separate function must be written for each type (code duplication)
 func fetchSlides(_ descriptor: FetchDescriptor<SlideModel>) throws -> [Slide] { ... }
-func fetchConfigs(_ descriptor: FetchDescriptor<ConfigModel>) throws -> [Config] { ... }
-// モデルが増えるたびに関数が増え続ける…
+func fetchSlideshows(_ descriptor: FetchDescriptor<SlideshowModel>) throws -> [Slideshow] { ... }
+// Functions keep multiplying as models are added...
 ```
 
 ジェネリクスを使えば1つの `fetch` 関数で全モデルに対応できます。
 
 ---
 
-## 4. `where` 句 — ジェネリクスへの追加条件
+## 4. `T.Type` -- メタタイプパラメータ
 
 ### 定義
 
-`where` 句はジェネリクスに**追加の制約**を付けるための構文です。
+`T.Type` は**メタタイプ**です。型のインスタンスではなく、型そのものを表す値です。型を関数の引数として渡すことができます。
 
 ### このファイルでの使われ方
-
-`delete` 関数をよく見てください。
 
 ```swift
 func delete<T: PersistentModel>(_ type: T.Type, where predicate: Predicate<T>) throws
 ```
 
-ここでは引数ラベルに `where` が使われていますが、ジェネリクスの制約としての `where` 句の例も補足します。Swift では次のような書き方ができます。
+最初のパラメータ `type: T.Type` は、**どのモデル型を削除するか**を関数に伝えます。呼び出し元は型リテラル（例: `SlideshowModel.self`）を渡し、コンパイラはそこから `T` を推論します。
 
 ```swift
-// ジェネリクスの where 句の例（制約を後置きで書く）
-func process<T>(_ items: [T]) where T: Equatable & Hashable {
-    // T は Equatable かつ Hashable でなければならない
-}
+// Caller (in SlideshowRepository):
+try await store.delete(SlideshowModel.self, where: #Predicate { $0.id == id })
+//                      ↑ T = SlideshowModel is inferred from this
 ```
 
-`<T: PersistentModel>` と `where T: PersistentModel` は同じ意味ですが、複数の条件を組み合わせるときに `where` 句が便利です。
+> **注意**: この関数シグネチャの `where` は**引数ラベル**であり、ジェネリクスの `where` 句ではありません。呼び出し箇所が自然に読めるようにするためのものです: `delete(SlideshowModel.self, where: somePredicate)`。
 
 ---
 
-## 5. `Predicate<T>` — 型安全な「絞り込み条件」
+## 5. `Predicate<T>` -- 型安全な「絞り込み条件」
 
 ### 定義
 
@@ -165,22 +162,22 @@ func process<T>(_ items: [T]) where T: Equatable & Hashable {
 func delete<T: PersistentModel>(_ type: T.Type, where predicate: Predicate<T>) throws
 ```
 
-`Predicate<T>` を使うことで、型が一致しない条件式はコンパイルエラーになります。たとえば `SlideModel` 用の述語を `ConfigModel` の削除に渡すことができません。
+`Predicate<T>` を使うことで、型が一致しない条件式はコンパイルエラーになります。たとえば `SlideModel` 用の述語を `SlideshowModel` の削除に渡すことができません。
 
 ### もし使わなかったら
 
 ```swift
-// NG: 文字列でクエリを書く古典的な方法
+// NG: The classic approach of writing queries as strings
 func deleteWhere(sql: String) throws { ... }
-// 呼び出し元: deleteWhere(sql: "slideName = 'vacation'")
-// → タイポや型の不一致がランタイム（実行時）まで気づけない
+// Caller: deleteWhere(sql: "slideName = 'vacation'")
+// → Typos and type mismatches are not caught until runtime
 ```
 
 `Predicate<T>` ならコンパイラがチェックしてくれるため、実行前にバグを発見できます。
 
 ---
 
-## 6. `@Sendable` クロージャ — 並行処理で安全なクロージャ
+## 6. `@Sendable` クロージャ -- 並行処理で安全なクロージャ
 
 ### 定義
 
@@ -206,17 +203,17 @@ func write(_ work: @Sendable (ModelContext) throws -> Void) throws
 ### もし使わなかったら
 
 ```swift
-// NG: @Sendable なしだとコンパイラが警告・エラーを出す
+// NG: Without @Sendable, the compiler issues a warning or error
 func fetch<T: PersistentModel, R: Sendable>(
     _ descriptor: FetchDescriptor<T>,
-    transform: (T) throws -> R   // @Sendable なし
+    transform: (T) throws -> R   // No @Sendable
 ) throws -> [R]
-// → Sendable でないクロージャをアクター境界を越えて渡せないとエラーになる
+// → Error: a non-Sendable closure cannot be passed across actor boundaries
 ```
 
 ---
 
-## 7. `ModelContext` — SwiftData のデータ操作の「作業台」
+## 7. `ModelContext` -- SwiftData のデータ操作の「作業台」
 
 ### 定義
 
@@ -228,16 +225,16 @@ func fetch<T: PersistentModel, R: Sendable>(
 
 ```swift
 func fetch<T: PersistentModel, R: Sendable>(...) throws -> [R] {
-    try modelContext.fetch(descriptor).map(transform)  // ← modelContext を使ってデータ取得
+    try modelContext.fetch(descriptor).map(transform)  // ← Uses modelContext to fetch data
 }
 
 func delete<T: PersistentModel>(...) throws {
-    try modelContext.delete(model: type, where: predicate)  // 削除
-    try modelContext.save()  // 保存（忘れると変更がディスクに書き込まれない）
+    try modelContext.delete(model: type, where: predicate)  // Delete
+    try modelContext.save()  // Save (if forgotten, changes are not written to disk)
 }
 
 func write(_ work: @Sendable (ModelContext) throws -> Void) throws {
-    try work(modelContext)  // ModelContext を外部に渡して柔軟な書き込みを許可
+    try work(modelContext)  // Pass ModelContext to the outside for flexible writing
 }
 ```
 
@@ -249,7 +246,7 @@ SwiftData なしでデータを永続化しようとすると、自分でファ�
 
 ---
 
-## 8. `throws` — エラーを呼び出し元に伝える
+## 8. `throws` -- エラーを呼び出し元に伝える
 
 ### 定義
 
@@ -262,17 +259,17 @@ SwiftData なしでデータを永続化しようとすると、自分でファ�
 ```swift
 func fetch<T: PersistentModel, R: Sendable>(...) throws -> [R] {
     try modelContext.fetch(descriptor).map(transform)
-    // ↑ fetch が失敗したら Error が投げられ、この関数も自動的に throws する
+    // ↑ If fetch fails, an Error is thrown, and this function automatically throws too
 }
 ```
 
 ### もし使わなかったら
 
 ```swift
-// NG: エラーを無視して nil や空配列を返すと、呼び出し元が失敗を検知できない
+// NG: Ignoring the error and returning nil or an empty array prevents the caller from detecting failure
 func fetch(...) -> [R]? {
     return try? modelContext.fetch(descriptor).map(transform)
-    // 失敗してもただ nil が返るだけ — なぜ失敗したか分からない
+    // On failure, nil is simply returned -- there's no way to know why it failed
 }
 ```
 
@@ -297,24 +294,24 @@ SwiftData と Photos フレームワークを使った開発で実際に遭遇�
 #### 正しい書き方
 
 ```swift
-// ✅ 親を insert → 子を insert → リレーションシップを設定 → save
+// ✅ Insert parent → insert children → set relationship → save
 let model = SlideshowModel(...)
-modelContext.insert(model)                          // 1. 親を先にコンテキストに登録
+modelContext.insert(model)                          // 1. Register the parent in the context first
 let slideModels = dto.slides.map { SlideModel(...) }
-slideModels.forEach { modelContext.insert($0) }     // 2. 子も個別にコンテキストに登録
-model.slides = slideModels                          // 3. 両方がコンテキストに入った状態で関連付け
-try modelContext.save()                             // 4. 保存
+slideModels.forEach { modelContext.insert($0) }     // 2. Register each child in the context individually
+model.slides = slideModels                          // 3. Establish the relationship with both in the context
+try modelContext.save()                             // 4. Save
 ```
 
 #### やってはいけない書き方
 
 ```swift
-// ❌ 子がコンテキストに入る前にリレーションシップを設定 — 子が消失する
+// ❌ Setting the relationship before children are in the context -- children are lost
 let model = SlideshowModel(...)
-model.slides = dto.slides.map { SlideModel(...) }   // 子はまだコンテキスト未登録！
-modelContext.insert(model)                           // 親だけ登録される
+model.slides = dto.slides.map { SlideModel(...) }   // Children are not yet in the context!
+modelContext.insert(model)                           // Only the parent is registered
 try modelContext.save()
-// → save() は成功するが、後で取得すると model.slides == []
+// → save() succeeds, but later fetching yields model.slides == []
 ```
 
 **ポイント**: `save()` がエラーなく成功しても、リレーションシップが正しく保存されたとは限りません。「親を insert → 子を insert → 関連付け」の順序を必ず守りましょう。
@@ -332,31 +329,34 @@ try modelContext.save()
 #### 正しい書き方
 
 ```swift
-// ✅ 古い子を明示的に削除してから、新しい子を挿入・関連付け
-func save(_ dto: SlideshowDTO) throws {
-    let id = dto.id
-    let descriptor = FetchDescriptor<SlideshowModel>(
-        predicate: #Predicate { $0.id == id }
-    )
-    if let existing = try modelContext.fetch(descriptor).first {
-        existing.slides.forEach { modelContext.delete($0) }     // 古い子を削除
-        let newSlides = makeSlideModels(from: dto.slides)
-        newSlides.forEach { modelContext.insert($0) }           // 新しい子を挿入
-        existing.slides = newSlides                              // 関連付け
-    } else {
-        // 新規作成パス
+// ✅ Explicitly delete old children before inserting and associating new ones
+// (actual pattern from SlideshowRepository.save)
+func save(_ slideshow: Slideshow) async throws {
+    let id = slideshow.id
+    let slides = slideshow.slides
+
+    try await store.write { context in
+        let descriptor = FetchDescriptor<SlideshowModel>(predicate: #Predicate { $0.id == id })
+        if let existing = try context.fetch(descriptor).first {
+            existing.slides.forEach { context.delete($0) }          // Delete old children
+            let newSlides = slides.map { SlideModel(id: $0.id, ...) }
+            newSlides.forEach { context.insert($0) }                // Insert new children
+            existing.slides = newSlides                              // Establish relationship
+        } else {
+            // New creation path
+        }
+        try context.save()
     }
-    try modelContext.save()
 }
 ```
 
 #### やってはいけない書き方
 
 ```swift
-// ❌ 配列をそのまま上書き — 古い子レコードが孤児として残る
+// ❌ Overwriting the array directly -- old child records remain as orphans
 existing.slides = newSlides
 try modelContext.save()
-// → 古い SlideModel が DB に残り続け、ストレージが肥大化する
+// → Old SlideModel records persist in the DB, and storage keeps growing
 ```
 
 **ポイント**: `deleteRule: .cascade` はあくまで「親が消えたとき」に子を道連れにする機能です。「子の入れ替え」は開発者が明示的に古い子を `delete()` する必要があります。
@@ -364,6 +364,8 @@ try modelContext.save()
 ---
 
 ### 落とし穴 3: PHImageManager の deliveryMode に `.opportunistic` を使わない
+
+> **注意**: この落とし穴は `SwiftDataStore.swift` ではなく `Sources/Infrastructure/Image/ImageDataSource.swift` に関連するものです。SwiftData に隣接するパターン（continuation の安全性）に関するインフラストラクチャ層の一般的な落とし穴であるため、ここに含めています。
 
 #### 何が起きるか
 
@@ -374,9 +376,9 @@ try modelContext.save()
 #### 正しい書き方
 
 ```swift
-// ✅ .highQualityFormat を使えばコールバックは必ず1回だけ
+// ✅ Using .highQualityFormat guarantees the callback is called exactly once
 let options = PHImageRequestOptions()
-options.deliveryMode = .highQualityFormat  // 1回だけコールバックが呼ばれることが保証される
+options.deliveryMode = .highQualityFormat  // Guarantees the callback is called only once
 
 let data: Data = try await withCheckedThrowingContinuation { continuation in
     PHImageManager.default().requestImageDataAndOrientation(
@@ -394,7 +396,7 @@ let data: Data = try await withCheckedThrowingContinuation { continuation in
 #### やってはいけない書き方
 
 ```swift
-// ❌ .opportunistic はコールバックが2回来る → continuation が2回 resume されてクラッシュ
+// ❌ .opportunistic delivers the callback twice → continuation resumes twice and crashes
 let options = PHImageRequestOptions()
 options.deliveryMode = .opportunistic
 
@@ -403,7 +405,7 @@ let data: Data = try await withCheckedThrowingContinuation { continuation in
         for: asset, options: options
     ) { data, _, _, _ in
         if let data {
-            continuation.resume(returning: data)  // 2回目でクラッシュ！
+            continuation.resume(returning: data)  // Crashes on the second call!
         }
     }
 }
@@ -426,4 +428,4 @@ let data: Data = try await withCheckedThrowingContinuation { continuation in
 | `ModelContext` | SwiftData の読み書きをすべて担う「作業台」 |
 | `throws` | 関数のエラーを呼び出し元に伝える仕組み |
 
-このファイルはたった22行ですが、「スレッド安全性」「型の汎用化」「エラー伝播」という現代のSwiftプログラミングの核心が詰まっています。これらの概念を押さえると、Swiftで書かれたデータ永続化コードの多くが読めるようになります。
+このファイルはたった21行ですが、「スレッド安全性」「型の汎用化」「エラー伝播」という現代のSwiftプログラミングの核心が詰まっています。これらの概念を押さえると、Swiftで書かれたデータ永続化コードの多くが読めるようになります。

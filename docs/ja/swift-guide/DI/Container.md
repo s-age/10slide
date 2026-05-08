@@ -9,6 +9,9 @@
 | ファイル | 役割 |
 |---------|------|
 | `Sources/DI/Container.swift` | アプリ全体の「配線図」。全レイヤーのコンテナを決まった順序で生成する |
+| `Sources/DI/InfrastructureContainer.swift` | インフラストラクチャ層のコンテナ。`ModelContainer`、データストア、データソースを保持する |
+| `Sources/DI/RepositoryContainer.swift` | リポジトリ層のコンテナ。インフラストラクチャプロトコルを注入されたリポジトリインスタンスを保持する |
+| `Sources/DI/DomainContainer.swift` | ドメイン層のコンテナ。リポジトリプロトコルを注入されたドメインサービスインスタンスを保持する |
 | `Sources/DI/UseCaseContainer.swift` | ユースケース層のコンテナ。各ユースケースをバリデーションデコレータで包んで保持する |
 | `Sources/DI/PresentationContainer.swift` | 表示層のコンテナ。ViewModelを組み立てるファクトリメソッドを提供する |
 
@@ -25,12 +28,12 @@ DI（Dependency Injection＝依存性注入）とは、あるオブジェクト�
 たとえば `SlideshowPlayerViewModel` は「スライド画像を読み込む機能」が必要です。これを自分で作ろうとすると、こうなります。
 
 ```swift
-// ❌ DI なし — ViewModel が依存を自分で生成してしまう
+// ❌ Without DI — ViewModel creates its own dependencies
 class SlideshowPlayerViewModel {
     private let loader = LoadSlideImageUseCase(
-        domainService: ImageService(
+        domainService: ImageDomainService(
             repository: ImageRepository(
-                store: SwiftDataImageStore()
+                imageDataSource: ImageDataSource()
             )
         )
     )
@@ -39,14 +42,14 @@ class SlideshowPlayerViewModel {
 
 これには深刻な問題があります。
 
-- **テストできない** — `SwiftDataImageStore` は実際のデータベースに繋がるため、テスト時に差し替えられない
-- **変更が伝染する** — `SwiftDataImageStore` の初期化方法が変わると、使っているすべての場所を直す必要がある
+- **テストできない** — `ImageDataSource` は実際のデータベースに繋がるため、テスト時に差し替えられない
+- **変更が伝染する** — `ImageDataSource` の初期化方法が変わると、使っているすべての場所を直す必要がある
 - **責任が混在する** — ViewModel が「どう作るか」まで知りすぎている
 
 DI を使うと、ViewModel は「外から渡された機能を使う」だけになります。
 
 ```swift
-// ✅ DI あり — ViewModel は受け取った依存を使うだけ
+// ✅ With DI — ViewModel just uses the dependency it receives
 class SlideshowPlayerViewModel {
     private let loadSlideImage: LoadSlideImageUseCaseProtocol
 
@@ -93,7 +96,7 @@ final class Container {
 ```swift
 final class Container { ... }
 
-// ❌ コンパイルエラー — final クラスは継承できない
+// ❌ Compile error — cannot inherit from a final class
 class SpecialContainer: Container { }
 ```
 
@@ -117,7 +120,7 @@ DI コンテナは「全オブジェクトの配線を管理する責任者」�
 
 ```swift
 let infrastructure: InfrastructureContainer
-// infrastructure = other  // ❌ コンパイルエラー
+// infrastructure = other  // ❌ Compile error
 ```
 
 #### なぜここで使われているか
@@ -127,7 +130,7 @@ DI コンテナが保持するオブジェクトは、アプリ起動時に一�
 #### もし `var` を使ったら
 
 ```swift
-var infrastructure: InfrastructureContainer  // ❌ 後から差し替えが可能に
+var infrastructure: InfrastructureContainer  // ❌ Can be replaced later
 ```
 
 `var` にすると、どこかのコードが `container.infrastructure = anotherInfrastructure` と書いて配線を破壊できてしまいます。
@@ -142,7 +145,7 @@ var infrastructure: InfrastructureContainer  // ❌ 後から差し替えが可�
 
 ```swift
 init() throws {
-    infrastructure = try InfrastructureContainer()  // 失敗するかもしれない
+    infrastructure = try InfrastructureContainer()  // Might fail
     ...
 }
 ```
@@ -153,8 +156,8 @@ init() throws {
 do {
     let container = try Container()
 } catch {
-    // データベースの初期化失敗など
-    print("起動失敗: \(error)")
+    // Database initialization failure, etc.
+    print("Startup failed: \(error)")
 }
 ```
 
@@ -171,11 +174,11 @@ do {
 ### 2-4. 依存の初期化順序 — infrastructure → repositories → domain → useCases → presentation
 
 ```swift
-infrastructure = try InfrastructureContainer()         // 1. 最下層
+infrastructure = try InfrastructureContainer()         // 1. Bottom layer
 repositories = RepositoryContainer(infrastructure: infrastructure)  // 2.
 domain = DomainContainer(repositories: repositories)               // 3.
 useCases = UseCaseContainer(domain: domain)                        // 4.
-presentation = PresentationContainer(useCases: useCases)           // 5. 最上層
+presentation = PresentationContainer(useCases: useCases)           // 5. Top layer
 ```
 
 #### 定義
@@ -183,15 +186,15 @@ presentation = PresentationContainer(useCases: useCases)           // 5. 最上�
 この順序は、アプリのアーキテクチャ（層構造）に対応しています。
 
 ```
-Presentation（画面）
-    ↓ 使う
-UseCases（機能単位）
-    ↓ 使う
-Domain（ビジネスロジック）
-    ↓ 使う
-Repositories（データ変換）
-    ↓ 使う
-Infrastructure（実際のDB・ファイル・ネットワーク）
+Presentation (UI)
+    ↓ uses
+UseCases (feature units)
+    ↓ uses
+Domain (business logic)
+    ↓ uses
+Repositories (data conversion)
+    ↓ uses
+Infrastructure (actual DB, files, network)
 ```
 
 #### なぜこの順序か
@@ -201,7 +204,7 @@ Infrastructure（実際のDB・ファイル・ネットワーク）
 #### もし順序を逆にしたら
 
 ```swift
-// ❌ これはコンパイルエラー — infrastructure がまだ存在しない
+// ❌ This is a compile error — infrastructure doesn't exist yet
 repositories = RepositoryContainer(infrastructure: infrastructure)
 infrastructure = try InfrastructureContainer()
 ```
@@ -216,11 +219,16 @@ Swift の `let` プロパティは使う前に初期化されていなければ�
 final class UseCaseContainer: Sendable {
     let createSlideshow: CreateSlideshowUseCaseProtocol
     let fetchSlideshow: FetchSlideshowUseCaseProtocol
-    // ... 他のユースケースも同様 ...
+    // ... (15 use case properties total, all following the same pattern)
 
     init(domain: DomainContainer) {
         createSlideshow = ValidationAsyncUseCaseDecorator(
             decoratee: CreateSlideshowUseCase(domainService: domain.slideshowService)
+        )
+
+        // Sync use cases use ValidationSyncUseCaseDecorator:
+        advanceSlide = ValidationSyncUseCaseDecorator(
+            decoratee: AdvanceSlideUseCase(domainService: domain.playbackService)
         )
         // ...
     }
@@ -250,9 +258,9 @@ final class UseCaseContainer: Sendable { ... }
 3. 全プロパティの型が `Sendable` であること（連鎖して安全）
 
 ```swift
-// ✅ 全条件を満たすため Sendable が成立
+// ✅ All conditions met, so Sendable conformance holds
 final class UseCaseContainer: Sendable {
-    let createSlideshow: CreateSlideshowUseCaseProtocol  // プロトコルも Sendable 宣言済み
+    let createSlideshow: CreateSlideshowUseCaseProtocol  // Protocol is also declared Sendable
 }
 ```
 
@@ -269,14 +277,18 @@ Swift 6 の厳格な並行性チェックが有効なこのコードベースで
 Swiftのプロトコルを型として使うとき、`any` キーワードをつけると**プロトコル存在型**（existential type）になります。「このプロトコルに準拠した何らかの型」を格納できる箱です。
 
 ```swift
-// プロトコル定義
-protocol CreateSlideshowUseCaseProtocol: Sendable {
-    func execute(request: CreateSlideshowRequest) async throws -> SlideshowResponse
+// Base protocol with generics (in ExecutableUseCase.swift)
+protocol AsyncUseCase<Request, Response>: Sendable {
+    associatedtype Request
+    associatedtype Response
+    func execute(_ request: Request) async throws -> Response
 }
 
-// any をつけた存在型として格納
+// Typealias pins the generic parameters (in Protocols/CreateSlideshowUseCaseProtocol.swift)
+typealias CreateSlideshowUseCaseProtocol = any AsyncUseCase<CreateSlideshowRequest, SlideshowResponse>
+
+// Stored in the container — `any` is already embedded in the typealias, so no prefix needed
 let createSlideshow: CreateSlideshowUseCaseProtocol
-//                   ↑ これは実際には `any CreateSlideshowUseCaseProtocol` の省略形（typealias）
 ```
 
 #### なぜここで使われているか
@@ -284,10 +296,10 @@ let createSlideshow: CreateSlideshowUseCaseProtocol
 コンテナが具体的な実装クラスの型を知ってしまうと、その実装に依存してしまいます。プロトコル型として格納することで、**差し替え可能な設計**になります。
 
 ```swift
-// ✅ プロトコル型で格納 — 実装を知らない
+// ✅ Stored as protocol type — doesn't know the implementation
 let createSlideshow: CreateSlideshowUseCaseProtocol
 
-// 実際に格納されるのはデコレータで包まれた具体型
+// The actual stored value is a concrete type wrapped in a decorator
 createSlideshow = ValidationAsyncUseCaseDecorator(
     decoratee: CreateSlideshowUseCase(domainService: domain.slideshowService)
 )
@@ -296,7 +308,7 @@ createSlideshow = ValidationAsyncUseCaseDecorator(
 #### もし具体型で格納したら
 
 ```swift
-// ❌ 具体型で格納 — 実装の詳細が漏れ出す
+// ❌ Stored as concrete type — implementation details leak out
 let createSlideshow: ValidationAsyncUseCaseDecorator<CreateSlideshowUseCase>
 ```
 
@@ -319,13 +331,34 @@ createSlideshow = ValidationAsyncUseCaseDecorator(
 この場合、`CreateSlideshowUseCase`（本体の処理）を `ValidationAsyncUseCaseDecorator`（バリデーション機能）で包んでいます。
 
 ```
-ValidationAsyncUseCaseDecorator（外側 — バリデーションを担当）
-    └─ CreateSlideshowUseCase（内側 — 実際の処理を担当）
+ValidationAsyncUseCaseDecorator (outer — handles validation)
+    └─ CreateSlideshowUseCase (inner — handles actual processing)
 ```
 
 #### なぜここで使われているか
 
 バリデーションロジックを各ユースケースクラスに書くと、すべてのユースケースに同じコードが重複します。デコレータとして分離することで、本体のユースケースはビジネスロジックだけに集中できます。
+
+#### 2つのデコレータバリアント
+
+このコードベースでは、ユースケースが非同期か同期かに応じて2つのデコレータバリアントを使い分けています。
+
+| デコレータ | ユースケースの種類 | 例 |
+|-----------|------------------|-----|
+| `ValidationAsyncUseCaseDecorator` | `AsyncUseCase`（async/await） | `CreateSlideshowUseCase`、`FetchSlideshowUseCase` など |
+| `ValidationSyncUseCaseDecorator` | `SyncUseCase`（同期） | `AdvanceSlideUseCase`、`PreviousSlideUseCase`、`AddDroppedFilesUseCase` |
+
+```swift
+// Async use case — wrapped with ValidationAsyncUseCaseDecorator
+createSlideshow = ValidationAsyncUseCaseDecorator(
+    decoratee: CreateSlideshowUseCase(domainService: domain.slideshowService)
+)
+
+// Sync use case — wrapped with ValidationSyncUseCaseDecorator
+advanceSlide = ValidationSyncUseCaseDecorator(
+    decoratee: AdvanceSlideUseCase(domainService: domain.playbackService)
+)
+```
 
 ---
 
@@ -335,12 +368,26 @@ ValidationAsyncUseCaseDecorator（外側 — バリデーションを担当）
 final class PresentationContainer: Sendable {
     private let createSlideshow: CreateSlideshowUseCaseProtocol
     private let loadSlideImage: LoadSlideImageUseCaseProtocol
-    // ...
+    private let loadThumbnail: LoadThumbnailUseCaseProtocol
+    private let updateSlideshowConfig: UpdateSlideshowConfigUseCaseProtocol
+    private let advanceSlide: AdvanceSlideUseCaseProtocol
+    private let previousSlide: PreviousSlideUseCaseProtocol
+    private let addDroppedFiles: AddDroppedFilesUseCaseProtocol
+    private let fetchSlideshows: FetchSlideshowsUseCaseProtocol
+    private let deleteSlideshow: DeleteSlideshowUseCaseProtocol
+    private let updateSlideshow: UpdateSlideshowUseCaseProtocol
 
     init(useCases: UseCaseContainer) {
         createSlideshow = useCases.createSlideshow
         loadSlideImage = useCases.loadSlideImage
-        // ...
+        loadThumbnail = useCases.loadThumbnail
+        updateSlideshowConfig = useCases.updateSlideshowConfig
+        advanceSlide = useCases.advanceSlide
+        previousSlide = useCases.previousSlide
+        addDroppedFiles = useCases.addDroppedFiles
+        fetchSlideshows = useCases.fetchSlideshows
+        deleteSlideshow = useCases.deleteSlideshow
+        updateSlideshow = useCases.updateSlideshow
     }
 
     @MainActor
@@ -353,7 +400,9 @@ final class PresentationContainer: Sendable {
         SlideshowPlayerViewModel(
             slideshow: slideshow,
             loadSlideImage: loadSlideImage,
-            ...
+            updateSlideshowConfig: updateSlideshowConfig,
+            advanceSlide: advanceSlide,
+            previousSlide: previousSlide
         )
     }
 }
@@ -381,9 +430,9 @@ private let createSlideshow: CreateSlideshowUseCaseProtocol
 
 ```swift
 init(useCases: UseCaseContainer) {
-    createSlideshow = useCases.createSlideshow   // プロトコル値を取り出す
-    loadSlideImage = useCases.loadSlideImage     // プロトコル値を取り出す
-    // useCases 自体はプロパティに保存しない！
+    createSlideshow = useCases.createSlideshow   // Extract the protocol value
+    loadSlideImage = useCases.loadSlideImage     // Extract the protocol value
+    // useCases itself is NOT saved as a property!
 }
 ```
 
@@ -442,10 +491,10 @@ func makeSlideshowPlayerViewModel(slideshow: SlideshowResponse) -> SlideshowPlay
 `SlideshowPlayerViewModel` には `loadSlideImage`、`updateSlideshowConfig`、`advanceSlide`、`previousSlide` という4つの依存が必要です。View（呼び出し側）がこれらを直接渡すためには、View 自身がこれら全部を知っている必要があります。
 
 ```swift
-// ❌ ファクトリなし — View が依存関係を全部知らなければならない
+// ❌ Without a factory — View must know all dependencies
 SlideshowPlayerViewModel(
     slideshow: slideshow,
-    loadSlideImage: ???,   // View はどこから取得する？
+    loadSlideImage: ???,   // Where does the View get this?
     ...
 )
 ```
@@ -453,7 +502,7 @@ SlideshowPlayerViewModel(
 ファクトリメソッドを通すと、View は `slideshow`（表示したいデータ）だけを知っていれば済みます。
 
 ```swift
-// ✅ ファクトリあり — View は slideshow だけ渡せばよい
+// ✅ With a factory — View only needs to pass slideshow
 let vm = container.presentation.makeSlideshowPlayerViewModel(slideshow: slideshow)
 ```
 
@@ -462,11 +511,11 @@ let vm = container.presentation.makeSlideshowPlayerViewModel(slideshow: slidesho
 `@MainActor` なメソッドは、クロージャとして引き渡すこともできます。
 
 ```swift
-// makePlayerViewModel の型をクロージャとして表現すると:
+// Expressing the type of makeSlideshowPlayerViewModel as a closure:
 // @MainActor @Sendable (SlideshowResponse) -> SlideshowPlayerViewModel
 
-// View に「ViewModel を作る方法」だけを渡す（コンテナ全体は渡さない）
-let factory: @MainActor (SlideshowResponse) -> SlideshowPlayerViewModel
+// Pass only "the method for creating ViewModels" to the View (not the entire container)
+let factory: @MainActor @Sendable (SlideshowResponse) -> SlideshowPlayerViewModel
     = container.presentation.makeSlideshowPlayerViewModel
 ```
 
@@ -495,7 +544,7 @@ Swift 6 の厳格な並行性チェックが有効な環境で、DI コンテナ
 
 ```
 warning: converting non-Sendable function value to
-'@MainActor @Sendable (Slideshow) -> SlideshowPlayerViewModel' may introduce data races
+'@MainActor @Sendable (SlideshowResponse) -> SlideshowPlayerViewModel' may introduce data races
 ```
 
 実際にこのプロジェクトでは、`ContentView` が `PresentationContainer` のファクトリメソッドをクロージャとして受け取る設計になっており、`PresentationContainer` が `Sendable` でなかったためにこの警告が発生しました。
@@ -503,14 +552,16 @@ warning: converting non-Sendable function value to
 #### 正しい書き方
 
 ```swift
-// ✅ final class + let のみ + 全プロパティが Sendable → 自動的に Sendable 準拠が成立
+// ✅ final class + let only + all properties Sendable → Sendable conformance holds automatically
 final class PresentationContainer: Sendable {
-    private let createSlideshow: any CreateSlideshowUseCaseProtocol  // Sendable
-    private let loadSlideImage: any LoadSlideImageUseCaseProtocol    // Sendable
+    private let createSlideshow: CreateSlideshowUseCaseProtocol  // typealias embeds `any`
+    private let loadSlideImage: LoadSlideImageUseCaseProtocol    // typealias embeds `any`
+    // ... (10 private let properties total — all UseCase protocol typealiases)
 
     init(useCases: UseCaseContainer) {
         createSlideshow = useCases.createSlideshow
         loadSlideImage = useCases.loadSlideImage
+        // ... (all 10 extracted here)
     }
 }
 ```
@@ -524,15 +575,15 @@ final class PresentationContainer: Sendable {
 #### やってはいけない書き方
 
 ```swift
-// ❌ var プロパティがあると Sendable にできない
+// ❌ Having a var property makes Sendable impossible
 final class PresentationContainer: Sendable {
-    private var createSlideshow: any CreateSlideshowUseCaseProtocol  // コンパイルエラー！
+    private var createSlideshow: any CreateSlideshowUseCaseProtocol  // Compile error!
 }
 
-// ❌ @unchecked Sendable でごまかす — コンパイラの保護を捨ててしまう
+// ❌ Faking it with @unchecked Sendable — discards the compiler's protection
 final class PresentationContainer: @unchecked Sendable {
     private var createSlideshow: any CreateSlideshowUseCaseProtocol
-    // データ競合の危険が残ったまま…
+    // Data race risk remains...
 }
 ```
 
@@ -555,13 +606,22 @@ Presentation → UseCases → Domain Services → Repositories → Infrastructur
 #### 正しい書き方
 
 ```swift
-// ✅ UseCase は DomainService だけを呼ぶ（Repository は呼ばない）
-final class CreateSlideshowUseCase {
-    private let domainService: SlideshowServiceProtocol
+// ✅ UseCase only calls DomainService (does not call Repository)
+final class CreateSlideshowUseCase: AsyncUseCase, Sendable {
+    private let domainService: any SlideshowDomainServiceProtocol
 
-    func execute(request: CreateSlideshowRequest) async throws -> SlideshowResponse {
-        let entity = try await domainService.create(name: request.name)
-        return SlideshowResponse(entity)
+    func execute(_ request: CreateSlideshowRequest) async throws -> SlideshowResponse {
+        let config = SlideshowConfig(
+            duration: request.duration.toDomain,
+            transition: request.transition.toDomain,
+            loop: request.loop
+        )
+        let slideshow = try await domainService.create(
+            name: request.name,
+            localIdentifiers: request.localIdentifiers,
+            config: config
+        )
+        return SlideshowResponse(from: slideshow)
     }
 }
 ```
@@ -569,9 +629,9 @@ final class CreateSlideshowUseCase {
 #### やってはいけない書き方
 
 ```swift
-// ❌ UseCase が Repository を直接呼んでいる（レイヤースキップ）
+// ❌ UseCase is calling Repository directly (layer skip)
 final class CreateSlideshowUseCase {
-    private let repository: SlideshowRepositoryProtocol  // Domain Service を飛ばしている！
+    private let repository: SlideshowRepositoryProtocol  // Skipping the Domain Service!
 
     func execute(request: CreateSlideshowRequest) async throws -> SlideshowResponse {
         let entity = try await repository.save(...)
@@ -584,7 +644,7 @@ final class CreateSlideshowUseCase {
 
 ---
 
-## 5. このファイルで学べること まとめ
+## 6. このファイルで学べること — まとめ
 
 | 概念 | キーワード | 一言まとめ |
 |------|-----------|-----------|

@@ -11,6 +11,7 @@
 | `Sources/Domain/Entities/Slide.swift` | Entity（エンティティ） | スライドショーを構成する 1 枚のスライドを表す |
 | `Sources/Domain/Entities/Slideshow.swift` | Entity（エンティティ） | スライドの集合＋設定を持つスライドショー全体を表す |
 | `Sources/Domain/Entities/SlideshowConfig.swift` | Value Object（値オブジェクト） | スライドショーの再生設定（秒数・切り替え・ループ）を表す |
+| `Sources/Domain/Entities/SlideDuration.swift` | Enum Variant Set（列挙バリアントセット） | スライドの表示時間（5秒、10秒、…60秒、手動）を表す |
 | `Sources/Domain/Entities/TransitionType.swift` | Enum Variant Set（列挙バリアントセット） | スライド切り替えアニメーションの種類を表す |
 
 これらのファイルは **Domain 層** に属します。Domain 層はアプリのビジネスルールを純粋な Swift 型として表現する場所です。UI も I/O も依存しない、いわば「アプリの心臓部」です。
@@ -94,6 +95,34 @@ struct SlideshowConfig: Equatable, Sendable, Codable {
 }
 ```
 
+### SlideDuration.swift
+
+```swift
+import Foundation
+
+enum SlideDuration: String, Equatable, Sendable, CaseIterable, Codable {
+    case five = "5"
+    case ten = "10"
+    case fifteen = "15"
+    case thirty = "30"
+    case sixty = "60"
+    case manual
+
+    var seconds: TimeInterval? {
+        switch self {
+        case .five: return 5
+        case .ten: return 10
+        case .fifteen: return 15
+        case .thirty: return 30
+        case .sixty: return 60
+        case .manual: return nil
+        }
+    }
+}
+```
+
+> **注意**: `SlideDuration.seconds` は `TimeInterval?`（Optional）を返します。`manual` ケースは `nil` を返しますが、これは手動モードには固定の表示時間がなく、ユーザーが手動でスライドを進めるためです。そのため、`config.duration.seconds ?? 0` のように nil 合体演算子を使ったり、`guard let duration = config.duration.seconds else { return }` のようにオプショナルバインディングを使ったりするコードが存在します。
+
 ### TransitionType.swift
 
 ```swift
@@ -135,28 +164,28 @@ Swift には型を定義する方法が 2 つあります。
 #### もし `class` を使ったら
 
 ```swift
-// ❌ class だと参照を共有してしまう
+// ❌ With class, references are shared
 class SlideClass {
     var order: Int
     init(order: Int) { self.order = order }
 }
 
 let a = SlideClass(order: 0)
-let b = a          // コピーではなく、a と同じ実体を指す
+let b = a          // Not a copy -- points to the same instance as a
 b.order = 99
-print(a.order)     // 99 ← a まで変わってしまった！
+print(a.order)     // 99 ← a was changed too!
 ```
 
 ```swift
-// ✅ struct ならコピーされる
+// ✅ With struct, a copy is made
 struct SlideStruct {
     var order: Int
 }
 
 let a = SlideStruct(order: 0)
-var b = a          // 独立したコピーが作られる
+var b = a          // An independent copy is created
 b.order = 99
-print(a.order)     // 0 ← a は影響を受けない
+print(a.order)     // 0 ← a is unaffected
 ```
 
 #### 該当コード
@@ -176,7 +205,7 @@ struct SlideshowConfig: Equatable, Sendable, Codable { ... }
 `Identifiable` は Apple 標準のプロトコルで、「このオブジェクトには `id` というプロパティがある」ことを宣言します。
 
 ```swift
-// Apple の標準ライブラリの定義（イメージ）
+// Conceptual definition from Apple's standard library
 protocol Identifiable {
     associatedtype ID: Hashable
     var id: ID { get }
@@ -193,11 +222,11 @@ protocol Identifiable {
 #### もし `Identifiable` を使わなかったら
 
 ```swift
-// Identifiable なし
-ForEach(slides, id: \.localIdentifier) { slide in ... }  // 毎回 id キーパスを書く必要がある
+// Without Identifiable
+ForEach(slides, id: \.localIdentifier) { slide in ... }  // Must specify the id key path every time
 
-// Identifiable あり ✅
-ForEach(slides) { slide in ... }  // id が自明なので省略できる
+// With Identifiable ✅
+ForEach(slides) { slide in ... }  // id is self-evident, so it can be omitted
 ```
 
 #### 該当コード
@@ -228,17 +257,17 @@ struct Slide: Identifiable, Equatable, Sendable {
 #### もし `Equatable` を使わなかったら
 
 ```swift
-// ❌ Equatable なし
+// ❌ Without Equatable
 // let a: Slide = ...
 // let b: Slide = ...
-// if a == b { ... }  // コンパイルエラー: 比較できない
+// if a == b { ... }  // Compile error: cannot compare
 
-// 自前で比較ロジックを書く必要がある（面倒で漏れが生まれやすい）
+// You would need to write comparison logic manually (tedious and error-prone)
 func isEqual(_ a: Slide, _ b: Slide) -> Bool {
     a.id == b.id &&
     a.localIdentifier == b.localIdentifier &&
     a.order == b.order
-    // ... プロパティが増えるたびに追加しなければいけない
+    // ... must be updated every time a property is added
 }
 ```
 
@@ -266,9 +295,9 @@ struct Slide: Identifiable, Equatable, Sendable { ... }
 #### もし `Sendable` を付けなかったら
 
 ```swift
-// ❌ Sendable なし → Swift 6 の async コンテキストでコンパイルエラーになる可能性がある
+// ❌ Without Sendable → May cause compile errors in Swift 6 async contexts
 func fetchSlides() async -> [Slide] { ... }
-// "Sending 'result' risks causing data races" などのエラー
+// Errors such as "Sending 'result' risks causing data races"
 ```
 
 #### 該当コード
@@ -293,11 +322,11 @@ struct Slide: Identifiable, Equatable, Sendable { ... }
 
 ```swift
 struct Slide: Identifiable, Equatable, Sendable {
-    let id: UUID           // ← let: ID は作成後に絶対変わらない
-    let localIdentifier: String  // ← let: 元の写真への参照も変わらない
-    var order: Int         // ← var: スライドの並び順は変更される
-    var duration: TimeInterval   // ← var: 表示時間はあとで調整できる
-    var title: String?     // ← var: タイトルはあとで付けることができる
+    let id: UUID           // ← let: The ID never changes after creation
+    let localIdentifier: String  // ← let: The reference to the original photo never changes either
+    var order: Int         // ← var: The slide's display order can be changed
+    var duration: TimeInterval   // ← var: The display duration can be adjusted later
+    var title: String?     // ← var: A title can be added later
 }
 ```
 
@@ -306,17 +335,17 @@ struct Slide: Identifiable, Equatable, Sendable {
 #### もし全部 `var` にしたら
 
 ```swift
-// ❌ id を var にすると
+// ❌ If id were var
 var slide = Slide(id: UUID(), localIdentifier: "abc", order: 0, duration: 5, title: nil)
-slide.id = UUID()  // ID を書き換えられてしまう！ データの一貫性が壊れる
+slide.id = UUID()  // The ID can be overwritten! Data consistency is broken
 ```
 
 #### 該当コード
 
 ```swift
-let id: UUID                 // 変更不可 — エンティティの同一性を保証
-let localIdentifier: String  // 変更不可 — 元写真への参照を保証
-var order: Int               // 変更可能 — 並び順は編集できる
+let id: UUID                 // Immutable -- guarantees entity identity
+let localIdentifier: String  // Immutable -- guarantees the reference to the original photo
+var order: Int               // Mutable -- display order can be edited
 ```
 
 ---
@@ -340,12 +369,12 @@ var order: Int               // 変更可能 — 並び順は編集できる
 #### もし連番を使ったら
 
 ```swift
-// ❌ 連番だと複数箇所で同時に作ると衝突する
+// ❌ Sequential numbers can collide when created simultaneously in multiple places
 var nextId = 0
 let slide1 = Slide(id: nextId, ...)  // id: 0
 nextId += 1
 let slide2 = Slide(id: nextId, ...)  // id: 1
-// 別スレッドで同じカウンタを操作するとデータ競合が発生する
+// Operating on the same counter from different threads causes a data race
 ```
 
 #### 該当コード
@@ -353,7 +382,7 @@ let slide2 = Slide(id: nextId, ...)  // id: 1
 ```swift
 let id: UUID
 // ...
-Slideshow(id: UUID(), ...)  // UUID() で毎回新しい一意な ID を生成
+Slideshow(id: UUID(), ...)  // UUID() generates a new unique ID each time
 ```
 
 ---
@@ -373,26 +402,26 @@ Optional を使うことで、コンパイラが「nilの可能性を考慮し�
 #### もし Optional を使わなかったら
 
 ```swift
-// ❌ Optional なしで「タイトルなし」を表現しようとする
-var title: String = ""   // 空文字 = タイトルなし？ でも空文字のタイトルなのか、未設定なのか区別できない
-var title: String = "（なし）"  // 表示用文字列を入れる？ ドメイン層にUI知識が混入する
+// ❌ Trying to represent "no title" without Optional
+var title: String = ""   // Empty string = no title? But you can't distinguish between an empty title and "not set"
+var title: String = "(none)"  // Put a display string? Domain knowledge of UI leaks into the Domain layer
 
-// ✅ Optional なら意味が明確
-var title: String?  // nil = タイトル未設定、"Hello" = タイトルあり
+// ✅ With Optional, the meaning is clear
+var title: String?  // nil = title not set, "Hello" = title exists
 ```
 
 使う側では次のようにアンラップします：
 
 ```swift
-// if let による安全なアンラップ
+// Safe unwrapping with if let
 if let title = slide.title {
-    print("タイトル: \(title)")
+    print("Title: \(title)")
 } else {
-    print("タイトルなし")
+    print("No title")
 }
 
-// ?? によるデフォルト値
-let displayTitle = slide.title ?? "無題"
+// Default value with ??
+let displayTitle = slide.title ?? "Untitled"
 ```
 
 #### 該当コード
@@ -428,12 +457,12 @@ enum TransitionType: String, Equatable, Sendable, CaseIterable, Codable {
 #### もし `String` で管理したら
 
 ```swift
-// ❌ String だと誤入力をコンパイラが検出できない
-var transition: String = "fde"   // タイポに気づかない
-var transition: String = "zoom"  // 未定義の値を渡せてしまう
+// ❌ With String, the compiler cannot detect typos
+var transition: String = "fde"   // Typo goes unnoticed
+var transition: String = "zoom"  // An undefined value can be assigned
 
-// ✅ enum なら存在するケースしか代入できない
-var transition: TransitionType = .fade  // コンパイラが補完・検証してくれる
+// ✅ With enum, only existing cases can be assigned
+var transition: TransitionType = .fade  // The compiler provides completion and validation
 ```
 
 #### 該当コード
@@ -460,7 +489,7 @@ enum TransitionType: String, ... {
 UI のピッカー（選択コントロール）でアニメーション種類の一覧を表示する場合、`allCases` を使って全選択肢を動的に取得できます。新しいケースを追加しても、UI 側のコードを変更する必要がありません。
 
 ```swift
-// allCases を使ったピッカーの例（Presentation 層での利用イメージ）
+// Example of a picker using allCases (how it would look in the Presentation layer)
 ForEach(TransitionType.allCases, id: \.self) { type in
     Text(type.rawValue)
 }
@@ -469,9 +498,9 @@ ForEach(TransitionType.allCases, id: \.self) { type in
 #### もし `CaseIterable` を使わなかったら
 
 ```swift
-// ❌ 手動で配列を管理する
+// ❌ Managing the array manually
 let allTransitions: [TransitionType] = [.none, .fade, .slide, .dissolve]
-// ケースを追加するたびにこの配列も更新し忘れないよう気をつける必要がある
+// You must be careful to update this array every time a case is added
 ```
 
 #### 該当コード
@@ -504,7 +533,8 @@ let config = SlideshowConfig(duration: .five, transition: .fade, loop: true)
 
 // エンコード: Swift 型 → JSON
 let data = try JSONEncoder().encode(config)
-// {"duration":"five","transition":"fade","loop":true}
+// {"duration":"5","transition":"fade","loop":true}
+// ↑ SlideDuration.five の rawValue は "5" なので、JSON には "five" ではなく "5" が入る
 
 // デコード: JSON → Swift 型
 let restored = try JSONDecoder().decode(SlideshowConfig.self, from: data)
@@ -515,7 +545,7 @@ let restored = try JSONDecoder().decode(SlideshowConfig.self, from: data)
 #### もし `Codable` を使わなかったら
 
 ```swift
-// ❌ 手動でエンコード/デコードを書く（数十行になる）
+// ❌ Writing encode/decode manually (can run to dozens of lines)
 func encode() -> [String: Any] {
     return [
         "duration": duration.rawValue,
@@ -553,9 +583,9 @@ struct SlideshowConfig: Equatable, Sendable, Codable { ... }
 
 ```swift
 static let `default` = SlideshowConfig(
-    duration: .five,       // 5 秒表示
-    transition: .fade,     // フェードで切り替え
-    loop: true             // ループ再生
+    duration: .five,       // Display for 5 seconds
+    transition: .fade,     // Transition with a fade
+    loop: true             // Loop playback
 )
 ```
 
@@ -564,10 +594,11 @@ static let `default` = SlideshowConfig(
 #### もし `static let default` を使わなかったら
 
 ```swift
-// ❌ デフォルト値をあちこちに散らばせてしまう
-// View でも UseCase でも毎回同じ値を書く → 一箇所変えたときに漏れが起きる
+// ❌ Scattering default values across multiple locations
+// Both in the View and UseCase, you write the same values every time
+// → When one is changed, others may be missed
 let config1 = SlideshowConfig(duration: .five, transition: .fade, loop: true)
-let config2 = SlideshowConfig(duration: .five, transition: .fade, loop: true)  // 重複
+let config2 = SlideshowConfig(duration: .five, transition: .fade, loop: true)  // Duplication
 ```
 
 #### 該当コード
@@ -581,7 +612,7 @@ static let `default` = SlideshowConfig(
 ```
 
 ```swift
-// TransitionType にも同様のパターン
+// The same pattern in TransitionType
 static let `default` = TransitionType.fade
 ```
 
@@ -616,17 +647,17 @@ static func create(name: String, localIdentifiers: [String], config: SlideshowCo
 #### もしファクトリメソッドを使わなかったら
 
 ```swift
-// ❌ 呼び出し側が毎回すべての初期化を担当する
+// ❌ The caller handles all initialization every time
 let slideshow = Slideshow(
-    id: UUID(),           // ← 呼び出し側で UUID() を書く必要がある
+    id: UUID(),           // ← Caller must write UUID()
     name: name,
     slides: localIdentifiers.enumerated().map { index, id in
         Slide(id: UUID(), localIdentifier: id, order: index, duration: duration, title: nil)
     },
     config: config,
-    createdAt: Date()    // ← 作成日時も呼び出し側で書く
+    createdAt: Date()    // ← Caller must write the creation date too
 )
-// この生成ロジックが UseCase や View など複数の場所に重複する
+// This creation logic gets duplicated across UseCases, Views, etc.
 ```
 
 #### 該当コード
@@ -663,21 +694,21 @@ static func create(name: String, localIdentifiers: [String], config: SlideshowCo
 
 ```swift
 func applying(config: SlideshowConfig) -> Slideshow {
-    var updated = self         // 1. 自分のコピーを作る（struct なのでコピー）
-    updated.config = config    // 2. コピーの設定を変更する
-    return updated             // 3. 変更済みコピーを返す（元の self は変わらない）
+    var updated = self         // 1. Create a copy of self (it's a struct, so it's copied)
+    updated.config = config    // 2. Modify the config on the copy
+    return updated             // 3. Return the modified copy (the original self is unchanged)
 }
 ```
 
 #### もしこのパターンを使わなかったら
 
 ```swift
-// ❌ 直接 mutate する（これ自体は動くが、意図が見えにくい）
+// ❌ Mutating directly (this works, but the intent is less clear)
 var slideshow = Slideshow.create(...)
-slideshow.config = newConfig   // どこで何が変わったか追跡しにくくなる
+slideshow.config = newConfig   // Harder to track where and what changed
 
-// ❌ UseCase 層が直接プロパティを書き換えると、
-//    ドメインロジック（「何を同時に更新すべきか」）が UseCase に漏れ出す
+// ❌ If the UseCase layer directly mutates properties,
+//    domain logic ("what should be updated together") leaks into the UseCase
 ```
 
 `updating(name:localIdentifiers:)` が `name` と `slides` を**同時に**更新する点に注目してください。「名前を変えるときはスライドリストも必ず再生成する」というビジネスルールが、このメソッドに閉じ込められています。
@@ -712,27 +743,29 @@ func updating(name: String, localIdentifiers: [String]) -> Slideshow {
 #### 何が起きるか
 
 エンティティに「便利だから」とメソッドを追加していくと、データの器であるべき型がビジネスロジックの塊になります。
-実際に `Slideshow` には `nextSlideIndex(from:)` と `previousSlideIndex(from:)` というメソッドがありましたが、これらは引数だけで計算でき、エンティティ自身の状態（`self`）に依存していませんでした。こうしたメソッドは Domain Service に属するべきです。
+実際に `Slideshow` にはスライドナビゲーション用のメソッドがありましたが、これらは引数だけで計算でき、エンティティ自身の状態（`self`）に依存していませんでした。こうしたメソッドは Domain Service に属するべきです。
 
 #### 判断基準
 
-- メソッドが `self` のストアドプロパティを使っている → エンティティに置いてよい（例: `applying(config:)`）
-- メソッドが引数だけで結果を計算できる → Domain Service に移すべき
+- メソッドが `self` のストアドプロパティを使っている --> エンティティに置いてよい（例: `applying(config:)`）
+- メソッドが引数だけで結果を計算できる --> Domain Service に移すべき
 
 ```swift
-// ❌ エンティティに置くべきでないメソッド（self の状態を使わない）
+// ❌ A method that should not be in the entity (does not use self's state)
 struct Slideshow {
     func nextSlideIndex(from currentIndex: Int) -> Int {
-        // currentIndex と slides.count だけで計算できるが、
-        // 再生ロジックは PlaybackDomainService の責務
+        // Can be computed from just currentIndex and slides.count,
+        // but playback logic is the responsibility of PlaybackDomainService
         (currentIndex + 1) % slides.count
     }
 }
 
-// ✅ Domain Service に移す
-final class PlaybackDomainService {
-    func nextSlideIndex(from currentIndex: Int, totalSlides: Int) -> Int {
-        (currentIndex + 1) % totalSlides
+// ✅ Move to a Domain Service (actual code from PlaybackDomainService.swift)
+final class PlaybackDomainService: PlaybackDomainServiceProtocol, Sendable {
+    func nextIndex(totalSlides: Int, currentIndex: Int, loop: Bool) -> Int? {
+        guard totalSlides > 0 else { return nil }
+        if currentIndex < totalSlides - 1 { return currentIndex + 1 }
+        return loop ? 0 : nil
     }
 }
 ```
@@ -748,7 +781,7 @@ final class PlaybackDomainService {
 「Domain 層は `struct` で書く」というルールを厳密に解釈しすぎて、固定の選択肢まで `struct` + `static let` で書いてしまうことがあります。しかし Swift の `enum` も値型なので、Domain 層のルール（値型であること）に違反しません。
 
 ```swift
-// ❌ struct + static let で表現（switch の網羅チェックが効かない）
+// ❌ Expressed with struct + static let (switch exhaustiveness checking does not work)
 struct TransitionType: Equatable, Sendable {
     let rawValue: String
     static let none = TransitionType(rawValue: "none")
@@ -757,18 +790,18 @@ struct TransitionType: Equatable, Sendable {
     static let dissolve = TransitionType(rawValue: "dissolve")
 }
 
-// この書き方だと、switch 文で全ケースを列挙しても
-// コンパイラが「漏れ」を検出できない
+// With this approach, even if you list all cases in a switch statement,
+// the compiler cannot detect missing cases
 switch transition {
 case .none: ...
 case .fade: ...
-// .slide と .dissolve を忘れてもコンパイルが通ってしまう
-default: break  // ← default が必須になり、漏れに気づけない
+// Forgetting .slide and .dissolve still compiles
+default: break  // ← default is required, and you can't notice omissions
 }
 ```
 
 ```swift
-// ✅ enum なら switch の網羅チェックが効く
+// ✅ With enum, switch exhaustiveness checking works
 enum TransitionType: String, Equatable, Sendable, CaseIterable, Codable {
     case none
     case fade
@@ -779,13 +812,13 @@ enum TransitionType: String, Equatable, Sendable, CaseIterable, Codable {
 switch transition {
 case .none: ...
 case .fade: ...
-// .slide と .dissolve を書かないとコンパイルエラーになる ← 安全！
+// Not writing .slide and .dissolve causes a compile error ← Safe!
 }
 ```
 
 **選び方の目安:**
-- **選択肢が固定で増減しない** → `enum`（コンパイラの網羅チェックが使える）
-- **将来的に拡張される可能性がある** → `struct` またはプロトコル
+- **選択肢が固定で増減しない** --> `enum`（コンパイラの網羅チェックが使える）
+- **将来的に拡張される可能性がある** --> `struct` またはプロトコル
 
 ---
 

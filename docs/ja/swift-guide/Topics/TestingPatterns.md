@@ -11,9 +11,9 @@ Swift の非同期処理や SwiftData を使ったコードのテストには、
 | テストの課題 | 症状 | 解決パターン |
 |------------|------|------------|
 | `XCTAssertThrowsError` が async で使えない | コンパイルエラー | `do/catch` + `XCTFail` パターン |
-| `@Model` テストフィクスチャが重い | `ModelContainer` のセットアップが必要 | コンテキストなしで `@Model` を直接作成 |
+| Repository テストに実際の SwiftData が必要 | `ModelContainer` のセットアップが必要 | in-memory `ModelContainer` + 実際の `SwiftDataStore` |
 | `@ModelActor` のテスト方法が不明 | 単体と統合の区別がつかない | プロトコルモックと in-memory コンテナの使い分け |
-| タイマー付き ViewModel のテストが遅い | 本番の Duration で待つ必要がある | `Duration` をパラメータ化して短縮 |
+| タイマー付き ViewModel のテストが遅い | 本番の `Duration` で待つ必要がある | `Duration` をパラメータ化して短縮 |
 
 ---
 
@@ -26,24 +26,24 @@ Swift の非同期処理や SwiftData を使ったコードのテストには、
 ### 間違った例
 
 ```swift
-// ❌ コンパイルエラー：async call in an autoclosure that does not support concurrency
+// ❌ Compile error: async call in an autoclosure that does not support concurrency
 func testLoad_whenInvalidYAML_throws() async throws {
     await XCTAssertThrowsError(try await sut.load())
 }
 ```
 
-`XCTAssertThrowsError` の引数は `@autoclosure` であり、`async` クロージャを受け取る overload が存在しないためです。
+`XCTAssertThrowsError` の引数は `@autoclosure` であり、`async` クロージャを受け取るオーバーロードが存在しないためです。
 
 ### 正しい例
 
 ```swift
-// ✅ do/catch + XCTFail パターン
+// ✅ do/catch + XCTFail pattern
 func testLoad_whenInvalidYAML_throws() async {
     do {
         _ = try await sut.load()
-        XCTFail("Expected load() to throw")  // ここに到達したらテスト失敗
+        XCTFail("Expected load() to throw")  // If we reach here, the test fails
     } catch {
-        // 期待通りエラーが投げられた
+        // Error was thrown as expected
     }
 }
 ```
@@ -51,15 +51,18 @@ func testLoad_whenInvalidYAML_throws() async {
 ### エラーの種類まで検証したい場合
 
 ```swift
-// ✅ 特定のエラー型を検証する
-func testLoad_whenFileNotFound_throwsConfigError() async {
+// ✅ Verify a specific error type (using actual error types from the codebase)
+// SlideshowDomainService.update throws DomainError.slideshowNotFound when the ID doesn't exist
+func testUpdate_whenNotFound_throwsDomainError() async {
+    let unknownID = UUID()
     do {
-        _ = try await sut.load()
-        XCTFail("Expected load() to throw ConfigError.fileNotFound")
-    } catch let error as ConfigError {
-        XCTAssertEqual(error, .fileNotFound)
+        _ = try await sut.update(id: unknownID, name: "x", localIdentifiers: ["a"])
+        XCTFail("Expected update() to throw DomainError.slideshowNotFound")
     } catch {
-        XCTFail("Unexpected error type: \(error)")
+        guard case DomainError.slideshowNotFound(let id) = error else {
+            return XCTFail("Unexpected error type: \(error)")
+        }
+        XCTAssertEqual(id, unknownID)
     }
 }
 ```
@@ -72,151 +75,148 @@ func testLoad_whenFileNotFound_throwsConfigError() async {
 
 ---
 
-## 2. @Model インスタンスは ModelContext なしで作れる — テストフィクスチャの軽量化
+## 2. Repository テストは in-memory コンテナで実際の SwiftDataStore を使う
 
 ### 問題
 
-`@Model` を使ったテストで毎回 `ModelContainer` + `ModelContext` をセットアップすると、テストが重くなります。しかし実は、`@Model` インスタンスは **コンテキストなしで** 作成・操作できます。
+10slide では、Repository は `SwiftDataStoreProtocol`（`@ModelActor` アクター）に依存しています。これをどうテストすべきでしょうか？ Repository の中核ロジックは `FetchDescriptor` や `#Predicate` 式の構築にあり、これらは実際の SwiftData でしか動作しないため、**Repository テストは統合テスト**として、in-memory `ModelContainer` を使った実際の `SwiftDataStore` で実行します。
 
-### なぜ動くのか？
-
-`@Model` マクロは内部に `_$backingData` というバッキングストレージを生成します。これはコンテキストがなくてもインメモリで動作します。永続化（save/fetch）にはコンテキストが必要ですが、プロパティの読み書きやリレーションの代入はインメモリだけで完結します。
-
-### 間違った例
+### 実際のテストパターン（`SlideshowRepositoryTests` より）
 
 ```swift
-// ❌ 単体テストなのに ModelContainer を毎回セットアップ — 過剰
-func setUp() async throws {
-    let schema = Schema([SlideshowModel.self, SlideModel.self])
-    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-    let container = try ModelContainer(for: schema, configurations: [config])
-    let context = ModelContext(container)
-
-    let model = SlideshowModel(id: UUID(), name: "Test")
-    context.insert(model)
-    try context.save()
-    // ... これは統合テストの準備
-}
-```
-
-### 正しい例
-
-```swift
-// ✅ コンテキストなしで @Model フィクスチャを作成（単体テスト向け）
-func setUp() {
-    let model = SlideshowModel(id: UUID(), name: "Test")
-    model.slides = [
-        SlideModel(id: UUID(), localIdentifier: "slide-1", order: 0, duration: 3.0),
-        SlideModel(id: UUID(), localIdentifier: "slide-2", order: 1, duration: 5.0),
-    ]
-
-    // モックのデータソースにそのまま渡せる
-    mockDataSource.fetchAllResult = [model]
-}
-```
-
-### いつ ModelContainer が必要か？
-
-| テスト種別 | ModelContainer | 用途 |
-|-----------|---------------|------|
-| 単体テスト（Repository 等） | **不要** | モックにフィクスチャを渡すだけ |
-| 統合テスト（DataSource 等） | **必要**（in-memory） | 実際の save/fetch を検証 |
-
-### ルール
-
-- 単体テストでは `@Model` をコンテキストなしで直接作成する
-- リレーション配列の代入（`model.slides = [...]`）もコンテキストなしで動く
-- ただし、逆方向リレーション（`slide.slideshow`）はコンテキスト内でのみ自動設定される — テストでは自分が設定した方向だけを検証する
-
----
-
-## 3. @ModelActor のテスト戦略 — 単体テスト vs 統合テスト
-
-### 問題
-
-`@ModelActor` を使ったデータソースはどうテストすべきか？データソース自体のテストと、それを使う Repository のテストで戦略が異なります。
-
-### 統合テスト：in-memory ModelContainer で実際の永続化を検証
-
-データソース自体の正しさを検証するには、実際の `ModelContainer` が必要です。ただし、テスト間でデータが残らないよう **in-memory 構成** を使います。
-
-```swift
-// ✅ 統合テスト — データソースの実動作を検証
-final class SlideshowDataSourceTests: XCTestCase {
+final class SlideshowRepositoryTests: XCTestCase {
+    private var sut: SlideshowRepository!
+    private var store: SwiftDataStore!
     private var container: ModelContainer!
-    private var sut: SlideshowDataSource!
 
     override func setUp() async throws {
+        try await super.setUp()
         let schema = Schema([SlideshowModel.self, SlideModel.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         container = try ModelContainer(for: schema, configurations: [config])
-        sut = SlideshowDataSource(modelContainer: container)
+        store = SwiftDataStore(modelContainer: container)
+        sut = SlideshowRepository(store: store)
     }
 
-    func testSaveAndFetchAll() async throws {
-        let dto = SlideshowDTO(id: UUID(), name: "Test", slides: [])
-        try await sut.save(dto)
+    override func tearDown() async throws {
+        sut = nil
+        store = nil
+        container = nil
+        try await super.tearDown()
+    }
 
-        let results = try await sut.fetchAll()
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first?.name, "Test")
+    func testFetchAll_onEmpty_returnsEmptyArray() async throws {
+        let result = try await sut.fetchAll()
+        XCTAssertTrue(result.isEmpty)
     }
 }
 ```
 
-### 単体テスト：プロトコルモックで SwiftData を排除
+### 使い分けの基準
 
-Repository のテストでは、データソースのプロトコルをモックし、SwiftData への依存を完全に排除します。
+| テスト対象 | 戦略 | SwiftData 依存 |
+|-----------|------|---------------|
+| `SwiftDataStore`（Infrastructure） | 統合テスト — in-memory `ModelContainer` | あり |
+| Repository | 統合テスト — 実際の `SwiftDataStore` + in-memory コンテナ | あり |
+| UseCase | 単体テスト — Repository プロトコルをモック | なし |
+| ViewModel | 単体テスト — UseCase プロトコルをモック | なし |
+
+### ルール
+
+- Repository テストは**統合テスト**である — `FetchDescriptor` と `#Predicate` は実際の SwiftData でしか動作しないため、実際の `SwiftDataStore` を使う
+- 必ず `isStoredInMemoryOnly: true` を使う — ディスク上のストアはテスト間で状態が残る
+- `tearDown()` で `sut`、`store`、`container` を `nil` に設定し、状態のリークを防ぐ
+
+---
+
+## 3. UseCase と ViewModel のテスト — プロトコルモック
+
+### 問題
+
+UseCase は Domain Service に依存し、ViewModel は UseCase に依存しています。依存チェーン全体を引き込まずにテストするにはどうすればよいでしょうか？
+
+### パターン：プロトコル境界でモックする
+
+各レイヤーは依存先のプロトコルを定義しています。テストでは、そのプロトコルを実装した `Mock*` クラスを作成し、戻り値の設定や呼び出し回数のカウントを行います。
 
 ```swift
-// ✅ 単体テスト — データソースをモック
-final class MockSlideshowDataSource: SlideshowDataSourceProtocol, @unchecked Sendable {
-    var fetchAllResult: [SlideshowDTO] = []
-    var saveCallCount = 0
+// ✅ Mock for an async use case (from SlideshowPlayerViewModelTests)
+final class MockLoadSlideImageUseCase: AsyncUseCase, @unchecked Sendable {
+    // Minimal valid 1x1 pixel PNG
+    var executeResult: Data = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUg...")!
+    var executeCallCount = 0
+    var throwOnExecute = false
 
-    func fetchAll() async throws -> [SlideshowDTO] {
-        fetchAllResult
-    }
-
-    func save(_ dto: SlideshowDTO) async throws {
-        saveCallCount += 1
-    }
-}
-
-final class SlideshowRepositoryTests: XCTestCase {
-    private var mockDataSource: MockSlideshowDataSource!
-    private var sut: SlideshowRepository!
-
-    override func setUp() {
-        mockDataSource = MockSlideshowDataSource()
-        sut = SlideshowRepository(dataSource: mockDataSource)
-    }
-
-    func testFetchAll_returnsConvertedEntities() async throws {
-        mockDataSource.fetchAllResult = [
-            SlideshowDTO(id: UUID(), name: "Test", slides: [])
-        ]
-
-        let results = try await sut.fetchAll()
-        XCTAssertEqual(results.count, 1)
+    func execute(_ request: LoadSlideImageRequest) async throws -> Data {
+        executeCallCount += 1
+        if throwOnExecute { throw SlideshowPlayerTestError.intentional }
+        return executeResult
     }
 }
 ```
 
-### テスト戦略の使い分け
+```swift
+// ✅ Mock for a sync use case — contains real navigation logic (from SlideshowPlayerViewModelTests)
+final class MockAdvanceSlideUseCase: SyncUseCase, @unchecked Sendable {
+    func execute(_ request: AdvanceSlideRequest) throws -> Int? {
+        let next = request.currentIndex + 1
+        if next < request.totalSlides {
+            return next
+        } else if request.loop {
+            return 0
+        }
+        return nil
+    }
+}
+```
+
+### ViewModel テストには `@MainActor` が必要
+
+ViewModel は `@MainActor` で注釈されているため、それを生成・操作するテストクラスも `@MainActor` でなければなりません。
+
+```swift
+@MainActor
+final class SlideshowPlayerViewModelTests: XCTestCase {
+    private var mockLoadSlideImage: MockLoadSlideImageUseCase!
+    private var sut: SlideshowPlayerViewModel!
+
+    override func setUp() {
+        mockLoadSlideImage = MockLoadSlideImageUseCase()
+        // ... (other mocks initialized here)
+        sut = SlideshowPlayerViewModel(
+            slideshow: Self.makeSlideshow(
+                slides: [
+                    Self.makeSlide(identifier: "a", order: 0),
+                    Self.makeSlide(identifier: "b", order: 1),
+                    Self.makeSlide(identifier: "c", order: 2)
+                ],
+                loop: false
+            ),
+            loadSlideImage: mockLoadSlideImage,
+            updateSlideshowConfig: mockUpdateSlideshowConfig,
+            advanceSlide: mockAdvanceSlide,
+            previousSlide: mockPreviousSlide,
+            filmstripHideDuration: .milliseconds(50)  // Short duration for fast tests
+        )
+    }
+}
+```
+
+### テスト戦略の選び方
 
 | テスト対象 | テスト種別 | SwiftData 依存 | モック対象 |
 |-----------|----------|---------------|----------|
-| DataSource（Infrastructure） | 統合テスト | in-memory ModelContainer | なし |
-| Repository | 単体テスト | なし | DataSource プロトコル |
-| UseCase | 単体テスト | なし | Repository プロトコル |
+| `SwiftDataStore`（Infrastructure） | 統合テスト | in-memory `ModelContainer` | なし |
+| Repository | 統合テスト | in-memory `ModelContainer` + 実際のストア | なし |
+| UseCase | 単体テスト | なし | Domain Service プロトコル |
 | ViewModel | 単体テスト | なし | UseCase プロトコル |
 
 ### ルール
 
-- 統合テストでは `isStoredInMemoryOnly: true` を必ず使う — ディスク上のストアはテスト間で状態が残る
-- `@Model` クラスを直接モックしない — DTO プロトコルレベルでモックする
-- 同じ `ModelContainer` をテストメソッド間で共有する場合は、各テストの先頭でデータをリセットする
+- プロトコル境界でモックする — 具象クラスをモックしない
+- `@unchecked Sendable` はテストのセットアップでミューテーションが制御されるモック型にのみ使う
+- ViewModel のテストクラスには `@MainActor` を付ける
+- `AsyncUseCase` と `SyncUseCase` の両方のモックが必要（コードベースでは両方を使用）
 
 ---
 
@@ -224,20 +224,21 @@ final class SlideshowRepositoryTests: XCTestCase {
 
 ### 問題
 
-ViewModel にタイマー制御の機能（自動非表示、自動送り など）がある場合、本番の `Duration`（例: 3秒）でテストすると遅すぎます。かといって `Duration` をハードコードすると、テストで短縮できません。
+ViewModel にタイマー制御の機能（自動非表示、自動送りなど）がある場合、本番の `Duration`（例: 3秒）でテストすると遅すぎます。かといって `Duration` をハードコードすると、テストで短縮できません。
 
 ### 間違った例
 
 ```swift
-// ❌ Duration がハードコードされていてテストで変更できない
+// ❌ Duration is hardcoded and cannot be changed in tests
 @Observable
 @MainActor
 final class SlideshowPlayerViewModel {
-    var showFilmstrip = true
+    private(set) var showFilmstrip = true
 
-    func startAutoHide() {
-        Task {
-            try await Task.sleep(for: .seconds(3))  // テストで 3 秒待つことになる
+    private func scheduleHideFilmstrip() {
+        hideFilmstripTask = Task {
+            try? await Task.sleep(for: .seconds(3))  // Test has to wait 3 seconds
+            guard !Task.isCancelled else { return }
             showFilmstrip = false
         }
     }
@@ -245,10 +246,10 @@ final class SlideshowPlayerViewModel {
 ```
 
 ```swift
-// ❌ テストが遅い
-func testAutoHide() async throws {
-    sut.startAutoHide()
-    try await Task.sleep(for: .seconds(4))  // 4 秒も待つ...
+// ❌ Test is slow
+func testPlay_hidesFilmstripAfterDuration() async throws {
+    sut.play()
+    try await Task.sleep(for: .seconds(4))  // Waiting 4 seconds...
     XCTAssertFalse(sut.showFilmstrip)
 }
 ```
@@ -256,23 +257,25 @@ func testAutoHide() async throws {
 ### 正しい例
 
 ```swift
-// ✅ Duration を init パラメータにしてデフォルト値で本番動作を維持
+// ✅ Make Duration an init parameter with a default value to preserve production behavior
+// (actual pattern from SlideshowPlayerViewModel)
 @Observable
 @MainActor
 final class SlideshowPlayerViewModel {
-    var showFilmstrip = true
+    private(set) var showFilmstrip = true
     private let filmstripHideDuration: Duration
 
     init(
         ...,
-        filmstripHideDuration: Duration = .seconds(3)  // 本番デフォルト
+        filmstripHideDuration: Duration = .seconds(3)  // Production default
     ) {
         self.filmstripHideDuration = filmstripHideDuration
     }
 
-    func startAutoHide() {
-        Task {
-            try await Task.sleep(for: filmstripHideDuration)
+    private func scheduleHideFilmstrip() {
+        hideFilmstripTask = Task {
+            try? await Task.sleep(for: filmstripHideDuration)
+            guard !Task.isCancelled else { return }
             showFilmstrip = false
         }
     }
@@ -280,15 +283,16 @@ final class SlideshowPlayerViewModel {
 ```
 
 ```swift
-// ✅ テストでは短い Duration を注入 — 高速に完了
-func testAutoHide() async throws {
+// ✅ Inject a short Duration in tests — completes quickly
+// (actual pattern from SlideshowPlayerViewModelTests)
+func testPlay_hidesFilmstripAfterDuration() async throws {
     sut = SlideshowPlayerViewModel(
         ...,
-        filmstripHideDuration: .milliseconds(50)  // 50ms で完了
+        filmstripHideDuration: .milliseconds(50)  // Completes in 50ms
     )
 
-    sut.startAutoHide()
-    try await Task.sleep(for: .milliseconds(100))  // 十分な待ち時間
+    sut.play()
+    try await Task.sleep(for: .milliseconds(100))  // Sufficient wait time
     XCTAssertFalse(sut.showFilmstrip)
 }
 ```
@@ -314,13 +318,14 @@ func testAutoHide() async throws {
 | パターン | 問題 | 解決策 |
 |---------|------|--------|
 | `do/catch` + `XCTFail` | `XCTAssertThrowsError` が async 未対応 | `do { try await ...; XCTFail() } catch { }` |
-| コンテキストなし `@Model` | テストフィクスチャのセットアップが重い | `@Model` はコンテキストなしで作成可能 |
-| プロトコルモック | `@ModelActor` の単体テスト方法 | DTO プロトコルレベルでモック |
-| in-memory ModelContainer | `@ModelActor` の統合テスト方法 | `isStoredInMemoryOnly: true` |
+| in-memory `ModelContainer` | Repository テストに実際の SwiftData が必要 | `isStoredInMemoryOnly: true` + 実際の `SwiftDataStore` |
+| プロトコルモック | UseCase/ViewModel の単体テスト | プロトコル境界でモック + 呼び出しカウンター |
+| `@MainActor` テストクラス | ViewModel テストにメインアクターが必要 | テストクラスに `@MainActor` を付与 |
 | Duration パラメータ化 | タイマー付き ViewModel のテストが遅い | `init` パラメータ + デフォルト値 |
 
 ### 原則
 
-1. **単体テストでは SwiftData に触らない** — プロトコルモックで依存を排除する
-2. **統合テストは in-memory で行う** — ディスクの状態がテストを汚染しない
-3. **時間に依存するテストは Duration を注入する** — テストの速度と信頼性を両立させる
+1. **Repository テストは統合テスト**である — `FetchDescriptor` と `#Predicate` は実際の SwiftData でしか動作しないため
+2. **UseCase と ViewModel のテストは単体テスト**である — プロトコルモックで依存を排除する
+3. **統合テストは in-memory で行う** — ディスクの状態がテストを汚染しない
+4. **時間に依存するテストは Duration を注入する** — テストの速度と信頼性を両立させる

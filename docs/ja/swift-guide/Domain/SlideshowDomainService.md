@@ -61,7 +61,7 @@ final class SlideshowDomainService: SlideshowDomainServiceProtocol, Sendable {
 
 ---
 
-## 概念 1 — `final class` ＋ プロトコル準拠 ＋ `Sendable`
+## 概念 1 -- `final class` ＋ プロトコル準拠 ＋ `Sendable`
 
 ### 該当コード
 
@@ -113,7 +113,7 @@ Swift 6 のコンパイラが「この型は Sendable ではないので、非�
 
 ---
 
-## 概念 2 — `private let repository: any SlideshowRepositoryProtocol`
+## 概念 2 -- `private let repository: any SlideshowRepositoryProtocol`
 
 ### 該当コード
 
@@ -124,7 +124,7 @@ private let repository: any SlideshowRepositoryProtocol
 ### `any` キーワードと存在型とは？
 
 `any SlideshowRepositoryProtocol` は **存在型（existential type）** と呼ばれます。
-「`SlideshowRepositoryProtocol` を満たす、何らかの型」を表します。具体的な型名（例: `SwiftDataSlideshowRepository`）を書かずに済みます。
+「`SlideshowRepositoryProtocol` を満たす、何らかの型」を表します。具体的な型名（例: `SlideshowRepository`）を書かずに済みます。
 
 Swift 5.7 以降、こうした「プロトコルの存在型」には `any` を明示的に付けることが必要になりました。これにより「ここは具体的な型ではなくプロトコルの存在型を使っている」と読み手に伝わります。
 
@@ -139,19 +139,18 @@ Swift 5.7 以降、こうした「プロトコルの存在型」には `any` を
 ### なぜこのように書くのか？
 
 ```swift
-// NG — 具体的な型に依存している
-private let repository: SwiftDataSlideshowRepository
+// NG -- Depends on a concrete type
+private let repository: SlideshowRepository
 
-// OK — プロトコルに依存している
+// OK -- Depends on a protocol
 private let repository: any SlideshowRepositoryProtocol
 ```
 
-具体的な型を直接書くと、テスト時や実装を変えたいときにこのファイルも変更しなければなりません。
-`any SlideshowRepositoryProtocol` と書けば、「プロトコルを満たしていれば何でも受け入れる」になります。
+具体的な型を直接書くと、テスト時や実装を変えたいときにこのファイルも変更しなければなりません。`any SlideshowRepositoryProtocol` と書けば、「プロトコルを満たしていれば何でも受け入れる」になります。
 
 ---
 
-## 概念 3 — プロトコルベースの依存注入
+## 概念 3 -- プロトコルベースの依存注入
 
 ### 該当コード
 
@@ -164,14 +163,14 @@ init(repository: any SlideshowRepositoryProtocol) {
 ### 依存注入（Dependency Injection）とは？
 
 クラスが必要とするオブジェクト（= 依存）を、**外から渡してもらう** 設計パターンです。
-`SlideshowDomainService` は自分で `SwiftDataSlideshowRepository()` を生成しません。
+`SlideshowDomainService` は自分で `SlideshowRepository()` を生成しません。
 代わりに `init` の引数で「プロトコルを満たす何か」を受け取ります。
 
 ### なぜ依存注入を使うのか？
 
 | 状況 | 渡すもの |
 |------|---------|
-| 本番環境 | `SwiftDataSlideshowRepository`（実際の DB） |
+| 本番環境 | `SlideshowRepository`（実際の DB） |
 | テスト環境 | `MockSlideshowRepository`（メモリ上の偽実装） |
 
 呼び出し側が「何を渡すか」を決めるので、`SlideshowDomainService` 自身を一切変更せずに動作を切り替えられます。
@@ -179,9 +178,9 @@ init(repository: any SlideshowRepositoryProtocol) {
 ### 依存注入をしなかったら？
 
 ```swift
-// NG — 内部で具体的な実装を生成している
+// NG -- Creates a concrete implementation internally
 init() {
-    self.repository = SwiftDataSlideshowRepository()  // テストのときも本物のDBが動く
+    self.repository = SlideshowRepository()  // The real DB runs even during tests
 }
 ```
 
@@ -189,7 +188,7 @@ init() {
 
 ---
 
-## 概念 4 — `async throws` — 非同期で失敗可能な関数
+## 概念 4 -- `async throws` -- 非同期で失敗可能な関数
 
 ### 該当コード
 
@@ -217,17 +216,17 @@ func create(name: String, localIdentifiers: [String], config: SlideshowConfig) a
 try await repository.save(slideshow)
 ```
 
-- `await` — 「この非同期処理が終わるまで待つ」
-- `try`  — 「エラーが起きるかもしれないので、呼び出し元に伝える準備をする」
+- `await` -- 「この非同期処理が終わるまで待つ」
+- `try`  -- 「エラーが起きるかもしれないので、呼び出し元に伝える準備をする」
 
 この 2 つをセットで使うことで「非同期 かつ 失敗するかもしれない処理」を安全に呼び出せます。
 
 ### `async throws` がなかったら？
 
 ```swift
-// NG — 同期的にブロックする（UI が固まる）
+// NG -- Blocks synchronously (the UI freezes)
 func create(...) -> Slideshow {
-    repository.saveSync(slideshow)  // 保存が終わるまでアプリ全体が止まる
+    repository.saveSync(slideshow)  // The entire app stops until the save finishes
     return slideshow
 }
 ```
@@ -236,7 +235,7 @@ func create(...) -> Slideshow {
 
 ---
 
-## 概念 5 — `guard let ... else { throw }` — Optional の安全なアンラップとエラー送出
+## 概念 5 -- `guard let ... else { throw }` -- Optional の安全なアンラップとエラー送出
 
 ### 該当コード
 
@@ -262,8 +261,7 @@ func update(id: UUID, name: String, localIdentifiers: [String]) async throws -> 
 - 値が存在すれば `existing` に取り出して続きを実行する
 - `nil` だった場合は `else` ブロックに入り、そこで処理を抜ける
 
-通常の `if let` との違いは、`guard let` は「条件を満たさない場合は早期リターンする」という意図を明確にします。
-条件を満たしたときのメイン処理がインデントなしで続くため、読みやすくなります。
+通常の `if let` との違いは、`guard let` は「条件を満たさない場合は早期リターンする」という意図を明確にします。条件を満たしたときのメイン処理がインデントなしで続くため、読みやすくなります。
 
 ### `throw DomainError.slideshowNotFound(id)` とは？
 
@@ -273,7 +271,7 @@ func update(id: UUID, name: String, localIdentifiers: [String]) async throws -> 
 ### `guard let` を使わなかったら？
 
 ```swift
-// NG — Optional を強制アンラップ（クラッシュの危険）
+// NG -- Force unwrapping the Optional (risk of crash)
 let existing = try await repository.fetch(id: id)!
 ```
 
@@ -282,7 +280,7 @@ let existing = try await repository.fetch(id: id)!
 
 ---
 
-## 概念 6 — ドメインサービスの役割
+## 概念 6 -- ドメインサービスの役割
 
 ### ドメインサービスとは何か？
 
@@ -293,7 +291,7 @@ let existing = try await repository.fetch(id: id)!
 ```swift
 func update(id: UUID, name: String, localIdentifiers: [String]) async throws -> Slideshow {
     guard let existing = try await repository.fetch(id: id) else {
-        throw DomainError.slideshowNotFound(id)  // ← ビジネスルール: 存在しないものは更新できない
+        throw DomainError.slideshowNotFound(id)  // ← Business rule: cannot update what doesn't exist
     }
     let updated = existing.updating(name: name, localIdentifiers: localIdentifiers)
     try await repository.save(updated)
@@ -311,11 +309,11 @@ func update(id: UUID, name: String, localIdentifiers: [String]) async throws -> 
 ### このサービスの処理の流れ（`update` の例）
 
 ```
-1. repository.fetch(id:)   → DBから既存データを取得する
-2. guard let existing      → 存在しなければエラーを投げて終了
-3. existing.updating(...)  → Entityの純粋な変換（ビジネスルール）
-4. repository.save(updated)→ 変換後のデータをDBに保存する
-5. return updated          → 呼び出し元に結果を返す
+1. repository.fetch(id:)   → Fetch existing data from the DB
+2. guard let existing      → If it doesn't exist, throw an error and exit
+3. existing.updating(...)  → Pure transformation on the Entity (business rule)
+4. repository.save(updated)→ Save the transformed data to the DB
+5. return updated          → Return the result to the caller
 ```
 
 「取得 → 判断 → 変換 → 保存 → 返却」という一連の流れを **1 つのメソッドが責任を持つ** のがドメインサービスの特徴です。
@@ -334,36 +332,37 @@ func update(id: UUID, name: String, localIdentifiers: [String]) async throws -> 
 
 Domain Service のメソッドが「エンティティを変換して返すだけ」で、`repository.save()` を呼ばない設計にすると、呼び出し元（UseCase）が保存を忘れるという事故が起きます。
 
-実際にこのプロジェクトでは、`PlaybackDomainService.applyConfig` が設定を変更した `Slideshow` を返すだけで `repository.save()` を呼んでいませんでした。画面上は更新が反映されて見えますが、アプリを再起動すると設定が元に戻っていたのです。
+このプロジェクトの初期段階では、Domain Service のメソッドが変換済みのエンティティを返すだけで `repository.save()` を呼んでいませんでした。画面上は更新が反映されて見えますが（ViewModel がメモリ上で新しい値を保持しているため）、アプリを再起動すると設定が元に戻っていたのです。
 
 ```swift
-// ❌ 変換だけして返す（保存は呼び出し元に委ねる）
-final class PlaybackDomainService {
-    func applyConfig(to slideshow: Slideshow, config: SlideshowConfig) -> Slideshow {
-        slideshow.applying(config: config)
-        // repository.save() を呼んでいない！
-        // → 呼び出し元が save を忘れると、再起動時にデータが消える
+// ❌ Only transforms and returns (leaves saving to the caller)
+func updateConfig(id: UUID, config: SlideshowConfig) async throws -> Slideshow {
+    guard let existing = try await repository.fetch(id: id) else {
+        throw DomainError.slideshowNotFound(id)
     }
+    return existing.applying(config: config)
+    // Does not call repository.save()!
+    // → If the caller forgets to save, data is lost on restart
 }
 ```
 
 ```swift
-// ✅ 取得→変換→保存→返却を 1 つのメソッドで完結させる
+// ✅ Complete fetch → transform → save → return in a single method
 final class SlideshowDomainService: SlideshowDomainServiceProtocol, Sendable {
     func updateConfig(id: UUID, config: SlideshowConfig) async throws -> Slideshow {
         guard let existing = try await repository.fetch(id: id) else {
             throw DomainError.slideshowNotFound(id)
         }
-        let updated = existing.applying(config: config)  // 変換
-        try await repository.save(updated)                // 永続化
-        return updated                                    // 返却
+        let updated = existing.applying(config: config)  // Transform
+        try await repository.save(updated)                // Persist
+        return updated                                    // Return
     }
 }
 ```
 
 #### 覚えておくこと
 
-- Domain Service が永続的な状態を変更するメソッドは、**取得 → 変換 → 保存 → 返却** の全ステップを 1 つのメソッドに閉じ込める
+- Domain Service が永続的な状態を変更するメソッドは、**取得 → 変換 → 保存 → 返却の全ステップを 1 つのメソッドに閉じ込める**
 - `applyX` / `withX` / `applying(...)` という名前のメソッドを見たら、「これは保存まで含んでいるか？」を確認する
 - 純粋な変換メソッドなのか、永続化まで行うメソッドなのか、名前で区別できるようにする
 
@@ -373,7 +372,7 @@ final class SlideshowDomainService: SlideshowDomainServiceProtocol, Sendable {
 
 | 概念 | 要点 |
 |------|------|
-| `final class` | 継承を禁止し、意図とパフォーマンスを改善する |
+| `final class` | 継承を禁止し、意図の明確さとパフォーマンスの両方を改善する |
 | プロトコル準拠 | 上位レイヤーは具体型を知らずに済み、差し替えが容易になる |
 | `Sendable` | 非同期の境界をまたいで安全に渡せる型であることを宣言する |
 | `any SlideshowRepositoryProtocol` | 存在型。具体的な型ではなくプロトコルを型として扱う |
@@ -381,8 +380,8 @@ final class SlideshowDomainService: SlideshowDomainServiceProtocol, Sendable {
 | 依存注入 (`init` 経由) | 本番とテストで依存を差し替えられる設計にする |
 | `async throws` | 非同期かつ失敗可能な処理を型安全に表現する |
 | `try await` | 非同期＋失敗可能な処理を呼び出すセット構文 |
-| `guard let ... else { throw }` | Optionalを安全にアンラップし、nilならエラーで早期リターンする |
+| `guard let ... else { throw }` | Optional を安全にアンラップし、nil ならエラーで早期リターンする |
 | ドメインサービス | ビジネスルールを一箇所に集め、「なぜそう動くのか」を明確にする |
 
 これらの概念は、Swift で **安全で・変更しやすく・テストしやすい** コードを書くための基本パターンです。
-このファイルは 46 行と短いですが、そのすべての行に「なぜそう書くのか」という理由があります。
+このファイルは 45 行と短いですが、そのすべての行に「なぜそう書くのか」という理由があります。

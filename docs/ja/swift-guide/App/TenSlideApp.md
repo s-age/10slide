@@ -59,8 +59,8 @@ struct TenSlideApp: App {
 ### もし使わなかったら？
 
 ```swift
-// import SwiftUI を書かなかった場合
-struct TenSlideApp: App {  // ❌ エラー：'App' が見つかりません
+// If you omit import SwiftUI
+struct TenSlideApp: App {  // ❌ Error: 'App' cannot be found
 ```
 
 コンパイラは `App` が何か知らないので、ビルドエラーになります。
@@ -112,9 +112,9 @@ SwiftUIのアプリは `App` プロトコルに準拠した型が必要です。
 ### もし使わなかったら？
 
 ```swift
-// App プロトコルに準拠しなかった場合
+// If you don't conform to the App protocol
 @main
-struct TenSlideApp {  // ❌ @main には静的な main() が必要です
+struct TenSlideApp {  // ❌ @main requires a static main() method
 ```
 
 `@main` と `App` プロトコルはセットです。`App` が `main()` の実装を提供しているため、準拠しないとコンパイルエラーになります。
@@ -142,10 +142,10 @@ struct TenSlideApp: App {
 ### もし使わなかったら？
 
 ```swift
-var container: Container  // 変更可能で外部からも見える
+var container: Container  // Mutable and visible from outside
 ```
 
-外部のコードが `app.container = 別のコンテナ` と書き換えられてしまい、予期しない動作の原因になります。
+外部のコードが `app.container = anotherContainer` と書き換えられてしまい、予期しない動作の原因になります。
 
 ### 該当コード
 
@@ -169,7 +169,7 @@ private let container: Container
 
 ```swift
 private let container: Container = Container()
-// ❌ Container() は throws なので、ここでは直接呼べません
+// ❌ Container() throws, so it cannot be called directly here
 ```
 
 `throws` な関数を `try` なしで呼ぶとコンパイルエラーになります。`init()` を明示的に書くことで `do-catch` を使う場所を確保しています。
@@ -209,10 +209,10 @@ init() {
 ### もし `do-catch` なしで書いたら？
 
 ```swift
-// try? を使った場合（失敗を無視してnilにする）
+// Using try? (ignoring failure and returning nil)
 container = try? Container()
-// ❌ container は Optional<Container> になってしまい、
-//    型が合わなくなるうえ、失敗しても気づけません
+// ❌ container becomes Optional<Container>,
+//    which doesn't match the type, and failures go unnoticed
 ```
 
 ### `\(error)` について（文字列補間）
@@ -242,7 +242,7 @@ do {
 
 この一行には3つの要素が含まれています。
 
-**`var body`**：変更可能なプロパティです（ただし実際には再計算されるだけで外から変更するわけではありません）。`App` プロトコルが「`body` プロパティを用意せよ」と要求しているため必須です。
+**`var body`**：**コンピューテッドプロパティ** です。値を格納せず、アクセスされるたびに再計算されます。Swiftではコンピューテッドプロパティは `var` でなければならず（`let` は使えません）、`var` が使われているのはそのためです。`App` プロトコルが「`body` プロパティを用意せよ」と要求しているため必須です。
 
 **`Scene`**：アプリの画面（ウィンドウグループなど）を表すプロトコルです。macOSアプリのウィンドウやメニューバーなどは `Scene` の一種です。
 
@@ -255,10 +255,10 @@ do {
 ### もし `some` なしで書いたら？
 
 ```swift
-// some なし
+// Without some
 var body: Scene { ... }
-// ❌ プロトコル型 'any Scene' を返り値の型として使うには
-//    'any Scene' と書く必要があります（Swift 5.7+）
+// ❌ To use protocol type 'any Scene' as a return type,
+//    you need to write 'any Scene' (Swift 5.7+)
 ```
 
 また `any Scene` にすると型消去（type erasure）が発生し、コンパイラの最適化が効きにくくなります。`some` の方がパフォーマンスと型安全性の両面で優れています。
@@ -280,10 +280,10 @@ var body: some Scene {
 `{ }` の書き方は **トレイリングクロージャ（Trailing Closure）** と呼ばれる構文糖衣です。関数の最後の引数がクロージャ（関数型の引数）のとき、括弧の外に `{ }` で書けます。
 
 ```swift
-// 本来の書き方
+// Original syntax
 WindowGroup(content: { ContentView(...) })
 
-// トレイリングクロージャ（同じ意味）
+// Trailing closure (same meaning)
 WindowGroup {
     ContentView(...)
 }
@@ -307,7 +307,7 @@ WindowGroup {
 }
 ```
 
-`ContentView(...)` の引数に注目してください。`container.presentation.make〇〇ViewModel()` と呼ぶことで、DIコンテナからViewModelを取り出して渡しています。これがDI（依存性注入）の実践です。Viewが自分でViewModelを生成するのではなく、外から受け取ることで、テストや差し替えが容易になります。
+`ContentView(...)` の引数に注目してください。`container.presentation.make*ViewModel()` と呼ぶことで、DIコンテナからViewModelを取り出して渡しています。これがDI（依存性注入）の実践です。Viewが自分でViewModelを生成するのではなく、外から受け取ることで、テストや差し替えが容易になります。
 
 ---
 
@@ -326,10 +326,10 @@ SwiftDataのモデルコンテナを最上位のSceneレベルで登録するこ
 ### もし `.modelContainer()` がなかったら？
 
 ```swift
-// .modelContainer() を書かなかった場合
+// If you omit .modelContainer()
 WindowGroup { ContentView(...) }
-// → 子Viewが @Query や @Environment(\.modelContext) を使おうとすると
-//   実行時エラーになります（モデルコンテナが未設定）
+// → When child Views try to use @Query or @Environment(\.modelContext),
+//   a runtime error occurs (model container not configured)
 ```
 
 ### 修飾子はチェーンできる
@@ -337,7 +337,7 @@ WindowGroup { ContentView(...) }
 ```swift
 WindowGroup { ... }
     .modelContainer(...)
-    .commands { ... }  // さらに別の修飾子を追加することもできます
+    .commands { ... }  // You can add additional modifiers as well
 ```
 
 ### 該当コード
@@ -365,15 +365,15 @@ macOS では、`WindowGroup` 内のルートビューに `.navigationTitle()` �
 #### 正しい書き方
 
 ```swift
-// ✅ .navigationTitle() でウィンドウタイトルを制御する（NavigationStack は不要）
+// ✅ Control the window title with .navigationTitle() (NavigationStack is not required)
 var body: some Scene {
     WindowGroup {
         if let slideshow = currentSlideshow {
             SlideshowPlayerView(slideshow: slideshow)
-                .navigationTitle(slideshow.name)   // → タイトルバーにスライドショー名が表示される
+                .navigationTitle(slideshow.name)   // → Slideshow name appears in the title bar
         } else {
             HomeView()
-                .navigationTitle("")               // → タイトルバーのテキストを非表示にする
+                .navigationTitle("")               // → Hides the title bar text
         }
     }
 }
@@ -384,13 +384,13 @@ var body: some Scene {
 #### やってはいけない書き方
 
 ```swift
-// ❌ NSViewRepresentable を使ってウィンドウタイトルを設定しようとする — 過剰に複雑
+// ❌ Trying to set the window title using NSViewRepresentable — overly complex
 struct WindowTitleSetter: NSViewRepresentable {
     let title: String
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
         DispatchQueue.main.async {
-            view.window?.title = title  // タイミングによっては window が nil
+            view.window?.title = title  // window may be nil depending on timing
         }
         return view
     }

@@ -49,7 +49,7 @@ SwiftUI のすべての画面部品は `View` プロトコルに準拠する必�
 `View` に準拠しない struct は SwiftUI の画面ツリーに組み込めません。`body` プロパティを持てず、`.frame()` などの修飾子も呼べません。
 
 ```swift
-struct SlideshowPlayerView: View {   // View プロトコルに準拠することを宣言
+struct SlideshowPlayerView: View {   // Declares conformance to the View protocol
     // ...
 }
 ```
@@ -96,9 +96,9 @@ init(
     viewModel: SlideshowPlayerViewModel,
     thumbnailViewModel: ThumbnailViewModel,
     onBack: @escaping () -> Void,          // @escaping
-    onSpriteMode: ((Int) -> Void)? = nil   // Optional なので暗黙的に @escaping
+    onSpriteMode: ((Int) -> Void)? = nil   // Optional, so implicitly @escaping
 ) {
-    self.onBack = onBack       // ← struct のプロパティとして保存している
+    self.onBack = onBack       // <- Stored as a property of the struct
 ```
 
 `onBack` は `init` が終わった後も `self.onBack` として保存され、ボタンが押されたときに呼び出されます。「呼び出し元の `init` が終わった後も生き残る」ため `@escaping` が必要です。
@@ -157,13 +157,13 @@ SwiftUI のレイアウトコンテナは、複数のビューをどのように
 
 ```swift
 ZStack(alignment: .bottom) {
-    Color.black          // 一番奥：黒背景
+    Color.black          // Backmost layer: black background
         .ignoresSafeArea()
 
-    slideImage           // 中間：スライド画像
+    slideImage           // Middle layer: slide image
 
     if viewModel.showFilmstrip {
-        FilmstripView(...)   // 手前：フィルムストリップ（下部）
+        FilmstripView(...)   // Front layer: filmstrip (at the bottom)
     }
 }
 ```
@@ -195,11 +195,11 @@ HStack(spacing: 0) {
 
 ### なぜここで使われているか
 
-スライドショーの黒背景は画面全体を覆う必要があります。セーフエリアを無視しないと、ノッチ周辺や画面端に背景色が当たらない隙間が生じます。
+スライドショーの黒背景は画面全体を覆う必要があります。セーフエリアを無視しないと、ノッチ周辺や画面端に黒以外の色（システム背景）が見える隙間が生じます。
 
 ```swift
 Color.black
-    .ignoresSafeArea()   // 画面の端から端まで黒くする
+    .ignoresSafeArea()   // Extend black to the very edges of the screen
 ```
 
 ### もし使わなかったら
@@ -221,14 +221,14 @@ SwiftUI では、ビューに `.修飾子名()` を連鎖的に付けること�
 
 ```swift
 slideImage
-    .frame(maxWidth: .infinity, maxHeight: .infinity)  // 利用可能な最大サイズまで広げる
+    .frame(maxWidth: .infinity, maxHeight: .infinity)  // Expand to the maximum available size
 ```
 
 `maxWidth: .infinity` は「横幅は親ビューの許す限り最大にして」という指示です。スライド画像を画面全体に広げるために使っています。
 
 ```swift
 Image(systemName: "xmark.circle.fill")
-    .padding(16)   // アイコンの周囲に16ポイントの余白を付けてタップしやすくする
+    .padding(16)   // Add 16 points of padding around the icon for a larger tap target
 ```
 
 ボタンのアイコンは小さいため、`.padding()` でタップ領域を広げています。
@@ -249,7 +249,7 @@ Image(systemName: "xmark.circle.fill")
 
 このファイルでは 3 箇所で使われています。
 
-**① スプライトモードボタンの表示判定**
+**1. スプライトモードボタンの表示判定**
 
 ```swift
 if let onSpriteMode {
@@ -261,7 +261,7 @@ if let onSpriteMode {
 
 `onSpriteMode` は `((Int) -> Void)?`（Optional なクロージャ）です。渡されていない場合（`nil`）はボタンを表示しない、という条件分岐です。
 
-**② フルスクリーンヒントの表示**
+**2. フルスクリーンヒントの表示**
 
 ```swift
 if let hint = viewModel.fullscreenHint {
@@ -271,7 +271,7 @@ if let hint = viewModel.fullscreenHint {
 
 ヒントが存在する（非 nil）ときだけオーバーレイを表示します。
 
-**③ スライド画像の表示**
+**3. スライド画像の表示**
 
 ```swift
 if let nsImage = viewModel.currentNSImage {
@@ -303,8 +303,8 @@ if let nsImage = viewModel.currentNSImage {
 
 ```swift
 .task {
-    await viewModel.loadCurrentImage()   // 画像を非同期でロード
-    viewModel.play()                     // ロード完了後に再生開始
+    await viewModel.loadCurrentImage()   // Load the image asynchronously
+    viewModel.play()                     // Start playback after loading completes
 }
 ```
 
@@ -313,14 +313,14 @@ if let nsImage = viewModel.currentNSImage {
 ### `onAppear` との違い
 
 ```swift
-// NG な例（アーキテクチャルールでも禁止）
+// BAD example (also prohibited by architecture rules)
 .onAppear {
-    Task { await viewModel.loadCurrentImage() }  // ビューが消えてもキャンセルされない
+    Task { await viewModel.loadCurrentImage() }  // Not cancelled when the view disappears
 }
 
-// 推奨
+// Recommended
 .task {
-    await viewModel.loadCurrentImage()           // ビューが消えると自動キャンセル
+    await viewModel.loadCurrentImage()           // Automatically cancelled when the view disappears
 }
 ```
 
@@ -342,7 +342,7 @@ if let nsImage = viewModel.currentNSImage {
 .focusable()
 .onKeyPress(.space) {
     if viewModel.isPlaying { viewModel.pause() } else { viewModel.play() }
-    return .handled   // スペースキーのデフォルト動作を上書き
+    return .handled   // Override the default behavior of the space key
 }
 .onKeyPress(.leftArrow) {
     Task { await viewModel.previous() }
@@ -376,7 +376,7 @@ if let nsImage = viewModel.currentNSImage {
 
 ```swift
 .onTapGesture {
-    viewModel.userDidInteract()   // タップでフィルムストリップを表示
+    viewModel.userDidInteract()   // A tap shows the filmstrip
 }
 ```
 
@@ -388,16 +388,16 @@ if let nsImage = viewModel.currentNSImage {
 .simultaneousGesture(
     DragGesture(minimumDistance: 20)
         .onEnded { value in
-            let dx = value.translation.width   // 横方向の移動量
-            let dy = value.translation.height  // 縦方向の移動量
+            let dx = value.translation.width   // Horizontal displacement
+            let dy = value.translation.height  // Vertical displacement
             if abs(dx) > abs(dy) {
                 if dx < -50 {
-                    Task { await viewModel.userDidNext() }    // 左スワイプ → 次へ
+                    Task { await viewModel.userDidNext() }    // Swipe left -> next
                 } else if dx > 50 {
-                    Task { await viewModel.previous() }      // 右スワイプ → 前へ
+                    Task { await viewModel.previous() }      // Swipe right -> previous
                 }
             } else {
-                viewModel.userDidInteract()   // 縦スワイプ → インタラクション扱い
+                viewModel.userDidInteract()   // Vertical swipe -> treat as interaction
             }
         }
 )
@@ -451,19 +451,19 @@ if let nsImage = viewModel.currentNSImage {
 
 ```swift
 slideImage
-    .transition(slideTransition)   // スライド切り替え時のトランジション
+    .transition(slideTransition)   // Transition when switching slides
 ```
 
 ```swift
 FilmstripView(...)
     .transition(.move(edge: .bottom).combined(with: .opacity))
-    // 下から滑り込みながらフェードイン、下に滑り出しながらフェードアウト
+    // Slides up from the bottom while fading in; slides down while fading out
 ```
 
 ```swift
 if let hint = viewModel.fullscreenHint {
     fullscreenHintOverlay(hint)
-        .transition(.opacity)   // フェードイン/フェードアウト
+        .transition(.opacity)   // Fade in / fade out
 }
 ```
 
@@ -488,7 +488,7 @@ if let hint = viewModel.fullscreenHint {
 ```swift
 @ViewBuilder
 private func fullscreenHintOverlay(_ hint: SlideshowPlayerViewModel.FullscreenHintType) -> some View {
-    let label: String = switch hint {   // hint の値によってラベルを切り替え
+    let label: String = switch hint {   // Switch label based on hint value
     case .enter: "Full Screen: Fn+F"
     case .exit: "Exit Full Screen: Esc"
     }
@@ -502,7 +502,7 @@ private func fullscreenHintOverlay(_ hint: SlideshowPlayerViewModel.FullscreenHi
 ```swift
 @ViewBuilder
 private var slideImage: some View {
-    if let nsImage = viewModel.currentNSImage {   // 条件分岐でビューを返す
+    if let nsImage = viewModel.currentNSImage {   // Returns views via conditional branching
         Image(nsImage: nsImage)
     } else {
         Color.black
@@ -542,13 +542,13 @@ private var slideTransition: AnyTransition {
 }
 ```
 
-`switch` で場合分けして**異なるトランジションを返す**ためには、戻り値の型を統一する必要があります。それぞれのトランジションは異なる型（`OpacityTransition`、`MoveTransition` など）ですが、すべて `AnyTransition` に包まれているため、ひとつの関数/プロパティから返せます。
+`switch` で場合分けして**異なるトランジションを返す**ためには、戻り値の型を統一する必要があります。スタティックメンバーである `.identity`、`.opacity`、`.asymmetric(...)` はすべて `AnyTransition` を返すため、コンピューテッドプロパティの戻り値型として機能します。`AnyTransition` がなければ、Swift は各分岐で全く同じ具体型を返すことを要求します。
 
 `.asymmetric` は「出現時と消滅時で別々のトランジション」を設定できる特別なトランジションです。スライドが右から入って左へ出る「スライド送り」の動きを実現しています。
 
 ### もし `AnyTransition` を使わなかったら
 
-`switch` の各ケースで異なる型を返せず、コンパイルエラーになります。型消去は Swift で多態性を実現するための重要なパターンです。
+コンピューテッドプロパティがより具体的な戻り値型を宣言していた場合、Swift はすべての分岐で同じ具体型を返すことを要求します。`AnyTransition` はすべてのトランジションバリアントを統一する共通の戻り値型として機能します。
 
 ---
 
@@ -591,21 +591,21 @@ macOS でウィンドウがフルスクリーンになると、システムが `
 このファイルでは 3 箇所に `.onHover` があります。
 
 ```swift
-// フィルムストリップへのホバー
+// Hover on the filmstrip
 FilmstripView(...)
     .onHover { hovering in
         if hovering { viewModel.overlayHoverBegan() }
         else { viewModel.overlayHoverEnded() }
     }
 
-// ボタン群へのホバー
+// Hover on the button group
 HStack { ... }
     .onHover { hovering in
         if hovering { viewModel.overlayHoverBegan() }
         else { viewModel.overlayHoverEnded() }
     }
 
-// 画面全体へのホバー
+// Hover on the entire screen
 .onHover { hovering in
     if hovering { viewModel.userDidInteract() }
 }
@@ -658,7 +658,7 @@ onNext: { Task { await viewModel.userDidNext() } },
 ```swift
 slideImage
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .id(viewModel.currentIndex)   // ← 現在のスライド番号を ID として使用
+    .id(viewModel.currentIndex)   // <- Uses the current slide number as the ID
     .transition(slideTransition)
 ```
 
@@ -681,7 +681,7 @@ slideImage
 `.onAppear` の中で `Task {}` を作ると、**View が消えてもタスクがキャンセルされません**。画面遷移後も裏で処理が動き続け、すでに存在しない ViewModel に書き込もうとする危険があります。
 
 ```swift
-// ❌ BAD — View が消えてもタスクが走り続ける
+// BAD -- The task keeps running even after the View disappears
 .onAppear {
     Task { await viewModel.loadCurrentImage() }
 }
@@ -690,18 +690,15 @@ slideImage
 `.task { }` 修飾子を使えば、View が非表示になったときに**自動でキャンセル**されます。値の変化に応じて再実行したい場合は `.task(id:)` を使います。
 
 ```swift
-// ✅ GOOD — View 消滅時に自動キャンセル
+// GOOD -- Automatically cancelled when the View disappears
 .task {
     await viewModel.loadCurrentImage()
     viewModel.play()
 }
 
-// ✅ GOOD — currentImage が変わるたびに前のタスクをキャンセルして再実行
-.task(id: viewModel.currentImage) {
-    guard let data = viewModel.currentImage else { return }
-    decodedImage = await Task.detached(priority: .userInitiated) {
-        NSImage(data: data)
-    }.value
+// GOOD -- Cancels the previous task and re-runs whenever currentIndex changes
+.task(id: viewModel.currentIndex) {
+    await viewModel.loadCurrentImage()
 }
 ```
 
@@ -722,15 +719,15 @@ slideImage
 フィルムストリップなどでサムネイルを正方形に表示したいとき、2つのよくある間違いがあります。
 
 ```swift
-// ❌ BAD① — scaledToFill は画像のレイアウトサイズが枠を超え、
-//           重なったボタンのヒットテストが壊れる
+// BAD (1) -- scaledToFill causes the image's layout size to exceed the frame,
+//            breaking hit testing on overlapping buttons
 Image(nsImage: nsImage)
     .resizable()
     .scaledToFill()
     .frame(width: 80, height: 80)
 
-// ❌ BAD② — LazyVGrid は高さを無限に提案するため、
-//           .fill では正方形にならない
+// BAD (2) -- LazyVGrid proposes infinite height,
+//            so .fill does not produce a square
 Image(nsImage: nsImage)
     .resizable()
     .aspectRatio(1, contentMode: .fill)
@@ -739,17 +736,17 @@ Image(nsImage: nsImage)
 正解は、**まず幅を確定させてから `aspectRatio(1, contentMode: .fit)` で高さ = 幅にする**方法です。
 
 ```swift
-// ✅ GOOD — 幅を先に確定し、アスペクト比で正方形にする
+// GOOD -- Fix the width first, then use aspect ratio to make it square
 ZStack {
-    Color.gray.opacity(0.15)           // レターボックス背景
+    Color.gray.opacity(0.15)           // Letterbox background
     if let nsImage = image {
         Image(nsImage: nsImage)
             .resizable()
-            .scaledToFit()             // 枠内に収まる
+            .scaledToFit()             // Fits within the frame
     }
 }
-.frame(maxWidth: .infinity)            // 列幅いっぱいに広げる
-.aspectRatio(1, contentMode: .fit)     // 高さ = 幅 → 正方形
+.frame(maxWidth: .infinity)            // Expand to fill the column width
+.aspectRatio(1, contentMode: .fit)     // height = width -> square
 .clipShape(RoundedRectangle(cornerRadius: 6))
 ```
 
@@ -762,11 +759,11 @@ ZStack {
 例えば「ライブラリパネルの編集ボタンを押したら、作成中のフォームに未保存データがあるか確認する」という処理。兄弟ビュー同士が直接やりとりしたくなりますが、**兄弟ビューが互いの ViewModel にアクセスするのはアンチパターン**です。
 
 ```swift
-// ❌ BAD — 兄弟ビューが別の兄弟の ViewModel を直接参照
+// BAD -- A sibling view directly references another sibling's ViewModel
 struct SlideshowLibraryPanel: View {
-    let createViewModel: CreateSlideshowViewModel  // ← 本来別の兄弟が持つ ViewModel
+    let createViewModel: CreateSlideshowViewModel  // <- A ViewModel belonging to another sibling
     func onEditTapped() {
-        if createViewModel.hasUnsavedWork { ... }  // ← 責務が曖昧になる
+        if createViewModel.hasUnsavedWork { ... }  // <- Blurred responsibilities
     }
 }
 ```
@@ -774,14 +771,14 @@ struct SlideshowLibraryPanel: View {
 正解は、**親ビューをコーディネーターとして使い、クロージャで連携する**方法です。
 
 ```swift
-// ✅ GOOD — 親ビュー（HomeView）がコーディネーター役
+// GOOD -- The parent view (HomeView) acts as coordinator
 struct HomeView: View {
     let createViewModel: CreateSlideshowViewModel
 
     var body: some View {
         HStack {
             SlideshowLibraryPanel(
-                onEdit: { slideshow in handleEdit(slideshow) }  // クロージャで通知
+                onEdit: { slideshow in handleEdit(slideshow) }  // Notify via closure
             )
             LibraryPickerView(viewModel: createViewModel)
         }
@@ -789,9 +786,9 @@ struct HomeView: View {
 
     private func handleEdit(_ slideshow: SlideshowResponse) {
         if createViewModel.hasUnsavedWork {
-            pendingEditSlideshow = slideshow   // 確認ダイアログを表示
+            pendingEditSlideshow = slideshow   // Show a confirmation dialog
         } else {
-            applyEdit(slideshow)              // 直接適用
+            applyEdit(slideshow)              // Apply directly
         }
     }
 }

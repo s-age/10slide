@@ -16,7 +16,7 @@
 Presentation → UseCases → Domain/Services → Repositories → Infrastructure
                               ↑
                          Domain/Entities
-                         Errors（共有リーフ層）
+                         Errors (shared leaf layer)
 ```
 
 ### App — エントリポイント
@@ -29,20 +29,20 @@ Presentation → UseCases → Domain/Services → Repositories → Infrastructur
 
 | 章 | 学べること |
 |----|-----------|
-| [SlideshowPlayerView](Presentation/SlideshowPlayerView.md) | SwiftUI ビュー構成、`@Bindable`、`@State`、`ForEach`、`.task` |
+| [SlideshowPlayerView](Presentation/SlideshowPlayerView.md) | SwiftUI ビュー構成、`ZStack`/`HStack`、`.task`、ジェスチャー処理、`@ViewBuilder`、トランジション |
 | [SlideshowPlayerViewModel](Presentation/SlideshowPlayerViewModel.md) | `@Observable`、`@MainActor`、`async/await`、`Task` 管理 |
 
 ### UseCases — ユースケース
 
 | 章 | 学べること |
 |----|-----------|
-| [CreateSlideshowUseCase](UseCases/CreateSlideshowUseCase.md) | UseCase パターン、Request/Response、`protocol` と `any` |
+| [CreateSlideshowUseCase](UseCases/CreateSlideshowUseCase.md) | UseCase パターン、Request/Response、`typealias` と `any`、ジェネリクス |
 
 ### Domain — ビジネスロジック
 
 | 章 | 学べること |
 |----|-----------|
-| [Slide / Slideshow / SlideshowConfig](Domain/Slide.md) | `struct`、`enum`、`Identifiable`、`Equatable`、`Sendable`、`Codable`、ファクトリメソッド |
+| [Slide / Slideshow / SlideshowConfig / SlideDuration / TransitionType](Domain/Slide.md) | `struct`、`enum`、`Identifiable`、`Equatable`、`Sendable`、`CaseIterable`、ファクトリメソッド |
 | [SlideshowDomainService](Domain/SlideshowDomainService.md) | Domain Service パターン、Repository プロトコル呼び出し |
 
 ### Repositories — データアクセス抽象
@@ -55,13 +55,13 @@ Presentation → UseCases → Domain/Services → Repositories → Infrastructur
 
 | 章 | 学べること |
 |----|-----------|
-| [Container](DI/Container.md) | DI コンテナ、`Sendable` な `final class`、レイヤー間の依存解決 |
+| [Container](DI/Container.md) | DI コンテナ、`final class`、レイヤーごとの依存関係の配線 |
 
 ### Infrastructure — 外部システム連携
 
 | 章 | 学べること |
 |----|-----------|
-| [SwiftDataStore](Infrastructure/SwiftDataStore.md) | `@ModelActor`、ジェネリクス、`Predicate`、SwiftData の CRUD |
+| [SwiftDataStore](Infrastructure/SwiftDataStore.md) | `@ModelActor`、ジェネリクス、`@Sendable` クロージャ、SwiftData 操作 |
 
 ---
 
@@ -80,9 +80,9 @@ Presentation → UseCases → Domain/Services → Repositories → Infrastructur
 
 ## 読み方のおすすめ
 
-1. **Swift 完全初心者** → Domain/Slide.md から始める。`struct`、`enum`、プロトコル準拠の基本が学べる
-2. **SwiftUI を学びたい** → Presentation の2章を読む。ビューとViewModelの関係がわかる
-3. **アーキテクチャを理解したい** → DI/Container.md → UseCases → Domain → Repositories → Infrastructure の順に読む
-4. **実践的な落とし穴を知りたい** → 各章末の「実践で学んだ落とし穴」セクション、および第2部のトピック別ガイド
+1. **Swift 完全初心者** -- Domain/Slide.md から始める。`struct`、`enum`、プロトコル準拠の基本が学べる
+2. **SwiftUI を学びたい** -- Presentation の2章を読む。ビューと ViewModel の関係がわかる
+3. **アーキテクチャを理解したい** -- DI/Container.md → UseCases → Domain → Repositories → Infrastructure の順に読む
+4. **実践的な落とし穴を知りたい** -- 各章末の「実践で学んだ落とし穴」セクション、および第2部のトピック別ガイド
 
 各章の「落とし穴」セクションは、実際の開発で Claude が遭遇し、デバッグした事例をベースにしています。「なぜこの書き方ではダメなのか」を具体的なエラーメッセージや挙動とともに解説しているため、同じ問題に遭遇したときの解決の手がかりになります。

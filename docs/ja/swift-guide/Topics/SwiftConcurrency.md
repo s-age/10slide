@@ -45,42 +45,43 @@ Swift 6 ではこれらを **正しく組み合わせないとビルドが通り
 ### 正しい例
 
 ```swift
-// ✅ struct — プロパティが全て Sendable なら自動的に Sendable
-struct SlideDTO: Sendable {
-    let id: UUID
+// ✅ struct — automatically Sendable if all properties are Sendable
+// (from Sources/Infrastructure/Image/DTO/ImageDTO.swift)
+struct ImageDTO: Sendable {
     let localIdentifier: String
-    let order: Int
+    let data: Data
+    let creationDate: Date?
 }
 ```
 
 ```swift
-// ✅ final class — let プロパティのみで Sendable
+// ✅ final class — Sendable with let-only properties
 final class PresentationContainer: Sendable {
-    private let createSlideshow: any CreateSlideshowUseCaseProtocol  // Sendable なプロトコル
-    private let loadSlideImage: any LoadSlideImageUseCaseProtocol
+    private let createSlideshow: CreateSlideshowUseCaseProtocol  // typealias embeds `any`
+    private let loadSlideImage: LoadSlideImageUseCaseProtocol
 }
 ```
 
 ### 間違った例
 
 ```swift
-// ❌ 非 final class は Sendable にできない
-class UseCaseRequest: Sendable {  // コンパイルエラー
+// ❌ Non-final class cannot be Sendable
+class UseCaseRequest: Sendable {  // Compile error
     func validate() throws { }
 }
 ```
 
 ```swift
-// ❌ var がある final class は Sendable にできない
+// ❌ final class with var cannot be Sendable
 final class Cache: Sendable {
-    var items: [String: Data] = [:]  // コンパイルエラー：var は Sendable と両立しない
+    var items: [String: Data] = [:]  // Compile error: var is incompatible with Sendable
 }
 ```
 
 ```swift
-// ❌ @unchecked Sendable で警告を黙らせる（プロジェクトで禁止）
+// ❌ Silencing warnings with @unchecked Sendable (prohibited in this project)
 final class Cache: @unchecked Sendable {
-    var items: [String: Data] = [:]  // コンパイラは通るが、データ競合のリスクを隠している
+    var items: [String: Data] = [:]  // Compiles, but hides data race risks
 }
 ```
 
@@ -89,15 +90,25 @@ final class Cache: @unchecked Sendable {
 UseCase の Request 型は当初 `class` 継承で設計されていましたが、Swift 6 では `Sendable` にできないためコンパイルエラーになりました。`protocol UseCaseRequest: Sendable` + `struct` に変更して解決しています。
 
 ```swift
-// ✅ protocol + struct パターン（現在の設計）
+// ✅ protocol + struct pattern (current design)
 protocol UseCaseRequest: Sendable {
     func validate() throws
 }
 
 struct CreateSlideshowRequest: UseCaseRequest {
     let name: String
-    let slides: [SlideInfo]
-    func validate() throws { /* ... */ }
+    let localIdentifiers: [String]
+    let duration: SlideDurationResponse
+    let transition: TransitionTypeResponse
+    let loop: Bool
+    func validate() throws {
+        guard !name.trimmingCharacters(in: .whitespaces).isEmpty else {
+            throw ValidationError.emptyName
+        }
+        guard !localIdentifiers.isEmpty else {
+            throw ValidationError.noIdentifiers
+        }
+    }
 }
 ```
 
@@ -118,18 +129,19 @@ SwiftUI の `.task(id:)` 修飾子は `id` が変わると自動で前のタス�
 ### 間違った例
 
 ```swift
-// ❌ await の間にインデックスが変わると古い画像で上書きされる
+// ❌ If the index changes during await, an old image overwrites the current one
 @MainActor
 func loadCurrentImage() async {
     guard let slide = currentSlide else { return }
     do {
-        let data = try await loadSlideImageUseCase.execute(slide: slide)
-        // ⚠️ この時点で currentIndex は変わっているかもしれない
+        let request = LoadSlideImageRequest(localIdentifier: slide.localIdentifier)
+        let data = try await loadSlideImage.execute(request)
+        // ⚠️ currentIndex may have changed by this point
         let image = await Task.detached(priority: .userInitiated) {
             NSImage(data: data)
         }.value
-        // ⚠️ ここでも currentIndex は変わっているかもしれない
-        currentNSImage = image  // 古い画像で上書きしてしまう！
+        // ⚠️ currentIndex may have changed here too
+        currentNSImage = image  // Overwrites with a stale image!
     } catch {
         currentNSImage = nil
     }
@@ -139,20 +151,20 @@ func loadCurrentImage() async {
 ### 正しい例：インデックススナップショットパターン
 
 ```swift
-// ✅ await の前にインデックスをスナップショットし、await の後で毎回検証する
-@MainActor
+// ✅ Snapshot the index before await, then verify after every await
 func loadCurrentImage() async {
     guard let slide = currentSlide else { currentNSImage = nil; return }
-    let expectedIndex = currentIndex  // ① スナップショットを取る
+    let expectedIndex = currentIndex  // ① Take a snapshot
 
     do {
-        let data = try await loadSlideImageUseCase.execute(slide: slide)
-        guard currentIndex == expectedIndex else { return }  // ② fetch 後にガード
+        let request = LoadSlideImageRequest(localIdentifier: slide.localIdentifier)
+        let data = try await loadSlideImage.execute(request)
+        guard currentIndex == expectedIndex else { return }  // ② Guard after fetch
 
         let image = await Task.detached(priority: .userInitiated) {
             NSImage(data: data)
         }.value
-        guard currentIndex == expectedIndex else { return }  // ③ decode 後にもガード
+        guard currentIndex == expectedIndex else { return }  // ③ Guard after decode too
 
         currentNSImage = image
     } catch {
@@ -182,44 +194,55 @@ func loadCurrentImage() async {
 ### 正しい例
 
 ```swift
-// ✅ ファイル I/O をバックグラウンドで実行
-func load() async throws -> ConfigDTO {
-    let fileURL = self.fileURL  // Sendable な値をローカルにコピー
+// ✅ Run file I/O on a background thread (from ConfigStore.swift)
+func load() async throws -> ConfigDTO? {
+    let fileURL = self.fileURL  // Copy Sendable value to local
     return try await Task.detached(priority: .utility) {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            return nil
+        }
         let data = try Data(contentsOf: fileURL)
-        return try YAMLDecoder().decode(ConfigDTO.self, from: data)
+        let yaml = String(decoding: data, as: UTF8.self)
+        return try YAMLDecoder().decode(ConfigDTO.self, from: yaml)
     }.value
 }
 ```
 
 ```swift
-// ✅ 画像デコードをバックグラウンドで実行（デコーダーを注入）
-private let imageDecoder: @Sendable (Data) -> NSImage?
-
+// ✅ Run image decoding on a background thread (actual pattern from SlideshowPlayerViewModel)
 func loadCurrentImage() async {
-    let data = try await loadSlideImageUseCase.execute(...)
-    let decode = imageDecoder  // ローカルにコピー（Sendable）
-    currentImage = await Task.detached(priority: .userInitiated) {
-        decode(data)
-    }.value
+    guard let slide = currentSlide else { currentNSImage = nil; return }
+    let expectedIndex = currentIndex
+    do {
+        let request = LoadSlideImageRequest(localIdentifier: slide.localIdentifier)
+        let data = try await loadSlideImage.execute(request)
+        guard currentIndex == expectedIndex else { return }
+        let image = await Task.detached(priority: .userInitiated) {
+            NSImage(data: data)   // Heavy decode on background thread
+        }.value
+        guard currentIndex == expectedIndex else { return }
+        currentNSImage = image
+    } catch {
+        currentNSImage = nil
+    }
 }
 ```
 
 ### 間違った例
 
 ```swift
-// ❌ @MainActor メソッド内で直接画像デコード — UI がカクつく
+// ❌ Decoding images directly in a @MainActor method — UI stutters
 @MainActor
 func loadCurrentImage() async {
     let data = try await loadSlideImageUseCase.execute(...)
-    currentImage = NSImage(data: data)  // メインスレッドで重い処理
+    currentImage = NSImage(data: data)  // Heavy work on the main thread
 }
 ```
 
 ```swift
-// ❌ self が Sendable でないのに Task.detached 内でキャプチャ
+// ❌ Capturing self in Task.detached when self is not Sendable
 Task.detached {
-    let data = try Data(contentsOf: self.fileURL)  // コンパイルエラー
+    let data = try Data(contentsOf: self.fileURL)  // Compile error
 }
 ```
 
@@ -229,24 +252,7 @@ Task.detached {
 |-----------|----------|
 | ユーザー操作に直結する画像読み込み | `.userInitiated` |
 | バックグラウンドのファイル I/O | `.utility` |
-| サムネイルのプリフェッチ | `.background` |
-
-### テストでの工夫：デコーダーを注入する
-
-`NSImage(data:)` をテストで呼ぶと実際の画像データが必要になります。デコーダーを `@Sendable` クロージャとして `init` に注入すれば、テストではスタブに差し替えられます。
-
-```swift
-// プロダクションコード
-init(..., imageDecoder: @Sendable @escaping (Data) -> NSImage? = { NSImage(data: $0) }) {
-    self.imageDecoder = imageDecoder
-}
-
-// テストコード
-sut = SlideshowPlayerViewModel(
-    ...,
-    imageDecoder: { _ in NSImage(size: .init(width: 1, height: 1)) }
-)
-```
+| サムネイル生成 | `.userInitiated` |
 
 ---
 
@@ -260,21 +266,32 @@ sut = SlideshowPlayerViewModel(
 
 `ModelContext` は **スレッドセーフではありません**。別のスレッドからアクセスすると、リレーションシップの遅延読み込み（lazy loading）がクラッシュやデータ破壊を引き起こします。`Mutex<ModelContext>` はアクセスを直列化しますが、**同じスレッドで実行される保証がない** ため問題が残ります。
 
-### 正しい例
+### 正しい例 — 汎用 `SwiftDataStore`
+
+10slide では、単一の汎用 `@ModelActor` アクターがすべての SwiftData アクセスを処理します。リポジトリが `transform` クロージャを渡し、アクター境界の **内側で** `@Model` からドメインエンティティへの変換を行います。
 
 ```swift
-// ✅ @ModelActor で全アクセスを同一スレッドに固定
+// Sources/Infrastructure/SwiftData/SwiftDataStore.swift
 @ModelActor
-actor SlideshowDataSource: SlideshowDataSourceProtocol {
-    // modelContext と modelExecutor はマクロが自動生成する
-
-    func fetchAll() throws -> [SlideshowDTO] {
-        let models = try modelContext.fetch(FetchDescriptor<SlideshowModel>())
-        return models.map(dto(from:))  // actor 内で DTO に変換してから返す
+actor SwiftDataStore: SwiftDataStoreProtocol {
+    func fetch<T: PersistentModel, R: Sendable>(
+        _ descriptor: FetchDescriptor<T>,
+        transform: @Sendable (T) throws -> R
+    ) throws -> [R] {
+        try modelContext.fetch(descriptor).map(transform)
     }
 
-    private func dto(from model: SlideshowModel) -> SlideshowDTO {
-        SlideshowDTO(id: model.id, name: model.name, slides: model.slides.map { ... })
+    func write(_ work: @Sendable (ModelContext) throws -> Void) throws {
+        try work(modelContext)
+    }
+}
+```
+
+```swift
+// Caller (SlideshowRepository) — transform runs inside the actor
+func fetchAll() async throws -> [Slideshow] {
+    try await store.fetch(FetchDescriptor<SlideshowModel>()) { [self] in
+        slideshow(from: $0)  // @Model → Entity conversion inside actor boundary
     }
 }
 ```
@@ -282,23 +299,23 @@ actor SlideshowDataSource: SlideshowDataSourceProtocol {
 ### 間違った例
 
 ```swift
-// ❌ Mutex<ModelContext> — スレッドは固定されない
-final class SlideshowDataSource: Sendable {
+// ❌ Mutex<ModelContext> — thread is not pinned
+final class UnsafeStore: Sendable {
     private let context: Mutex<ModelContext>
 
-    func fetchAll() throws -> [SlideshowDTO] {
-        context.withLock { ctx in  // 毎回違うスレッドで実行される可能性がある
-            try ctx.fetch(FetchDescriptor<SlideshowModel>())  // リレーション遅延読み込みで破壊
+    func fetchAll() throws -> [SlideshowModel] {
+        context.withLock { ctx in  // May execute on a different thread each time
+            try ctx.fetch(FetchDescriptor<SlideshowModel>())  // Lazy loading causes corruption
         }
     }
 }
 ```
 
 ```swift
-// ❌ @Model を actor の外に返す
+// ❌ Returning @Model from the actor — @Model is not Sendable
 @ModelActor
-actor SlideshowDataSource {
-    func fetchAll() throws -> [SlideshowModel] {  // @Model は Sendable ではない！
+actor UnsafeStore {
+    func fetchAll() throws -> [SlideshowModel] {
         try modelContext.fetch(FetchDescriptor<SlideshowModel>())
     }
 }
@@ -306,10 +323,10 @@ actor SlideshowDataSource {
 
 ### ルール
 
-- `@ModelActor actor` として宣言する（`final class` ではなく）
+- 汎用の `@ModelActor actor` を使う — エンティティごとにデータソースアクターを作る必要はない
 - `init(modelContainer:)` はマクロが生成するので自分で書かない
-- `@Model` オブジェクトは actor の外に出さず、必ず DTO に変換してから返す
-- プロトコルは `async throws` で宣言する（actor のメソッドは自動的に async になる）
+- `@Model` オブジェクトは actor の外に出さず、必ず `transform` クロージャで変換してから返す
+- `@Model` 型は `Repositories/Models/` に置く（Infrastructure ではなく）
 
 ---
 
@@ -327,7 +344,7 @@ Swift 6 の `Synchronization` モジュールに含まれる `Mutex<T>` は、�
 ### 正しい例
 
 ```swift
-// ✅ キャッシュを Mutex で保護
+// ✅ Protect a cache with Mutex
 import Synchronization
 
 final class ImageCache: Sendable {
@@ -346,27 +363,27 @@ final class ImageCache: Sendable {
 ### 間違った例
 
 ```swift
-// ❌ withLock 内で await を呼ぶ — コンパイルエラー
+// ❌ Calling await inside withLock — compile error
 storage.withLock { cache in
-    let data = try await fetchData()  // await は withLock 内で使えない
+    let data = try await fetchData()  // await cannot be used inside withLock
     cache[key] = data
 }
 ```
 
 ```swift
-// ❌ @MainActor のみで使う値に Mutex は不要
+// ❌ Mutex is unnecessary for values used only with @MainActor
 @MainActor
 final class ViewModel {
-    private let count: Mutex<Int> = Mutex(0)  // 過剰 — @MainActor で十分
+    private let count: Mutex<Int> = Mutex(0)  // Overkill — @MainActor is sufficient
 }
 ```
 
 ```swift
-// ❌ init 後に変更しない値に Mutex は不要
+// ❌ Mutex is unnecessary for values that never change after init
 final class Config: Sendable {
-    private let settings: Mutex<[String: String]>  // 過剰 — let で十分
+    private let settings: Mutex<[String: String]>  // Overkill — let is sufficient
     init(settings: [String: String]) {
-        self.settings = Mutex(settings)  // 変更しないなら let プロパティでよい
+        self.settings = Mutex(settings)  // If it never changes, a let property is fine
     }
 }
 ```
@@ -376,7 +393,7 @@ final class Config: Sendable {
 | 特徴 | `Mutex<T>` | `actor` |
 |------|-----------|---------|
 | アクセス | 同期（`withLock`） | 非同期（`await`） |
-| `await` 内で使えるか | 不可 | 可能 |
+| 内部で `await` を使えるか | 不可 | 可能 |
 | 主な用途 | 単純なキャッシュ、カウンタ | データソース、複雑な状態管理 |
 
 ---
@@ -395,19 +412,20 @@ warning: converting non-Sendable function value to
 ### 正しい例
 
 ```swift
-// ✅ final class + let プロパティのみ → Sendable
+// ✅ final class + let-only properties → Sendable
+// UseCase protocol typealiases already embed `any` — do not add `any` prefix
 final class PresentationContainer: Sendable {
-    private let createSlideshow: any CreateSlideshowUseCaseProtocol
-    private let loadSlideImage: any LoadSlideImageUseCaseProtocol
+    private let createSlideshow: CreateSlideshowUseCaseProtocol  // typealias embeds `any`
+    private let loadSlideImage: LoadSlideImageUseCaseProtocol
 
-    init(createSlideshow: any CreateSlideshowUseCaseProtocol,
-         loadSlideImage: any LoadSlideImageUseCaseProtocol) {
-        self.createSlideshow = createSlideshow
-        self.loadSlideImage = loadSlideImage
+    init(useCases: UseCaseContainer) {
+        createSlideshow = useCases.createSlideshow
+        loadSlideImage = useCases.loadSlideImage
     }
 
-    func makeSlideshowPlayerViewModel(slideshow: Slideshow) -> SlideshowPlayerViewModel {
-        SlideshowPlayerViewModel(slideshow: slideshow, loadSlideImage: loadSlideImage)
+    @MainActor
+    func makeSlideshowPlayerViewModel(slideshow: SlideshowResponse) -> SlideshowPlayerViewModel {
+        SlideshowPlayerViewModel(slideshow: slideshow, loadSlideImage: loadSlideImage, ...)
     }
 }
 ```
@@ -415,19 +433,19 @@ final class PresentationContainer: Sendable {
 ### 間違った例
 
 ```swift
-// ❌ var があるとコンパイルエラー
+// ❌ Having var causes a compile error
 final class PresentationContainer: Sendable {
-    var loadSlideImage: any LoadSlideImageUseCaseProtocol  // var は Sendable と両立しない
+    var loadSlideImage: any LoadSlideImageUseCaseProtocol  // var is incompatible with Sendable
 }
 ```
 
 ```swift
-// ❌ Sendable でないコンテナからメソッド参照を渡す
-class PresentationContainer {  // Sendable でない
+// ❌ Passing a method reference from a non-Sendable container
+class PresentationContainer {  // Not Sendable
     func makePlayer(slideshow: Slideshow) -> SlideshowPlayerViewModel { ... }
 }
 
-// ContentView で
+// In ContentView
 ContentView(makePlayer: container.makePlayer)  // ⚠️ non-Sendable function value
 ```
 
@@ -436,26 +454,34 @@ ContentView(makePlayer: container.makePlayer)  // ⚠️ non-Sendable function v
 UseCase に渡す Request は actor 境界を越えるため `Sendable` が必要です。
 
 ```swift
-// ✅ protocol + struct — 自動で Sendable
+// ✅ protocol + struct — automatically Sendable
 protocol UseCaseRequest: Sendable {
     func validate() throws
 }
 
 struct CreateSlideshowRequest: UseCaseRequest {
-    let name: String      // String は Sendable
-    let slides: [SlideInfo]  // SlideInfo が Sendable なら OK
+    let name: String              // String is Sendable
+    let localIdentifiers: [String]  // [String] is Sendable
+    let duration: SlideDurationResponse
+    let transition: TransitionTypeResponse
+    let loop: Bool
     func validate() throws {
-        guard !name.isEmpty else { throw ValidationError.emptyName }
+        guard !name.trimmingCharacters(in: .whitespaces).isEmpty else {
+            throw ValidationError.emptyName
+        }
+        guard !localIdentifiers.isEmpty else {
+            throw ValidationError.noIdentifiers
+        }
     }
 }
 ```
 
 ```swift
-// ❌ class 継承 — Sendable にできない
-class UseCaseRequest {               // 非 final class は Sendable 不可
+// ❌ class inheritance — cannot be Sendable
+class UseCaseRequest {               // Non-final class cannot be Sendable
     func validate() throws { }
 }
-class CreateSlideshowRequest: UseCaseRequest {  // サブクラスで var を追加できてしまう
+class CreateSlideshowRequest: UseCaseRequest {  // Subclass could add var
     let name: String
 }
 ```
@@ -470,7 +496,7 @@ class CreateSlideshowRequest: UseCaseRequest {  // サブクラスで var を追
 | `Sendable` final class | DI コンテナなど参照型が必要なとき | `let` プロパティのみ、`@unchecked` は禁止 |
 | インデックススナップショット | `@MainActor` async メソッドで複数 `await` | `await` 前にスナップショット、`await` 後に毎回ガード |
 | `Task.detached` | CPU 負荷の高い処理（画像デコード、I/O） | Sendable な値のみキャプチャ、priority を適切に設定 |
-| `@ModelActor` | SwiftData のデータソース | `@Model` を外に出さず DTO に変換して返す |
+| `@ModelActor` | SwiftData アクセス（汎用 `SwiftDataStore`） | `@Model` を外に出さず `transform` クロージャでアクター内部で変換して返す |
 | `Mutex<T>` | 複数アクターから共有する単純な可変状態 | `withLock` 内で `await` 不可、`@MainActor` で足りるなら不要 |
 | `protocol + struct` Request | UseCase の入力型 | class 継承ではなく protocol で `Sendable` を確保 |
 
