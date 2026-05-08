@@ -245,18 +245,30 @@ The ViewModel needs "image loading functionality" but **does not need to know th
 
 ### How the Typealias Pattern Works
 
+The codebase defines two base protocols — `AsyncUseCase` for I/O operations and `SyncUseCase` for pure computation:
+
 ```swift
-// Step 1: Generic protocol defines the shape
+// Step 1: Two generic protocols define the shape
 protocol AsyncUseCase<Request, Response>: Sendable {
     func execute(_ request: Request) async throws -> Response
 }
 
-// Step 2: Typealias binds concrete types AND wraps in `any`
-typealias LoadSlideImageUseCaseProtocol = any AsyncUseCase<LoadSlideImageRequest, Data>
+protocol SyncUseCase<Request, Response>: Sendable {
+    func execute(_ request: Request) throws -> Response
+}
 
-// Step 3: ViewModel uses the typealias directly (no `any` prefix needed)
-private let loadSlideImage: LoadSlideImageUseCaseProtocol
+// Step 2: Typealiases bind concrete types AND wrap in `any`
+typealias LoadSlideImageUseCaseProtocol = any AsyncUseCase<LoadSlideImageRequest, Data>
+typealias AdvanceSlideUseCaseProtocol   = any SyncUseCase<AdvanceSlideRequest, Int?>
+typealias PreviousSlideUseCaseProtocol  = any SyncUseCase<PreviousSlideRequest, Int?>
+
+// Step 3: ViewModel uses the typealiases directly (no `any` prefix needed)
+private let loadSlideImage: LoadSlideImageUseCaseProtocol  // async — called with await
+private let advanceSlide: AdvanceSlideUseCaseProtocol      // sync — called without await
+private let previousSlide: PreviousSlideUseCaseProtocol    // sync — called without await
 ```
+
+This is why `next()` and `previous()` call `execute()` with `try?` (no `await`) while `loadCurrentImage()` uses `try await`.
 
 ```swift
 // Receives "some implementation" from outside via init
@@ -337,19 +349,26 @@ The `play()` method is synchronous, but it needs to run an async loop that advan
 
 ```swift
 func play() {
-    ...
-    timerTask?.cancel()       // Cancel the previous timer if any
-    timerTask = Task {        // Create and save a new timer task
+    guard !displayedSlides.isEmpty else { return }
+    guard let duration = slideshow.config.duration.seconds else { return }
+    isPlaying = true              // Set state BEFORE cancelling old task
+    timerTask?.cancel()           // Cancel the previous timer if any
+    timerTask = Task {            // Create and save a new timer task
         while !Task.isCancelled, isPlaying {   // Loop while not cancelled
             do {
                 try await Task.sleep(for: .seconds(duration))
             } catch {
-                break         // Break if sleep is cancelled
+                break            // Break if sleep is cancelled
             }
             guard !Task.isCancelled, isPlaying else { break }
             await next()
         }
     }
+    if !enterHintShown, !isSpriteMode {
+        enterHintShown = true
+        showHint(.enter)
+    }
+    showFilmstripOverlay()
 }
 ```
 
@@ -481,12 +500,12 @@ guard let slide = currentSlide else {
 
 Code written inside a `defer { }` block is **guaranteed to execute last, no matter how the function exits** -- whether via `return`, `throw`, or normal completion.
 
-### Why It Is Used Here
+### Why It Is Covered Here
 
-In this file, the pattern is applied within `loadCurrentImage()`, but the typical use case is resetting an `isLoading` flag (as shown in the architecture rules examples).
+`defer` is not directly used in this file, but it is a closely related pattern frequently used in other ViewModels in this codebase. The typical use case is resetting an `isLoading` flag.
 
 ```swift
-// Typical defer usage (for reference)
+// Typical defer usage in other ViewModels (e.g. SlideshowLibraryViewModel)
 func load() async {
     isLoading = true
     defer { isLoading = false }  // Always resets to false no matter how we return

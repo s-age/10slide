@@ -104,6 +104,9 @@ struct CreateSlideshowRequest: UseCaseRequest {
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty else {
             throw ValidationError.emptyName
         }
+        guard !localIdentifiers.isEmpty else {
+            throw ValidationError.noIdentifiers
+        }
     }
 }
 ```
@@ -130,7 +133,8 @@ SwiftUI's `.task(id:)` modifier automatically cancels the previous task when `id
 func loadCurrentImage() async {
     guard let slide = currentSlide else { return }
     do {
-        let data = try await loadSlideImageUseCase.execute(slide: slide)
+        let request = LoadSlideImageRequest(localIdentifier: slide.localIdentifier)
+        let data = try await loadSlideImage.execute(request)
         // ⚠️ currentIndex may have changed by this point
         let image = await Task.detached(priority: .userInitiated) {
             NSImage(data: data)
@@ -153,7 +157,8 @@ func loadCurrentImage() async {
     let expectedIndex = currentIndex  // ① Take a snapshot
 
     do {
-        let data = try await loadSlideImageUseCase.execute(slide: slide)
+        let request = LoadSlideImageRequest(localIdentifier: slide.localIdentifier)
+        let data = try await loadSlideImage.execute(request)
         guard currentIndex == expectedIndex else { return }  // ② Guard after fetch
 
         let image = await Task.detached(priority: .userInitiated) {
@@ -189,12 +194,16 @@ Image decoding (`NSImage(data:)`) and file I/O (`Data(contentsOf:)`) block the C
 ### Correct examples
 
 ```swift
-// ✅ Run file I/O on a background thread
-func load() async throws -> ConfigDTO {
+// ✅ Run file I/O on a background thread (from ConfigStore.swift)
+func load() async throws -> ConfigDTO? {
     let fileURL = self.fileURL  // Copy Sendable value to local
     return try await Task.detached(priority: .utility) {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            return nil
+        }
         let data = try Data(contentsOf: fileURL)
-        return try YAMLDecoder().decode(ConfigDTO.self, from: data)
+        let yaml = String(decoding: data, as: UTF8.self)
+        return try YAMLDecoder().decode(ConfigDTO.self, from: yaml)
     }.value
 }
 ```
@@ -459,6 +468,9 @@ struct CreateSlideshowRequest: UseCaseRequest {
     func validate() throws {
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty else {
             throw ValidationError.emptyName
+        }
+        guard !localIdentifiers.isEmpty else {
+            throw ValidationError.noIdentifiers
         }
     }
 }

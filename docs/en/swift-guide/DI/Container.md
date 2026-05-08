@@ -219,11 +219,16 @@ Swift's `let` properties must be initialized before use, so the compiler produce
 final class UseCaseContainer: Sendable {
     let createSlideshow: CreateSlideshowUseCaseProtocol
     let fetchSlideshow: FetchSlideshowUseCaseProtocol
-    // ... other use cases follow the same pattern ...
+    // ... (15 use case properties total, all following the same pattern)
 
     init(domain: DomainContainer) {
         createSlideshow = ValidationAsyncUseCaseDecorator(
             decoratee: CreateSlideshowUseCase(domainService: domain.slideshowService)
+        )
+
+        // Sync use cases use ValidationSyncUseCaseDecorator:
+        advanceSlide = ValidationSyncUseCaseDecorator(
+            decoratee: AdvanceSlideUseCase(domainService: domain.playbackService)
         )
         // ...
     }
@@ -359,12 +364,26 @@ advanceSlide = ValidationSyncUseCaseDecorator(
 final class PresentationContainer: Sendable {
     private let createSlideshow: CreateSlideshowUseCaseProtocol
     private let loadSlideImage: LoadSlideImageUseCaseProtocol
-    // ...
+    private let loadThumbnail: LoadThumbnailUseCaseProtocol
+    private let updateSlideshowConfig: UpdateSlideshowConfigUseCaseProtocol
+    private let advanceSlide: AdvanceSlideUseCaseProtocol
+    private let previousSlide: PreviousSlideUseCaseProtocol
+    private let addDroppedFiles: AddDroppedFilesUseCaseProtocol
+    private let fetchSlideshows: FetchSlideshowsUseCaseProtocol
+    private let deleteSlideshow: DeleteSlideshowUseCaseProtocol
+    private let updateSlideshow: UpdateSlideshowUseCaseProtocol
 
     init(useCases: UseCaseContainer) {
         createSlideshow = useCases.createSlideshow
         loadSlideImage = useCases.loadSlideImage
-        // ...
+        loadThumbnail = useCases.loadThumbnail
+        updateSlideshowConfig = useCases.updateSlideshowConfig
+        advanceSlide = useCases.advanceSlide
+        previousSlide = useCases.previousSlide
+        addDroppedFiles = useCases.addDroppedFiles
+        fetchSlideshows = useCases.fetchSlideshows
+        deleteSlideshow = useCases.deleteSlideshow
+        updateSlideshow = useCases.updateSlideshow
     }
 
     @MainActor
@@ -377,7 +396,9 @@ final class PresentationContainer: Sendable {
         SlideshowPlayerViewModel(
             slideshow: slideshow,
             loadSlideImage: loadSlideImage,
-            ...
+            updateSlideshowConfig: updateSlideshowConfig,
+            advanceSlide: advanceSlide,
+            previousSlide: previousSlide
         )
     }
 }
@@ -531,10 +552,12 @@ In this project, `ContentView` was designed to receive factory methods from `Pre
 final class PresentationContainer: Sendable {
     private let createSlideshow: CreateSlideshowUseCaseProtocol  // typealias embeds `any`
     private let loadSlideImage: LoadSlideImageUseCaseProtocol    // typealias embeds `any`
+    // ... (10 private let properties total — all UseCase protocol typealiases)
 
     init(useCases: UseCaseContainer) {
         createSlideshow = useCases.createSlideshow
         loadSlideImage = useCases.loadSlideImage
+        // ... (all 10 extracted here)
     }
 }
 ```

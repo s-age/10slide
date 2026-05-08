@@ -87,6 +87,7 @@ final class SlideshowRepositoryTests: XCTestCase {
     private var container: ModelContainer!
 
     override func setUp() async throws {
+        try await super.setUp()
         let schema = Schema([SlideshowModel.self, SlideModel.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         container = try ModelContainer(for: schema, configurations: [config])
@@ -94,9 +95,16 @@ final class SlideshowRepositoryTests: XCTestCase {
         sut = SlideshowRepository(store: store)
     }
 
+    override func tearDown() async throws {
+        sut = nil
+        store = nil
+        container = nil
+        try await super.tearDown()
+    }
+
     func testFetchAll_onEmpty_returnsEmptyArray() async throws {
         let result = try await sut.fetchAll()
-        XCTAssertEqual(result.count, 0)
+        XCTAssertTrue(result.isEmpty)
     }
 }
 ```
@@ -129,27 +137,32 @@ UseCases depend on Domain Services, and ViewModels depend on UseCases. How do yo
 Each layer defines a protocol for its dependencies. In tests, create a `Mock*` class that implements the protocol with configurable return values and call counters.
 
 ```swift
-// ✅ Mock for an async use case (from actual test code)
+// ✅ Mock for an async use case (from SlideshowPlayerViewModelTests)
 final class MockLoadSlideImageUseCase: AsyncUseCase, @unchecked Sendable {
-    var executeResult: Data = Data()
+    // Minimal valid 1x1 pixel PNG
+    var executeResult: Data = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUg...")!
     var executeCallCount = 0
+    var throwOnExecute = false
 
     func execute(_ request: LoadSlideImageRequest) async throws -> Data {
         executeCallCount += 1
+        if throwOnExecute { throw SlideshowPlayerTestError.intentional }
         return executeResult
     }
 }
 ```
 
 ```swift
-// ✅ Mock for a sync use case
+// ✅ Mock for a sync use case — contains real navigation logic (from SlideshowPlayerViewModelTests)
 final class MockAdvanceSlideUseCase: SyncUseCase, @unchecked Sendable {
-    var executeResult: Int? = 1
-    var executeCallCount = 0
-
     func execute(_ request: AdvanceSlideRequest) throws -> Int? {
-        executeCallCount += 1
-        return executeResult
+        let next = request.currentIndex + 1
+        if next < request.totalSlides {
+            return next
+        } else if request.loop {
+            return 0
+        }
+        return nil
     }
 }
 ```
